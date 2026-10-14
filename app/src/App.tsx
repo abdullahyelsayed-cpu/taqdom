@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import './App.css'
+import './landing.css'
 import { CareerAiError, improveCareerText } from './lib/ai'
 import { downloadPortfolioHtml } from './lib/portfolio-export'
 
