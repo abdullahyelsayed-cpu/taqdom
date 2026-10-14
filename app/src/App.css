@@ -175,7 +175,7 @@ button,input,textarea{font-family:inherit}
 
 /* Editor becomes a proper studio rather than a plain settings form. */
 .editor-mode{max-width:none;padding:0;background:#f5f4fa;min-height:100vh}
-.editor-mode .topbar{position:sticky;top:0;height:72px;padding:0 clamp(14px,2.6vw,36px);background:#fffdf;border-bottom:1px solid #e6e3ef;box-shadow:0 4px 20px #23194406}
+.editor-mode .topbar{position:sticky;top:0;height:72px;padding:0 clamp(14px,2.6vw,36px);background:#fffdfd;border-bottom:1px solid #e6e3ef;box-shadow:0 4px 20px #23194406}
 .editor-mode .brand-mark{width:30px;height:30px}
 .editor-breadcrumb{font-size:11px;color:#8c87a0}
 .editor-breadcrumb strong{color:#272438}
