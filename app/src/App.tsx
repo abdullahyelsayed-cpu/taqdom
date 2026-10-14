@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import './App.css'
+import { CareerAiError, improveCareerText } from './lib/ai'
+import { downloadPortfolioHtml } from './lib/portfolio-export'
 
 type Template = { id: string; profession: string; role: string; layout: number; accent: string; pale: string }
 type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; visible: Record<string, boolean> }
@@ -8,12 +10,40 @@ const jobs = [
   ['design', 'التصميم', 'مصممة منتجات رقمية'], ['code', 'البرمجة', 'مطورة برمجيات'], ['photo', 'التصوير', 'مصورة فوتوغرافية'],
   ['writing', 'الكتابة', 'كاتبة ومحررة'], ['consulting', 'الاستشارات', 'مستشار أعمال'], ['education', 'التعليم', 'مدرسة لغة إنجليزية'],
   ['architecture', 'العمارة', 'مهندس معماري'], ['marketing', 'التسويق', 'مسوق رقمي'], ['health', 'الصحة', 'أخصائية تغذية'], ['business', 'الأعمال', 'مؤسسة مشروع صغير'],
+  ['law', 'القانون', 'مستشارة قانونية'], ['engineering', 'الهندسة', 'مهندسة مدنية'], ['people', 'الموارد البشرية', 'أخصائية موارد بشرية'], ['events', 'الفعاليات', 'منظّمة فعاليات'],
 ]
 const layouts = ['Editorial', 'Canvas', 'Orbit', 'Studio', 'Minimal']
 const colors = ['#e76f51','#4677ed','#178b76','#7956ce','#bf8b37','#cf5b85','#4386a0','#6f7e3e','#3e485f','#d35642']
 const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], layout: l, accent: colors[(j + l * 2) % colors.length], pale: ['#fff0ea','#eaf0ff','#e4f5ee','#f1eaff','#fbf2df'][(j + l) % 5] })))
 const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#e76f51', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true} }
-function readSaved(): Portfolio { try { return { ...initial, ...JSON.parse(localStorage.getItem('taqdom.portfolio') || '{}') } } catch { return initial } }
+function readSaved(): Portfolio {
+  try {
+    const saved = JSON.parse(localStorage.getItem('taqdom.portfolio') || '{}') as Partial<Portfolio>
+    const visible = saved.visible && typeof saved.visible === 'object' ? saved.visible : {}
+    const projects = Array.isArray(saved.projects)
+      ? saved.projects.filter((item): item is string => typeof item === 'string').slice(0, 24)
+      : initial.projects
+    return {
+      ...initial,
+      ...saved,
+      name: typeof saved.name === 'string' ? saved.name.slice(0, 120) : initial.name,
+      role: typeof saved.role === 'string' ? saved.role.slice(0, 180) : initial.role,
+      bio: typeof saved.bio === 'string' ? saved.bio.slice(0, 2400) : initial.bio,
+      email: typeof saved.email === 'string' ? saved.email.slice(0, 254) : initial.email,
+      location: typeof saved.location === 'string' ? saved.location.slice(0, 160) : initial.location,
+      accent: typeof saved.accent === 'string' && /^#[0-9a-f]{6}$/i.test(saved.accent) ? saved.accent : initial.accent,
+      templateId: typeof saved.templateId === 'string' && templates.some((template) => template.id === saved.templateId) ? saved.templateId : initial.templateId,
+      projects,
+      visible: {
+        about: typeof visible.about === 'boolean' ? visible.about : initial.visible.about,
+        projects: typeof visible.projects === 'boolean' ? visible.projects : initial.visible.projects,
+        contact: typeof visible.contact === 'boolean' ? visible.contact : initial.visible.contact,
+      },
+    }
+  } catch {
+    return initial
+  }
+}
 
 export default function App() {
   const [portfolio, setPortfolio] = useState<Portfolio>(readSaved)
@@ -25,19 +55,51 @@ export default function App() {
   const [mobilePanel, setMobilePanel] = useState(false)
   const [showAllTemplates, setShowAllTemplates] = useState(false)
   const [device, setDevice] = useState<'desktop'|'mobile'>('desktop')
+  const [aiBusy, setAiBusy] = useState<'bio'|'headline'|null>(null)
+  const [aiMessage, setAiMessage] = useState('')
   const en = language === 'en'
   const chosen = templates.find(t => t.id === portfolio.templateId) || templates[0]
   const filtered = useMemo(() => templates.filter(t => (category === 'الكل' || t.profession === category) && (!search || (t.profession + t.role + layouts[t.layout]).includes(search))), [category, search])
   useEffect(() => { document.documentElement.lang = language; document.documentElement.dir = en ? 'ltr' : 'rtl' }, [language, en])
   useEffect(() => { if (view === 'preview') return; setSaved(false); const id = window.setTimeout(() => { localStorage.setItem('taqdom.portfolio', JSON.stringify(portfolio)); setSaved(true) }, 300); return () => window.clearTimeout(id) }, [portfolio, view])
   const update = (key: keyof Portfolio, value: unknown) => setPortfolio(p => ({ ...p, [key]: value }))
+  const improveText = async (kind: 'bio' | 'headline') => {
+    const text = kind === 'bio' ? portfolio.bio : portfolio.role
+    if (!text.trim()) {
+      setAiMessage(en ? 'Add some text first, then ask AI to improve it.' : 'اكتب نص الأول، وبعدها اطلب من الذكاء الاصطناعي تحسينه.')
+      return
+    }
+    setAiBusy(kind)
+    setAiMessage('')
+    try {
+      const result = await improveCareerText({ text, kind, locale: language })
+      update(kind === 'bio' ? 'bio' : 'role', result.text)
+      const remaining = typeof result.remainingToday === 'number'
+        ? (en ? ` · ${result.remainingToday} AI uses left today` : ` · متبقي ${result.remainingToday} محاولات اليوم`)
+        : ''
+      setAiMessage((en ? 'Text improved. Review it before publishing.' : 'تم تحسين النص. راجعه قبل النشر.') + remaining)
+    } catch (error) {
+      const code = error instanceof CareerAiError ? error.code : 'network_error'
+      const messages: Record<string, { ar: string; en: string }> = {
+        text_too_short: { ar: 'النص قصير جدًا. أضف تفاصيل أكثر.', en: 'The text is too short. Add a little more detail.' },
+        text_too_long: { ar: 'النص أطول من الحد المسموح.', en: 'The text exceeds the allowed length.' },
+        daily_limit_reached: { ar: 'وصلت للحد اليومي للتجربة. جرّب غدًا.', en: 'You reached today’s AI limit. Try again tomorrow.' },
+        daily_capacity_reached: { ar: 'مساعد الكتابة مشغول حاليًا. جرّب لاحقًا.', en: 'The writing assistant is busy. Please try later.' },
+        service_not_configured: { ar: 'مساعد الكتابة غير مهيأ حاليًا.', en: 'The writing assistant is not configured yet.' },
+        quota_service_unavailable: { ar: 'تعذر التحقق من حد الاستخدام. لم يُرسل الطلب.', en: 'Usage limits could not be checked. The request was not sent.' },
+        request_timeout: { ar: 'الطلب استغرق وقتًا طويلًا. جرّب مرة أخرى.', en: 'The request timed out. Please try again.' },
+        invalid_response: { ar: 'وصل رد غير مفهوم من الخدمة.', en: 'The service returned an invalid response.' },
+        network_error: { ar: 'تعذر الاتصال بمساعد الكتابة. يمكنك متابعة التحرير بشكل طبيعي.', en: 'Could not connect to the writing assistant. You can keep editing normally.' },
+      }
+      const message = messages[code] || { ar: 'لم نتمكن من تحسين النص حاليًا.', en: 'We could not improve the text right now.' }
+      setAiMessage(en ? message.en : message.ar)
+    } finally {
+      setAiBusy(null)
+    }
+  }
   const edit = () => { history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0) }
   const preview = () => { localStorage.setItem('taqdom.portfolio', JSON.stringify(portfolio)); const url = new URL(location.href); url.searchParams.set('preview','1'); history.pushState({},'',url); setView('preview'); window.scrollTo(0,0) }
-  const exportSite = () => {
-    const projects = portfolio.projects.map(p => '<article class="project">' + escapeHtml(p) + '</article>').join('')
-    const html = '<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>' + escapeHtml(portfolio.name) + ' — Portfolio</title><style>body{margin:0;background:#f7f6f2;color:#23251f;font:18px/1.8 Arial,sans-serif}.wrap{max-width:920px;margin:8vh auto;padding:40px}.tag{color:' + portfolio.accent + ';font-weight:bold}h1{font-size:clamp(48px,9vw,88px);line-height:1.1;letter-spacing:-.06em;margin:12px 0}p{max-width:640px}.project{display:inline-block;background:white;border:1px solid #e9e6df;border-radius:20px;padding:22px;margin:8px}a{display:inline-block;background:' + portfolio.accent + ';color:white;text-decoration:none;padding:12px 22px;border-radius:999px}</style><main class="wrap"><div class="tag">' + escapeHtml(portfolio.location) + ' · ' + escapeHtml(chosen.profession) + '</div><h1>' + escapeHtml(portfolio.name) + '</h1><h2>' + escapeHtml(portfolio.role) + '</h2><p>' + escapeHtml(portfolio.bio) + '</p><h2>أعمال مختارة</h2>' + projects + '<p><a href="mailto:' + escapeHtml(portfolio.email) + '">تواصل معي</a></p></main></html>'
-    const url = URL.createObjectURL(new Blob([html], {type:'text/html;charset=utf-8'})); const a = document.createElement('a'); a.href=url; a.download='taqdom-portfolio.html'; a.click(); URL.revokeObjectURL(url)
-  }
+  const exportSite = () => downloadPortfolioHtml(portfolio, chosen, language)
   const vars = { '--accent':portfolio.accent, '--pale':chosen.pale } as CSSProperties
   if (view === 'preview') return <div className="preview-screen" style={vars}><div className="preview-bar"><button onClick={() => { history.replaceState({},'',location.pathname); setView('editor') }}>← {en?'Back to editor':'العودة للمحرر'}</button><span className="preview-status"><i/>{en?'Private preview on this device':'معاينة خاصة على هذا الجهاز'}</span><button className="small-action" onClick={exportSite}>{en?'Download HTML':'تنزيل HTML'} ↓</button></div><PortfolioCanvas data={portfolio} template={chosen} language={language}/></div>
   return <div className={'app-shell '+(view==='editor'?'editor-mode':'')}>
@@ -55,17 +117,21 @@ export default function App() {
         <div className="hero-art"><div className="art-sun"/><div className="art-star star-one">✳</div><div className="art-star star-two">✦</div><div className="browser-window"><div className="browser-top"><div className="browser-dots"><i/><i/><i/></div><div className="browser-url">salma.design</div><span className="browser-menu">•••</span></div><div className="portfolio-mock"><div className="mock-nav"><b>SH</b><span>Work　 About　 Contact</span><span className="mock-available"><i/>Available</span></div><div className="mock-content"><div className="mock-intro"><div className="mock-tag">✳ PRODUCT DESIGNER</div><h2>Making digital<br/>feel <em>human.</em></h2><p>Thoughtful experiences for people and the planet.</p><span className="mock-link">See my work <b>↗</b></span></div><div className="mock-portrait"><div className="portrait-shape"><div className="portrait-head"/><div className="portrait-body"/><div className="portrait-flower">✿</div></div></div></div><div className="mock-projects"><div className="mock-project"><div className="project-art art-peach"><span>milo</span><i>☼</i></div><b>Everyday, reimagined</b><small>Product design · 2025</small></div><div className="mock-project"><div className="project-art art-green"><span>grow</span><i>✳</i></div><b>A greener way to learn</b><small>Strategy · 2024</small></div><div className="mock-project"><div className="project-art art-blue"><span>room</span><i>◒</i></div><b>Space to feel at home</b><small>Branding · 2024</small></div></div></div></div><div className="floating-note note-left"><span>✦</span><div><b>صممه بطريقتك</b><small>كل تفصيلة على مزاجك</small></div></div><div className="floating-note note-right"><div className="note-icon">Aa</div><div><b>سهل من أول مرة</b><small>من غير خبرة تقنية</small></div></div><div className="art-caption">Your next chapter, online. <span>↗</span></div></div>
       </section>
       <section id="features" className="feature-strip"><Feature icon="✳" title={en?'Made to feel like you':'شكل يعبر عنك'} desc={en?'Layouts that fit your work':'قوالب تناسب مجالك وشخصيتك'}/><Feature icon="✎" title={en?'Easy to make your own':'التعديل سهل وممتع'} desc={en?'Change it all, see it live':'غير وشوف النتيجة في لحظتها'}/><Feature icon="◎" title={en?'Ready for the world':'جاهز تشاركه مع العالم'} desc={en?'Arabic, English, and mobile':'عربي وإنجليزي ومناسب للموبايل'}/></section>
-      <section id="templates" className="template-section"><div className="section-heading"><div><div className="eyebrow">✳ {en?'A good place to start':'كل بداية ليها شكل'}</div><h2>{en?<>Find a look that<br/>feels like <em>you.</em></>:<>ابدأ بحاجة <em>شبهك.</em></>}</h2></div><div className="section-side"><p>{en?'From a first portfolio to a new chapter, find the right starting point for your story.':'من أول بورتفوليو لخطوة جديدة في مشوارك، اختار البداية اللي تليق بقصتك.'}</p><button className="text-link" onClick={edit}>{en?'Explore all 50 styles':'اكتشف الـ ٥٠ شكل'} <span>↗</span></button></div></div><div className="template-preview-grid">{templates.slice(0,4).map((t,i)=><button className="template-preview-card" key={t.id} onClick={()=>{update('templateId',t.id);edit()}}><TemplateThumb template={t} index={i}/><div className="template-card-foot"><div><b>{['هدوء وتركيز','صانع الأفكار','حكاية صورة','شغل متقن'][i]}</b><small>{t.profession}</small></div><span className="round-arrow">↗</span></div></button>)}</div></section>
+      <section id="templates" className="template-section"><div className="section-heading"><div><div className="eyebrow">✳ {en?'A good place to start':'كل بداية ليها شكل'}</div><h2>{en?<>Find a look that<br/>feels like <em>you.</em></>:<>ابدأ بحاجة <em>شبهك.</em></>}</h2></div><div className="section-side"><p>{en?'From a first portfolio to a new chapter, find the right starting point for your story.':'من أول بورتفوليو لخطوة جديدة في مشوارك، اختار البداية اللي تليق بقصتك.'}</p><button className="text-link" onClick={edit}>{en?'Explore all '+templates.length+' styles':'اكتشف '+templates.length+' قالب'} <span>↗</span></button></div></div><div className="template-preview-grid">{templates.slice(0,4).map((t,i)=><button className="template-preview-card" key={t.id} onClick={()=>{update('templateId',t.id);edit()}}><TemplateThumb template={t} index={i}/><div className="template-card-foot"><div><b>{['هدوء وتركيز','صانع الأفكار','حكاية صورة','شغل متقن'][i]}</b><small>{t.profession}</small></div><span className="round-arrow">↗</span></div></button>)}</div></section>
       <section id="how" className="how-section"><div className="eyebrow">✳ {en?'Three easy steps':'٣ خطوات بسيطة'}</div><h2>{en?<>From idea to <em>online.</em></>:<>من فكرة لموقع <em>جاهز.</em></>}</h2><div className="steps"><Step n="01" icon="▦" title={en?'Pick a starting point':'اختار نقطة البداية'} text={en?'Choose a template that already feels close to you.':'اختار قالب قريب من طريقتك ومجالك.'}/><Step n="02" icon="✎" title={en?'Make it your own':'ضيف لمستك'} text={en?'Write your story, add your work, play with the colors.':'اكتب قصتك، حط شغلك، واختار الألوان اللي بتحبها.'}/><Step n="03" icon="↗" title={en?'Share with the world':'شارك موقعك'} text={en?'Download your site and publish it anywhere.':'نزّل موقعك وشاركه على المنصة اللي تناسبك.'}/></div></section>
       <section className="closing-cta"><div><div className="eyebrow">✳ {en?'Your story starts here':'الحكاية بتبدأ من هنا'}</div><h2>{en?<>Make room for what’s next.</>:<>افتح مكان <em>للي جاي.</em></>}</h2><p>{en?'Your work has come a long way. Let it take you further.':'شغلك وصلك لحد هنا. خليه ياخدك لمكان أبعد.'}</p></div><button className="button button-white" onClick={edit}>{en?'Build your portfolio':'ابدأ موقعك دلوقتي'} <span>↗</span></button><span className="cta-flower">✿</span></section>
       <footer className="home-footer"><span>taqdom<span className="brand-dot">.</span></span><span>اتعمل بحب في مصر　✳　Made for everywhere</span><a href="#">Instagram ↗</a></footer>
     </main>:<main className="editor-layout"><aside className={'editor-sidebar '+(mobilePanel?'panel-open':'')}><div className="sidebar-scroll"><div className="editor-side-title"><div><small>{en?'YOUR PORTFOLIO':'موقعك الشخصي'}</small><h2>{en?'Make it yours':'ظبّطه بطريقتك'}</h2></div><button className="close-panel" onClick={()=>setMobilePanel(false)}>×</button></div>
-      <label className="field-label">{en?'Your name':'اسمك'}<input value={portfolio.name} onChange={e=>update('name',e.target.value)}/></label><label className="field-label">{en?'What you do':'بتشتغل إيه؟'}<input value={portfolio.role} onChange={e=>update('role',e.target.value)}/></label><label className="field-label">{en?'Short introduction':'نبذة صغيرة عنك'}<textarea value={portfolio.bio} rows={4} onChange={e=>update('bio',e.target.value)}/></label><label className="field-label">{en?'Contact email':'إيميل التواصل'}<input type="email" value={portfolio.email} onChange={e=>update('email',e.target.value)}/></label><label className="field-label">{en?'Location':'مكانك'}<input value={portfolio.location} onChange={e=>update('location',e.target.value)}/></label>
+      <label className="field-label">{en?'Your name':'اسمك'}<input value={portfolio.name} onChange={e=>update('name',e.target.value)}/></label><label className="field-label">{en?'What you do':'بتشتغل إيه؟'}<input value={portfolio.role} maxLength={180} onChange={e=>update('role',e.target.value)}/></label>
+      <button type="button" className="ai-action" disabled={aiBusy!==null} onClick={()=>void improveText('headline')}>{aiBusy==='headline'?'✳ '+(en?'Improving…':'جارٍ التحسين…'):'✦ '+(en?'Improve headline with AI':'حسّن المسمى بالذكاء الاصطناعي')}</button>
+      <label className="field-label">{en?'Short introduction':'نبذة صغيرة عنك'}<textarea value={portfolio.bio} rows={4} maxLength={2400} onChange={e=>update('bio',e.target.value)}/><small className="field-counter">{portfolio.bio.length}/2400</small></label>
+      <button type="button" className="ai-action" disabled={aiBusy!==null} onClick={()=>void improveText('bio')}>{aiBusy==='bio'?'✳ '+(en?'Improving…':'جارٍ التحسين…'):'✦ '+(en?'Improve introduction with AI':'حسّن النبذة بالذكاء الاصطناعي')}</button>
+      <p className={'ai-status '+(aiMessage?'has-message':'')} aria-live="polite">{aiMessage || (en?'AI only runs when you click. Check every suggestion before using it.':'الذكاء الاصطناعي لا يعمل إلا بطلبك. راجع كل اقتراح قبل استخدامه.')}</p><label className="field-label">{en?'Contact email':'إيميل التواصل'}<input type="email" value={portfolio.email} onChange={e=>update('email',e.target.value)}/></label><label className="field-label">{en?'Location':'مكانك'}<input value={portfolio.location} onChange={e=>update('location',e.target.value)}/></label>
       <div className="control-section"><div className="control-heading"><b>{en?'Pick a color':'اختار لونك'}</b><span>{portfolio.accent}</span></div><div className="color-options">{colors.map(c=><button className={portfolio.accent===c?'selected':''} key={c} style={{background:c}} aria-label={'Use '+c} onClick={()=>update('accent',c)}/>)}<label className="custom-color"><span>＋</span><input type="color" value={portfolio.accent} onChange={e=>update('accent',e.target.value)} aria-label="لون مخصص"/></label></div></div>
       <div className="control-section"><div className="control-heading"><b>{en?'Show sections':'الأقسام الظاهرة'}</b></div>{[['about',en?'About me':'عني'],['projects',en?'Selected work':'أعمال مختارة'],['contact',en?'Contact':'تواصل معي']].map(([key,label])=><label className="toggle-row" key={key}><span>{label}</span><input type="checkbox" checked={portfolio.visible[key]} onChange={e=>update('visible',{...portfolio.visible,[key]:e.target.checked})}/><i/></label>)}</div>
       <div className="control-section"><div className="control-heading"><b>{en?'Project names':'أسماء المشاريع'}</b></div>{portfolio.projects.map((project,index)=><label className="field-label project-field" key={index}>{en?'Project '+(index+1):'مشروع '+(index+1)}<input value={project} onChange={e=>update('projects',portfolio.projects.map((p,i)=>i===index?e.target.value:p))}/></label>)}</div>
       <div className="control-section"><div className="control-heading"><b>{en?'A different look?':'قالب تاني؟'}</b><button onClick={()=>document.getElementById('template-browser')?.scrollIntoView({behavior:'smooth'})}>{en?'See all':'شوف الكل'} ↗</button></div><div className="mini-template-row">{templates.slice(0,5).map(t=><button className={t.id===portfolio.templateId?'active':''} key={t.id} onClick={()=>update('templateId',t.id)} style={{'--accent':t.accent,'--pale':t.pale} as CSSProperties}><span/><span/><i/></button>)}</div><p className="selected-template">{chosen.profession} <span>·</span> {layouts[chosen.layout]}</p></div>
-      <div className="template-browser" id="template-browser"><div className="control-heading"><b>{en?'50 ways to begin':'٥٠ شكل لبدايتك'}</b><span>50</span></div><input className="search-input" value={search} onChange={e=>{setSearch(e.target.value);setShowAllTemplates(false)}} placeholder={en?'Search by profession…':'دور على مجال…'}/><div className="category-pills">{['الكل',...jobs.map(j=>j[1])].map(c=><button className={category===c?'active':''} key={c} onClick={()=>{setCategory(c);setShowAllTemplates(false)}}>{c}</button>)}</div><div className="template-list">{filtered.slice(0,showAllTemplates?50:12).map(t=><button className={t.id===portfolio.templateId?'chosen':''} key={t.id} onClick={()=>update('templateId',t.id)}><span className="template-mini" style={{'--accent':t.accent,'--pale':t.pale} as CSSProperties}><i/></span><span><b>{t.profession}</b><small>{layouts[t.layout]}</small></span>{t.id===portfolio.templateId&&<b className="checkmark">✓</b>}</button>)}</div>{filtered.length>12&&<button className="show-more" onClick={()=>setShowAllTemplates(!showAllTemplates)}>{showAllTemplates?(en?'Show fewer':'عرض أقل'):(en?'Show all '+filtered.length:'اعرض كل الـ '+filtered.length)} {showAllTemplates?'↑':'↓'}</button>}<small className="results-count">{en?'Showing '+Math.min(filtered.length,showAllTemplates?50:12)+' of '+filtered.length+' styles':'عرض '+Math.min(filtered.length,showAllTemplates?50:12)+' من '+filtered.length+' قالب'}</small></div>
+      <div className="template-browser" id="template-browser"><div className="control-heading"><b>{en?templates.length+' styles to explore':templates.length+' قالب لاستكشافها'}</b><span>{templates.length}</span></div><input className="search-input" value={search} onChange={e=>{setSearch(e.target.value);setShowAllTemplates(false)}} placeholder={en?'Search by profession…':'دور على مجال…'}/><div className="category-pills">{['الكل',...jobs.map(j=>j[1])].map(c=><button className={category===c?'active':''} key={c} onClick={()=>{setCategory(c);setShowAllTemplates(false)}}>{c}</button>)}</div><div className="template-list">{filtered.slice(0,showAllTemplates?filtered.length:12).map(t=><button className={t.id===portfolio.templateId?'chosen':''} key={t.id} onClick={()=>update('templateId',t.id)}><span className="template-mini" style={{'--accent':t.accent,'--pale':t.pale} as CSSProperties}><i/></span><span><b>{t.profession}</b><small>{layouts[t.layout]}</small></span>{t.id===portfolio.templateId&&<b className="checkmark">✓</b>}</button>)}</div>{filtered.length>12&&<button className="show-more" onClick={()=>setShowAllTemplates(!showAllTemplates)}>{showAllTemplates?(en?'Show fewer':'عرض أقل'):(en?'Show all '+filtered.length:'اعرض كل الـ '+filtered.length)} {showAllTemplates?'↑':'↓'}</button>}<small className="results-count">{en?'Showing '+Math.min(filtered.length,showAllTemplates?filtered.length:12)+' of '+filtered.length+' styles':'عرض '+Math.min(filtered.length,showAllTemplates?50:12)+' من '+filtered.length+' قالب'}</small></div>
       </div><div className="sidebar-bottom"><button className="button button-primary button-wide" onClick={preview}>{en?'Preview my site':'عاين موقعي'} <span>↗</span></button><button className="button button-light button-wide" onClick={exportSite}>{en?'Download HTML file':'نزّل نسخة HTML'} <span>↓</span></button><div className="local-note">◉ {en?'Saved privately on this device':'حفظ خاص على جهازك'}</div></div></aside>
       <section className="editor-workspace"><div className="editor-toolbar"><div className="toolbar-start"><button className="mobile-panel-button" onClick={()=>setMobilePanel(true)}>☷ {en?'Edit':'تعديل'}</button><div className="mode-switch"><button className={device==='desktop'?'active':''} onClick={()=>setDevice('desktop')}>◧ <span>{en?'Desktop':'كمبيوتر'}</span></button><button className={device==='mobile'?'active':''} onClick={()=>setDevice('mobile')}>▯ <span>{en?'Mobile':'موبايل'}</span></button></div></div><div className="toolbar-end"><button className="lang-switch" onClick={()=>setLanguage(en?'ar':'en')}>{en?'عربي':'EN'}</button><button className="button button-primary toolbar-publish" onClick={preview}>{en?'Preview ↗':'معاينة ↗'}</button></div></div><div className="canvas-area"><div className={'canvas-browser '+(device==='mobile'?'mobile-frame':'')}><div className="canvas-browser-bar"><span className="browser-dots"><i/><i/><i/></span><span className="canvas-address">{portfolio.name.toLowerCase().replaceAll(' ','-')||'my-portfolio'}.taqdom.me</span><button className="canvas-zoom">{device==='desktop'?'100%':'390px'}⌄</button></div><PortfolioCanvas data={portfolio} template={chosen} language={language}/></div><p className="canvas-hint"><span>✦</span>{en?'Edits are saved privately on this device. Download the HTML file to host it yourself.':'تعديلاتك محفوظة على جهازك. نزّل ملف الموقع لاستضافته بنفسك.'}</p></div></section>
     </main>}
