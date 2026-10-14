@@ -1,6 +1,6 @@
 # ADR 0002: Keep Git-based Cloudflare Pages deployment as the target
 
-- **Status:** GitHub source connected; first Pages build succeeded
+- **Status:** GitHub source connected; latest Pages build succeeded; apex domain binding pending Cloudflare verification
 - **Date:** 2026-10-14
 
 ## Context
@@ -11,7 +11,7 @@ Cloudflare's Pages setup guidance states that a Direct Upload project cannot lat
 
 ## Decision
 
-Keep `taqdom-studio-preview` as a Git-integrated Pages project and build the app from `/app`. Keep the production custom domains detached until the new `pages.dev` deployment builds and is reviewed.
+Keep `taqdom-studio-preview` as a Git-integrated Pages project and build the app from `/app`. After the owner explicitly requested publishing on `taqdom.me`, attach the apex domain to Pages and create a proxied CNAME to the project hostname. Do not claim the site is live on the custom domain until Cloudflare verifies the record and activates HTTPS. Keep `www.taqdom.me` detached unless separately requested.
 
 ## Pages build settings
 
@@ -27,5 +27,5 @@ Keep `taqdom-studio-preview` as a Git-integrated Pages project and build the app
 - GitHub contains the source and can be continued locally now.
 - The preview is available at `https://taqdom-studio-preview.pages.dev`.
 - A separate `taqdom1` Worker was accidentally created by the newer Workers wizard with no app build command; it is not the canonical app deployment.
-- `taqdom.me` and `www.taqdom.me` remain detached as requested.
+- `taqdom.me` is attached to Pages; DNS CNAME exists, but Cloudflare still reports custom-domain verification pending. `www.taqdom.me` remains detached.
 - Once Cloudflare Git integration is repaired, each push to `main` can build and deploy the site automatically.

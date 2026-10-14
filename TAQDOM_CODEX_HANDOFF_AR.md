@@ -324,6 +324,12 @@ taqdom/
 
 ## 16. الخطوة العملية التالية
 
-راجع المعاينة على `https://taqdom-studio-preview.pages.dev`، وتابع أي تغييرات لاحقة عبر GitHub. إعداد `path_includes=["*"]` يعني تشغيل البناء عند أي تغيير في المستودع. لا تُعد ربط `taqdom.me` أو `www.taqdom.me` قبل مراجعة المعاينة وموافقة المالك على الإطلاق.
+المعاينة المؤكدة: `https://taqdom-studio-preview.pages.dev`. طلب المالك ربط `taqdom.me` صراحةً، وتم تسجيل CNAME وربط النطاق بمشروع Pages؛ تابع التحقق وشهادة HTTPS في Cloudflare حتى تصبح الحالة Active. لم يُربط `www.taqdom.me`. إعداد `path_includes=["*"]` يشغّل البناء عند أي تغيير في المستودع.
 
 لا يمكن تحويل المحادثة المرجعية نفسها إلى محادثة Codex بهذه العملية؛ يمكن استخدام هذا المستند وسجل المصدر كجسر متابعة، ثم حفظ القرارات الجديدة في المستودع.
+
+## تحديث حالة النشر — 14 أكتوبر 2026
+
+طلب المالك صراحةً نشر المشروع على `taqdom.me`. نجح آخر نشر Git على Cloudflare Pages للمستودع `abdullahyelsayed-cpu/taqdom` من الفرع `main`، والـcommit `dbb8123`. أُضيف `taqdom.me` إلى مشروع `taqdom-studio-preview`، وأُنشئ سجل DNS proxied من النوع `CNAME` يشير إلى `taqdom-studio-preview.pages.dev`. عند آخر تحقق كانت حالة ربط النطاق `initializing` والتحقق `pending` ورسالة Cloudflare `CNAME record not set` ما تزال ظاهرة رغم ظهور السجل في Zone؛ لذلك لا تعتبر الشهادة أو إتاحة HTTPS مؤكدة حتى يكتمل التحقق. استخدم `https://taqdom-studio-preview.pages.dev` كرابط مؤقت مؤكد، ثم افحص حالة custom domain وDNS قبل إعلان اكتمال النطاق. لم يُربط `www.taqdom.me`.
+
+هذا النشر يتيح موقع التطبيق نفسه. نشر محافظ المستخدمين كروابط عامة وتخزين الحسابات ما زالا غير منفذين.
