@@ -330,6 +330,6 @@ taqdom/
 
 ## تحديث حالة النشر — 14 أكتوبر 2026
 
-طلب المالك صراحةً نشر المشروع على `taqdom.me`. نجح آخر نشر Git على Cloudflare Pages للمستودع `abdullahyelsayed-cpu/taqdom` من الفرع `main`، والـcommit `dbb8123`. أُضيف `taqdom.me` إلى مشروع `taqdom-studio-preview`، وأُنشئ سجل DNS proxied من النوع `CNAME` يشير إلى `taqdom-studio-preview.pages.dev`. عند آخر تحقق كانت حالة ربط النطاق `initializing` والتحقق `pending` ورسالة Cloudflare `CNAME record not set` ما تزال ظاهرة رغم ظهور السجل في Zone؛ لذلك لا تعتبر الشهادة أو إتاحة HTTPS مؤكدة حتى يكتمل التحقق. استخدم `https://taqdom-studio-preview.pages.dev` كرابط مؤقت مؤكد، ثم افحص حالة custom domain وDNS قبل إعلان اكتمال النطاق. لم يُربط `www.taqdom.me`.
+طلب المالك صراحةً نشر المشروع على `taqdom.me`. نجح آخر نشر Git على Cloudflare Pages للمستودع `abdullahyelsayed-cpu/taqdom` من الفرع `main`، والـcommit `dbb8123`. أُضيف `taqdom.me` إلى مشروع `taqdom-studio-preview`، وأُنشئ سجل DNS proxied من النوع `CNAME` يشير إلى `taqdom-studio-preview.pages.dev`. عند آخر تحقق كان سجل DNS ظاهرًا، وأصبح النطاق يفتح عبر HTTPS ويرجع `200 OK`، كما أصبحت `verification_data.status=active`. ما تزال Cloudflare API تعرض `validation_data.status=pending`؛ تابعها لاحقًا، لكن الوصول الفعلي للنطاق يعمل حاليًا. لم يُربط `www.taqdom.me`.
 
 هذا النشر يتيح موقع التطبيق نفسه. نشر محافظ المستخدمين كروابط عامة وتخزين الحسابات ما زالا غير منفذين.

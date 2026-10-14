@@ -1,6 +1,6 @@
 # ADR 0002: Keep Git-based Cloudflare Pages deployment as the target
 
-- **Status:** GitHub source connected; latest Pages build succeeded; apex domain binding pending Cloudflare verification
+- **Status:** GitHub source connected; latest Pages build succeeded; apex domain serves HTTPS; Cloudflare API validation is still pending
 - **Date:** 2026-10-14
 
 ## Context
@@ -27,5 +27,5 @@ Keep `taqdom-studio-preview` as a Git-integrated Pages project and build the app
 - GitHub contains the source and can be continued locally now.
 - The preview is available at `https://taqdom-studio-preview.pages.dev`.
 - A separate `taqdom1` Worker was accidentally created by the newer Workers wizard with no app build command; it is not the canonical app deployment.
-- `taqdom.me` is attached to Pages; DNS CNAME exists, but Cloudflare still reports custom-domain verification pending. `www.taqdom.me` remains detached.
+- `taqdom.me` is attached to Pages; DNS CNAME exists, `https://taqdom.me` returned `200 OK`, verification is active, while Cloudflare API validation remains pending. `www.taqdom.me` remains detached.
 - Once Cloudflare Git integration is repaired, each push to `main` can build and deploy the site automatically.
