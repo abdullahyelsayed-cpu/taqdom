@@ -1,4 +1,4 @@
-:root{font-family:'DM Sans','IBM Plex Sans Arabic',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#202025;background:#f4f2ec;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-optical-sizing:auto;font-weight:400;--ink:#202025;--muted:#77756f;--paper:#f4f2ec;--line:#e1ded6;--green:#17171b;--coral:#bdff62}
+:root{font-family:'DM Sans','IBM Plex Sans Arabic',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#202025;background:#f4f2ec;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-optical-sizing:auto;font-weight:400;--ink:#202025;--muted:#77756f;--paper:#f4f2ec;--line:#e1ded6;--green:#100d19;--coral:#8b5cff}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:82px}
 body{margin:0;min-width:320px;min-height:100vh}
