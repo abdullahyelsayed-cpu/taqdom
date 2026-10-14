@@ -1,17 +1,17 @@
 # ADR 0002: Keep Git-based Cloudflare Pages deployment as the target
 
-- **Status:** Pending Cloudflare GitHub App repair
+- **Status:** GitHub source connected; first Pages build pending
 - **Date:** 2026-10-14
 
 ## Context
 
-The private GitHub repository `abdullahyelsayed-cpu/taqdom` exists and contains the initial `main` branch. The old Cloudflare Pages project and its custom-domain bindings were intentionally deleted at the owner's request; the `taqdom.me` DNS zone remains active with no site records. Creating a new Pages project through Cloudflare's API with the Git repository source failed with Cloudflare error `8000011`, reporting an internal issue with the Pages Git installation. Wrangler is authenticated on this machine, but the browser origin approval needed to open GitHub installation settings was denied.
+The private GitHub repository `abdullahyelsayed-cpu/taqdom` exists and contains the `main` branch. The old Cloudflare Pages project and its custom-domain bindings were intentionally deleted at the owner's request; the `taqdom.me` DNS zone remains active with no site records. After the owner authorized the Cloudflare GitHub app through the dashboard, the Pages project `taqdom-studio-preview` was connected successfully to the repository. It has no deployment yet.
 
 Cloudflare's Pages setup guidance states that a Direct Upload project cannot later be connected to Git integration. Creating one now would obstruct the intended commit-to-deploy path.
 
 ## Decision
 
-Do not create a Direct Upload Pages project. Repair or reinstall the Cloudflare Workers and Pages GitHub App for the GitHub account, then create a Git-integrated Pages project for this repository. Keep the production custom domains detached until the new `pages.dev` deployment builds and is reviewed.
+Keep `taqdom-studio-preview` as a Git-integrated Pages project and build the app from `/app`. Keep the production custom domains detached until the new `pages.dev` deployment builds and is reviewed.
 
 ## Pages build settings
 
@@ -20,10 +20,12 @@ Do not create a Direct Upload Pages project. Repair or reinstall the Cloudflare 
 - Root directory: `/app`
 - Build command: `npm ci && npm run build`
 - Build output directory: `dist`
+- Pages preview URL: `https://taqdom-studio-preview.pages.dev`
 
 ## Consequences
 
 - GitHub contains the source and can be continued locally now.
-- No public preview URL exists yet, and no new Pages project was created.
+- The Pages URL exists but has no deployment until the first Git build completes.
+- A separate `taqdom1` Worker was accidentally created by the newer Workers wizard with no app build command; it is not the canonical app deployment.
 - `taqdom.me` and `www.taqdom.me` remain detached as requested.
 - Once Cloudflare Git integration is repaired, each push to `main` can build and deploy the site automatically.

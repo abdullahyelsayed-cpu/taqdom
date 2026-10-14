@@ -292,7 +292,8 @@ taqdom/
 - أُنشئ المستودع الخاص [abdullahyelsayed-cpu/taqdom](https://github.com/abdullahyelsayed-cpu/taqdom)، ودُفع إليه `main` بالـcommit `80cf4f5`؛ حالة الفرع المحلي متزامنة مع `origin/main`.
 - أُزيل مشروع Cloudflare Pages القديم `taqdom` مع deployments، وربطا `taqdom.me` و`www.taqdom.me` به، بناءً على طلب المالك.
 - بقيت Zone النطاق فعالة؛ حُذف سجلا CNAME اللذان كانا يوجهان النطاق إلى `taqdom.pages.dev`. DNS حاليًا بلا سجلات موقع، ليبقى النطاق غير مربوط حتى نشر النسخة الجديدة.
-- لم يُنشأ Pages project جديد: طلب Cloudflare API لإنشاء مشروع موصول بمستودع Git فشل برسالة داخلية تخص تثبيت Cloudflare Pages GitHub App. محاولة فتح صفحة إعدادات GitHub اللازمة لإصلاح/إعادة ربط التطبيق رُفضت من صلاحيات المتصفح؛ لم يُنشأ مشروع Direct Upload مؤقت حتى لا نغلق مسار الربط المستقبلي بـGit.
+- أُنشئ Pages project باسم `taqdom-studio-preview`، ووُصل بمستودع `abdullahyelsayed-cpu/taqdom` عبر GitHub بعد أن أتم المالك التفويض من لوحة Cloudflare. إعدادات المشروع: الفرع `main`، و`root_dir=/app`، وأمر البناء `npm ci && npm run build`، ومجلد الإخراج `dist`. لم يكن للمشروع نشر عند آخر فحص؛ دفع commit جديد في `app/` سيبدأ أول build.
+- أثناء محاولات الربط أُنشئ Worker منفصل باسم `taqdom1` عن طريق مسار Workers الحديث. إعداداته الظاهرة كانت بلا Build command وبأمر `npx wrangler deploy` وجذر `/`، لذلك لا يُعتبر نشر التطبيق الصحيح. لا تربط به النطاق ولا تحذف المورد قبل مراجعة ارتباطاته؛ سيبقى `taqdom.me` و`www.taqdom.me` مفصولين.
 - ملاحظة Desktop تحتوي على عدد كبير من مفاتيح لخدمات خارجية عديدة. لم تُستخدم، ولم تُنسخ لأي ملف، ولا ينبغي التعامل معها كتعليمات لإضافة كل الخدمات إلى التطبيق.
 - يوجد مرفق صورة في سجل المحادثة المرجعية، لكن البايتات/المحتوى البصري غير متاحين في نسخة المصدر.
 
@@ -323,6 +324,6 @@ taqdom/
 
 ## 16. الخطوة العملية التالية
 
-أصلح ربط Cloudflare Workers and Pages GitHub App من إعدادات تثبيت التطبيقات في GitHub، ثم أنشئ Pages project مرتبطًا بـ`abdullahyelsayed-cpu/taqdom` بإعداد `root_dir=/app`, و`build_command=npm ci && npm run build`, و`destination_dir=dist`, وفرع إنتاج `main`. تحقق من النشر على `pages.dev` قبل التفكير في إعادة ربط `taqdom.me` و`www.taqdom.me`.
+ادفع تحديثًا إلى `app/` لبدء أول build من Pages project `taqdom-studio-preview`، ثم تحقق من نجاحه على `taqdom-studio-preview.pages.dev`. لا تُعد ربط `taqdom.me` أو `www.taqdom.me` قبل مراجعة المعاينة وموافقة المالك على الإطلاق.
 
 لا يمكن تحويل المحادثة المرجعية نفسها إلى محادثة Codex بهذه العملية؛ يمكن استخدام هذا المستند وسجل المصدر كجسر متابعة، ثم حفظ القرارات الجديدة في المستودع.

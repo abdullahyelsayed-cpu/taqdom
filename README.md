@@ -24,6 +24,7 @@ Create a production build with `npm run build`.
 - Read [TAQDOM_CODEX_HANDOFF_AR.md](TAQDOM_CODEX_HANDOFF_AR.md) for product requirements, roadmap, Cloudflare cleanup, and open decisions.
 - Read [AGENTS.md](AGENTS.md) before changing the project.
 - The old Cloudflare Pages project and its domain bindings were removed at the owner's request. The Cloudflare DNS zone for `taqdom.me` remains active with no site records until the new build is ready.
+- GitHub is now connected to the Cloudflare Pages project `taqdom-studio-preview` (`taqdom-studio-preview.pages.dev`) on `main`; its first build is pending. Build settings: `/app`, `npm ci && npm run build`, output `dist`.
+- A separate Worker named `taqdom1` was accidentally created through the newer Workers wizard with no build command. It is not the Pages deployment and has no custom-domain binding. See [ADR 0002](docs/decisions/0002-cloudflare-pages-git-connection.md).
 - Never put secrets, key bundles, or local environment files in Git. Use the connected Cloudflare account and GitHub CLI authorization, scoped only to the required resources.
 - Billing and subscription setup stay out of scope until provider, terms, currencies, and the 20 EGP/month proposal are reviewed.
-- A new Pages project has not yet been created: Cloudflare's GitHub integration returned an internal Git installation error. See [ADR 0002](docs/decisions/0002-cloudflare-pages-git-connection.md).
