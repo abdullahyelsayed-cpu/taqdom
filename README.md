@@ -1,30 +1,40 @@
 # Taqdom.me
 
-Taqdom helps people build a personal portfolio from profession-aware layouts, then customize the writing, colors, and visible sections without coding.
+Taqdom is an Arabic/English personal-website and portfolio builder for professionals, students, freelancers, creators, and small businesses. The product is designed for RTL/LTR and mobile/desktop use.
 
-## Current build
+## Current product slice
 
-The first working web app lives in `app/`. It includes an Arabic/English marketing site, a visual portfolio editor, 50 data-driven combinations (10 professions × 5 shared layout systems), local autosave, a private on-device preview, and standalone HTML export.
+The application in `app/` includes:
 
-This is the first product slice. Accounts, cloud saving, user portfolio publishing, media uploads, and billing are not implemented yet. The marketing/editor app itself is published on Cloudflare Pages and `taqdom.me` is being connected. Preview inside the editor remains local to the current browser/device.
+- A photography-led, responsive editorial landing page and bilingual signup/sign-in UI.
+- A visual editor with profile fields, accent-color controls, project titles, section visibility, profession-aware templates, a live preview, and standalone HTML export.
+- 14 profession categories × 5 shared layout systems (70 starting combinations). These are combinations of shared layout systems, not 70 wholly custom visual designs.
+- Cloudflare D1-backed account records, hashed passwords, hashed opaque session tokens, secure HTTP-only session cookies, and per-owner portfolio CRUD.
+- Cloudflare Pages Functions proxying same-origin `/api/*` requests to the Worker API so session cookies can be scoped to `taqdom.me`.
+- AI-assisted headline and bio improvement using the existing Worker AI endpoint.
+
+### Account and publishing status
+
+Signup and login are implemented as an initial account system. Email verification and password recovery are **not enabled yet** because an email delivery provider has not been configured. Portfolio records autosave to the account when the user is authenticated. Without an account, the editor remains device-local and can export a standalone HTML file.
+
+Portfolio publishing to public subdomains, user media uploads, custom-domain management, billing and subscriptions are not implemented in this slice. The 20 EGP/month figure remains a proposal, not an active offer. External Unsplash images are visual examples, not an image-upload/storage system.
 
 ## Run locally
 
-```powershell
+```sh
 cd app
-npm install
+npm ci
 npm run dev
 ```
 
-Create a production build with `npm run build`.
+Create a production build with `npm run build`; run quality checks with `npm run lint`.
 
-## Project notes
+## Infrastructure
 
-- GitHub repository: [abdullahyelsayed-cpu/taqdom](https://github.com/abdullahyelsayed-cpu/taqdom) (private; `main` is pushed).
-- Read [TAQDOM_CODEX_HANDOFF_AR.md](TAQDOM_CODEX_HANDOFF_AR.md) for product requirements, roadmap, Cloudflare cleanup, and open decisions.
-- Read [AGENTS.md](AGENTS.md) before changing the project.
-- The old Cloudflare Pages project was removed at the owner's request. The replacement Pages project is now built and the owner has explicitly requested publishing on `taqdom.me`.
-- GitHub is connected to Cloudflare Pages project `taqdom-studio-preview` (`https://taqdom-studio-preview.pages.dev`) on `main`. The latest verified Git build completed successfully on commit `dbb8123`. Build settings: `/app`, `npm ci && npm run build`, output `dist`; path watch pattern `*` includes the repository. The apex `taqdom.me` is attached to this Pages project; its proxied DNS CNAME points to `taqdom-studio-preview.pages.dev`. The apex URL responds over HTTPS (`200 OK`); Cloudflare API still reports its HTTP validation stage as pending.
-- A separate Worker named `taqdom1` was accidentally created through the newer Workers wizard with no build command. It is not the Pages deployment and has no custom-domain binding. See [ADR 0002](docs/decisions/0002-cloudflare-pages-git-connection.md).
-- Never put secrets, key bundles, or local environment files in Git. Use the connected Cloudflare account and GitHub CLI authorization, scoped only to the required resources.
-- Billing and subscription setup stay out of scope until provider, terms, currencies, and the 20 EGP/month proposal are reviewed.
+- GitHub repository: [abdullahyelsayed-cpu/taqdom](https://github.com/abdullahyelsayed-cpu/taqdom) (private).
+- Cloudflare Pages: `taqdom-studio-preview`, build root `/app`, build command `npm ci && npm run build`, output `dist`.
+- API Worker: `taqdom-studio-api`.
+- D1 database: `taqdom-studio-dev`.
+- Secrets must only be kept in scoped Cloudflare secrets or a dedicated secrets manager. Never commit API keys or environment files.
+
+Read [AGENTS.md](AGENTS.md) and [TAQDOM_CODEX_HANDOFF_AR.md](TAQDOM_CODEX_HANDOFF_AR.md) before substantial changes. Payments stay out of scope until provider support, costs, legal terms, supported countries, currencies, and cancellation rules are confirmed.
