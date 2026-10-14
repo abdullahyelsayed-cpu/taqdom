@@ -139,7 +139,6 @@ export default function App() {
   const goHome = () => { history.replaceState({}, '', location.pathname); setView('home'); setAccountError(''); window.scrollTo(0,0) }
   const openAuth = (mode: AuthMode) => { setAuthMode(mode); history.pushState({}, '', '?auth=' + mode + (en ? '&lang=en' : '')); setView('auth'); setAccountError(''); window.scrollTo(0,0) }
   const openDashboard = () => { history.replaceState({}, '', location.pathname); setView('dashboard'); setAccountError(''); window.scrollTo(0,0) }
-  const edit = () => { if (user && !portfolioId) { setView('dashboard'); return } history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0) }
   const signOut = async () => {
     try { await apiRequest('/api/auth/logout', { method:'POST', body:'{}' }) } catch { /* local workspace still remains available */ }
     setUser(null); setAccountPortfolios([]); setPortfolioId(null); goHome()
@@ -327,9 +326,6 @@ function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onC
   </div>
 }
 
-function Feature({icon,title,desc}:{icon:string;title:string;desc:string}) { return <div className="feature"><span className="feature-icon">{icon}</span><div><b>{title}</b><small>{desc}</small></div></div> }
-function Step({n,icon,title,text}:{n:string;icon:string;title:string;text:string}) { return <div className="step"><span>{n}</span><div className="step-icon">{icon}</div><h3>{title}</h3><p>{text}</p></div> }
-function TemplateThumb({template,index}:{template:Template;index:number}) { return <div className={'template-thumb thumb-'+index} style={{'--accent':template.accent,'--pale':template.pale} as CSSProperties}><div className="thumb-browser"><i/><i/><i/></div><div className="thumb-inner"><small>{['HELLO, I’M','STUDIO / 2026','A LITTLE ABOUT ME','INDEPENDENT CREATIVE','YOUR NEXT CHAPTER','DESIGNED TO STAND OUT'][index%6]}</small><b>{['A better way to\nmake things.','Sami\nElmasry.','Stories in\nsoft focus.','Ideas made\nwith care.','Make room for\nbig ideas.','A little more\nyou.'][index%6]}</b><span/><span/><div className="thumb-art">{['✿','S','◉','✳','↗','Aa'][index%6]}</div></div></div> }
 function PortfolioCanvas({data,template,language}:{data:Portfolio;template:Template;language:'ar'|'en'}) {
   const en=language==='en'
   const projects=en?['A calmer way to bank','Learning without limits','A brand built to grow']:data.projects
