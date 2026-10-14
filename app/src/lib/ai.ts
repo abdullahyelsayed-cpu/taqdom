@@ -17,7 +17,7 @@ interface ApiErrorBody {
   limit?: number
 }
 
-const API_URL = 'https://taqdom-studio-api.abdullahyehia1566.workers.dev/api/ai/improve'
+const API_URL = '/api/ai/improve'
 const MAX_TEXT_LENGTH = 2400
 
 export class CareerAiError extends Error {
