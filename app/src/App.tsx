@@ -20,9 +20,9 @@ const jobs = [
   ['law', 'القانون', 'مستشار قانوني'], ['engineering', 'الهندسة', 'مهندس'], ['people', 'الموارد البشرية', 'متخصص موارد بشرية'], ['events', 'الفعاليات', 'منظم فعاليات'],
 ]
 const layouts = ['Editorial', 'Canvas', 'Orbit', 'Studio', 'Minimal']
-const colors = ['#bdff62','#7a67f8','#ff725e','#2e9f89','#e1ad50','#d85a94','#4386a0','#7d8e4b','#333f5b','#c75e42']
+const colors = ['#8b5cff','#61dfff','#fa75d5','#b4a0ff','#5e83ff','#ff9e72','#7de5bb','#d7a5ff','#f1a8d8','#f7d78c']
 const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], layout: l, accent: colors[(j + l * 2) % colors.length], pale: ['#f8e8dd','#e9e7ff','#dff1ea','#fff0ce','#e4edf1'][(j + l) % 5] })))
-const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#bdff62', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true} }
+const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true} }
 const imageUrls = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=88',
   'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1000&q=85',
@@ -152,7 +152,7 @@ export default function App() {
   const createPortfolio = async () => {
     if (!user) { openAuth('register'); return }
     setAccountBusy(true); setAccountError('')
-    const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], visible:{about:true,projects:true,contact:true}, templateId:'design-0', accent:'#bdff62' }
+    const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], visible:{about:true,projects:true,contact:true}, templateId:'design-0', accent:'#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My first portfolio' : 'موقعي الشخصي', templateId:fresh.templateId, document:fresh }) })
       setPortfolio(normalisePortfolio(result.portfolio.document, fresh)); setPortfolioId(result.portfolio.id); setAccountPortfolios(items => [result.portfolio, ...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
@@ -171,7 +171,7 @@ export default function App() {
   const createPortfolioWithTemplate = async (templateId: string) => {
     if (!user) { openAuth('register'); return }
     setAccountBusy(true); setAccountError('')
-    const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], visible:{about:true,projects:true,contact:true}, templateId, accent:templates.find(t=>t.id===templateId)?.accent || '#bdff62' }
+    const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], visible:{about:true,projects:true,contact:true}, templateId, accent:templates.find(t=>t.id===templateId)?.accent || '#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My portfolio' : 'موقعي الشخصي', templateId, document:fresh }) })
       setPortfolio(fresh); setPortfolioId(result.portfolio.id); setAccountPortfolios(items=>[result.portfolio,...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
