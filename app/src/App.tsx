@@ -185,12 +185,12 @@ const colors = ['#8b5cff','#61dfff','#fa75d5','#b4a0ff','#5e83ff','#ff9e72','#7d
 const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], layout: l, accent: colors[(j + l * 2) % colors.length], pale: ['#f8e8dd','#e9e7ff','#dff1ea','#fff0ce','#e4edf1'][(j + l) % 5] })))
 const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true} }
 const imageUrls = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=88',
-  'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1000&q=85',
-  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=1000&q=85',
-  'https://images.unsplash.com/photo-1558655146-9f40138edfeb?auto=format&fit=crop&w=1000&q=85',
-  'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=85',
-  'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1000&q=85',
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=76',
+  'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=720&q=74',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=720&q=74',
+  'https://images.unsplash.com/photo-1558655146-9f40138edfeb?auto=format&fit=crop&w=720&q=74',
+  'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=720&q=74',
+  'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=720&q=74',
 ]
 const imageAlt = ['صورة استرشادية لواجهة شخصية إبداعية','مساحة عمل رقمية حديثة','صورة شخصية استرشادية','لوحة ألوان وتصميم بصري','مشهد بصري ملهم','فريق يعمل على مشروع']
 
@@ -289,8 +289,8 @@ export default function App() {
     document.querySelector('meta[property="og:description"]')?.setAttribute('content', seo.description)
     document.querySelector('meta[property="og:locale"]')?.setAttribute('content', en ? 'en_US' : 'ar')
     document.querySelector('link[rel="canonical"]')?.setAttribute('href', new URL(localizedSitePath(language, siteRoute.page), location.origin).href)
-    document.querySelector('meta[name="robots"]')?.setAttribute('content', siteRoute.page === 'not-found' ? 'noindex, follow' : 'index, follow')
-  }, [language, en])
+    document.querySelector('meta[name="robots"]')?.setAttribute('content', siteRoute.page === 'not-found' || query.has('auth') || query.has('preview') || view !== 'home' ? 'noindex, follow' : 'index, follow')
+  }, [language, en, view])
   useEffect(() => {
     let active = true
     apiRequest<{user:User}>('/api/auth/me').then(async result => {
@@ -657,9 +657,9 @@ function LandingPage({language,user,onLanguage,onStart,onLogin,onTemplate}:{lang
               <aside className="mockup-rail"><span className="selected">◫</span><span>▤</span><span>◉</span><span>Aa</span><span>⌘</span><span>⚙</span><div className="rail-avatar">M</div></aside>
               <div className="mockup-page">
                 <div className="mockup-canvas-nav"><b>MIRA<span>.</span></b><span>WORK&nbsp;&nbsp; ABOUT&nbsp;&nbsp; CONTACT</span><span className="mini-nav-pill"><i/> Available</span></div>
-                <div className="mockup-canvas-hero"><div className="canvas-headline"><small>INDEPENDENT DESIGNER · CAIRO</small><strong>Make room<br/><em>for wonder.</em></strong><p>Digital worlds with a little more soul.</p><span className="mockup-canvas-link">EXPLORE MY WORK <b>↗</b></span></div><div className="mockup-canvas-image"><img src={imageUrls[0]} alt={imageAlt[0]} loading="lazy"/><span className="image-index">01 / 04</span><i>✳</i></div></div>
+                <div className="mockup-canvas-hero"><div className="canvas-headline"><small>INDEPENDENT DESIGNER · CAIRO</small><strong>Make room<br/><em>for wonder.</em></strong><p>Digital worlds with a little more soul.</p><span className="mockup-canvas-link">EXPLORE MY WORK <b>↗</b></span></div><div className="mockup-canvas-image"><img src={imageUrls[0]} alt={imageAlt[0]} loading="eager" fetchPriority="high" decoding="async"/><span className="image-index">01 / 04</span><i>✳</i></div></div>
                 <div className="mockup-project-label"><span>SELECTED PROJECTS</span><span>SCROLL TO EXPLORE ↓</span></div>
-                <div className="mockup-project-row"><div className="mockup-project-art art-one"><img src={imageUrls[3]} alt="" loading="lazy"/><span>Forms of feeling</span></div><div className="mockup-project-art art-two"><img src={imageUrls[1]} alt="" loading="lazy"/><span>Future, in focus</span></div><div className="mockup-project-art art-three"><img src={imageUrls[4]} alt="" loading="lazy"/><span>Objects of joy</span></div></div>
+                <div className="mockup-project-row"><div className="mockup-project-art art-one"><img src={imageUrls[3]} alt="" loading="lazy" decoding="async"/><span>Forms of feeling</span></div><div className="mockup-project-art art-two"><img src={imageUrls[1]} alt="" loading="lazy"/><span>Future, in focus</span></div><div className="mockup-project-art art-three"><img src={imageUrls[4]} alt="" loading="lazy"/><span>Objects of joy</span></div></div>
               </div>
               <aside className="mockup-inspector"><div className="inspector-title"><span>DESIGN PANEL</span><b>•••</b></div><div className="inspector-section"><span>Selected element</span><b className="inspector-selected">Hero section <i>⌄</i></b></div><div className="inspector-section"><span>Layout <small className="interactive-hint">LIVE</small></span><div className="layout-selectors">{['▦','▤','◫','▥'].map((symbol,index)=><button type="button" key={symbol} className={demoLayout===index?'picked':''} aria-label={'Preview layout '+(index+1)} aria-pressed={demoLayout===index} onClick={()=>setDemoLayout(index)}>{symbol}</button>)}</div></div><div className="inspector-section"><span>Typography</span><b className="inspector-font">Aa <small>Editorial display</small></b></div><div className="inspector-section"><span>Color system <small className="interactive-hint">LIVE</small></span><div className="inspector-colors">{demoPalettes.map(([primary,secondary],index)=><button type="button" key={primary} className={demoPaletteIndex===index?'picked':''} style={{'--swatch-a':primary,'--swatch-b':secondary} as CSSProperties} aria-label={'Use color palette '+(index+1)} aria-pressed={demoPaletteIndex===index} onClick={()=>setDemoPaletteIndex(index)}/>)}</div><small className="hex-label">{demoPalette[0].toUpperCase()}　 {demoPalette[1].toUpperCase()}</small></div><div className="inspector-section"><span>Spacing</span><div className="spacing-meter"><i/><i/><i/><i/><i/><i/></div></div><div className="inspector-footer"><span>✦ AI DESIGN ASSIST</span><i>↗</i></div></aside>
             </div>
