@@ -12,7 +12,7 @@
 .mobile-frame .site-portrait{order:-1!important;margin-bottom:8px!important}
 .mobile-frame .portrait-ring{width:110px!important;height:125px!important}
 .mobile-frame .site-project-grid{grid-template-columns:1fr!important}
-.show-more{width:100%;border:1px solid #ebe9e3;background:#faf9f6;border-radius:8px;padding:8px;color:#787a71;font-size:10px}.project-field{font-size:10px;margin:8px 0}.project-field input{font-size:10px}.mobile-panel-button{display:none}
+.show-more{width:100%;border:1px solid #ebe9e3;background:#faf9f6;border-radius:8px;padding:8px;color:#787a71;font-size:10px}.project-field{font-size:10px;margin:8px 0}.project-field input{font-size:10px}@media(min-width:741px){.mobile-panel-button{display:none}}
 
 /* Avatar upload */
 .avatar-upload-control{display:flex;align-items:center;gap:14px;padding:10px 12px;background:#fbfaf8;border:1px dashed #dcd9d2;border-radius:12px;margin:8px 0 14px}
