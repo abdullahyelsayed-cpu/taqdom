@@ -1,11 +1,18 @@
-# Retain old Arabic URLs while moving Arabic to the unprefixed canonical routes.
-/ar / 301
-/ar/ / 301
+# Old Arabic-prefixed URLs now redirect to the Arabic canonical routes./ar / 301
+/ar/ /
+/ar/about /about/ 301
 /ar/about/ /about/ 301
+/ar/templates /templates/ 301
 /ar/templates/ /templates/ 301
+/ar/features /features/ 301
 /ar/features/ /features/ 301
+/ar/pricing /pricing/ 301
 /ar/pricing/ /pricing/ 301
+/ar/faq /faq/ 301
 /ar/faq/ /faq/ 301
+/ar/contact /contact/ 301
 /ar/contact/ /contact/ 301
+/ar/privacy /privacy/ 301
 /ar/privacy/ /privacy/ 301
+/ar/terms /terms/ 301
 /ar/terms/ /terms/ 301
