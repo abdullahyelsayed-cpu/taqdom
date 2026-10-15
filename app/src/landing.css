@@ -1653,3 +1653,48 @@
 @media(prefers-reduced-motion:reduce){
  .hero-crystal-float,.crystal-aura,.crystal-glint,.hero-light-orbit{animation:none!important}
 }
+
+
+/* Free project, founder profile and open-source acknowledgement */
+.founder-support-section{
+ position:relative;max-width:1240px;margin:clamp(72px,10vw,150px) auto 80px;padding:clamp(22px,4vw,54px);
+ border:1px solid rgba(143,127,255,.22);border-radius:28px;
+ background:radial-gradient(ellipse at 12% 0%,rgba(102,76,255,.13),transparent 45%),linear-gradient(145deg,rgba(8,13,33,.96),rgba(4,7,20,.98));
+ box-shadow:0 35px 100px rgba(0,0,0,.2);overflow:hidden;
+}
+.founder-profile{display:grid;grid-template-columns:minmax(210px,300px) minmax(0,1fr);align-items:center;gap:clamp(24px,5vw,68px);padding-bottom:clamp(28px,4vw,50px)}
+.founder-photo-wrap{position:relative;max-width:300px;aspect-ratio:1;border-radius:24px;padding:3px;background:linear-gradient(140deg,#d4c3ff,#8155ff 45%,#4ddfff);box-shadow:0 0 38px rgba(128,85,255,.22);isolation:isolate}
+.founder-photo{display:block;width:100%;height:100%;object-fit:cover;object-position:center 35%;border-radius:21px;background:#10142a}
+.founder-photo-orbit{position:absolute;z-index:-1;inset:-12px;border:1px solid rgba(113,207,255,.25);border-radius:30px;transform:rotate(-5deg)}
+.founder-copy .section-overline,.supporters-panel .section-overline{color:#b4a1ff;letter-spacing:.14em;font-size:.74rem}
+.founder-copy h2{margin:12px 0 14px;font-size:clamp(26px,3.5vw,44px);line-height:1.14;letter-spacing:-.04em;color:#f8f7ff}
+.founder-copy p,.supporters-panel p{max-width:650px;color:#aeb9d8;font-size:15px;line-height:1.9;margin:0 0 22px}
+.founder-linkedin{display:inline-flex;align-items:center;gap:11px;padding:12px 17px;border-radius:12px;border:1px solid rgba(123,161,255,.38);background:rgba(50,76,145,.15);color:#e5e9ff;text-decoration:none;font-size:14px;transition:background .2s,border-color .2s,transform .2s}
+.founder-linkedin:hover{background:rgba(91,104,255,.2);border-color:#8c86ff;transform:translateY(-2px)}
+.linkedin-mark{display:grid;place-items:center;width:25px;height:25px;border-radius:6px;background:#0a66c2;color:white;font-weight:800;font-size:15px;direction:ltr}
+.supporters-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,320px);align-items:center;gap:30px;padding-top:clamp(26px,4vw,42px);border-top:1px solid rgba(140,153,205,.17)}
+.supporters-panel h3{margin:10px 0 10px;color:#f8f7ff;font-size:clamp(21px,2.4vw,29px);line-height:1.25}
+.supporters-panel p{margin:0;font-size:13px}
+.mit-license-card{display:flex;align-items:center;gap:15px;padding:18px;border:1px solid rgba(145,132,255,.25);border-radius:16px;background:rgba(16,20,47,.7);text-decoration:none;color:#f6f4ff;transition:border-color .2s,transform .2s}
+.mit-license-card:hover{border-color:rgba(125,219,255,.75);transform:translateY(-2px)}
+.mit-license-card>span:nth-child(2){display:flex;flex-direction:column;gap:5px;min-width:0}
+.mit-license-card>span:nth-child(2) b{font-size:15px}
+.mit-license-card small{font-size:12px;color:#9daacb}
+.mit-wordmark{flex:none;width:61px;height:43px;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:1fr 1fr;gap:3px;position:relative}
+.mit-wordmark b{grid-column:1/5;grid-row:1;font-size:25px;line-height:1;text-align:center;letter-spacing:.04em;color:#e9e4ff}
+.mit-wordmark i{grid-row:2;display:block;border-radius:2px;background:linear-gradient(180deg,#a48cff,#5c5cff 60%,#4ddfff)}
+.mit-wordmark i:nth-of-type(1){grid-column:1}
+.mit-wordmark i:nth-of-type(2){grid-column:2}
+.mit-wordmark i:nth-of-type(3){grid-column:3}
+.mit-wordmark i:nth-of-type(4){grid-column:4}
+.support-arrow{margin-inline-start:auto;color:#81dfff;font-size:20px}
+@media(max-width:760px){
+ .founder-support-section{margin:70px 16px 50px;padding:22px 18px;border-radius:22px}
+ .founder-profile{grid-template-columns:1fr;gap:26px}
+ .founder-photo-wrap{width:min(72%,260px);margin-inline:auto}
+ .founder-copy{text-align:center}
+ .founder-copy p{margin-inline:auto}
+ .supporters-panel{grid-template-columns:1fr;gap:22px}
+ .mit-license-card{max-width:none}
+}
+@media(prefers-reduced-motion:reduce){.founder-linkedin,.mit-license-card{transition:none}}
