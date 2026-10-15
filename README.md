@@ -64,7 +64,7 @@ Production configuration and secrets belong in Cloudflare-managed settings. Do n
 
 ## International pages and SEO
 
-The English homepage is served at `/`. Modern Standard Arabic has a separate, right-to-left route at `/ar/`. The core informational pages are available in both languages at clean paths such as `/features/` and `/ar/features/`.
+The Arabic homepage is served at `/` using Modern Standard Arabic and right-to-left layout. English is available at `/en/`. Core content pages follow the same pattern: Arabic at `/features/`, English at `/en/features/`.
 
 Each route has its own HTML title and description, canonical URL, reciprocal `hreflang` references, Open Graph metadata, and JSON-LD structured data. `app/public/sitemap.xml` lists the canonical English and Arabic pages, while `app/public/robots.txt` advertises the sitemap and keeps API routes out of crawl discovery. A branded 404 page is included.
 
