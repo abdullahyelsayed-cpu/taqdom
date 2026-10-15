@@ -1,25 +1,70 @@
-# Taqdom.me
+<div align="center">
 
-Taqdom is an Arabic/English personal-website and portfolio builder for professionals, students, freelancers, creators, and small businesses. The product is designed for RTL/LTR and mobile/desktop use.
+<img src="app/public/taqdom-mark.svg" alt="Taqdom mark" width="76" height="76" />
 
-## Current product slice
+# Taqdom
 
-The application in `app/` includes:
+### Your work, in its own universe.
 
-- A photography-led, responsive editorial landing page and bilingual signup/sign-in UI.
-- A visual editor with profile fields, accent-color controls, project titles, section visibility, profession-aware templates, a live preview, and standalone HTML export.
-- 14 profession categories × 5 shared layout systems (70 starting combinations). These are combinations of shared layout systems, not 70 wholly custom visual designs.
-- Cloudflare D1-backed account records, hashed passwords, hashed opaque session tokens, secure HTTP-only session cookies, and per-owner portfolio CRUD.
-- Cloudflare Pages Functions proxying same-origin `/api/*` requests to the Worker API so session cookies can be scoped to `taqdom.me`.
-- AI-assisted headline and bio improvement using the existing Worker AI endpoint.
+A bilingual, visual website studio for people with something worth sharing.
 
-### Account and publishing status
+[**Open Taqdom.me →**](https://taqdom.me) · [Report a bug](https://github.com/abdullahyelsayed-cpu/taqdom/issues) · [Security policy](SECURITY.md)
 
-Signup and login are implemented as an initial account system. Email verification and password recovery are **not enabled yet** because an email delivery provider has not been configured. Portfolio records autosave to the account when the user is authenticated. Without an account, the editor remains device-local and can export a standalone HTML file.
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111827)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-Pages%20%2B%20Workers-F38020?logo=cloudflare&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-8b5cff)
 
-Portfolio publishing to public subdomains, user media uploads, custom-domain management, billing and subscriptions are not implemented in this slice. The 20 EGP/month figure remains a proposal, not an active offer. External Unsplash images are visual examples, not an image-upload/storage system.
+</div>
 
-## Run locally
+---
+
+## The idea
+
+Your work deserves more than a generic profile page. Taqdom is being built as a visual-first studio where designers, developers, freelancers, students, professionals, and independent businesses can shape a personal website without starting from code.
+
+The experience is designed for **Arabic and English**, including right-to-left and left-to-right layouts, with mobile and desktop in mind.
+
+## What is here today
+
+- **Immersive visual identity** — a custom vector mark, spectral violet/cyan palette, animated aurora layers, and a layered website-studio showcase.
+- **Bilingual experience** — Arabic RTL and English LTR across the landing page, account screens, workspace, editor, and portfolio preview.
+- **Visual portfolio editor** — edit profile content, accent colors, project names, and visible sections with a live preview.
+- **Template starting points** — 14 professional categories combined with five shared layout systems. These are 70 starting combinations, not 70 completely unique designs.
+- **Account workspace** — signup, sign-in, session handling, and account-owned portfolio records stored via the backend.
+- **AI writing helper** — optional, user-triggered help for improving a selected headline or biography. Users review changes before using them.
+- **Portable output** — export a standalone HTML copy of the portfolio.
+
+## Product status
+
+Taqdom is an active build, not a claim that every part of a full website-builder platform is finished.
+
+| Area | Current state |
+| --- | --- |
+| Marketing site, animated art direction and brand mark | Implemented |
+| Arabic / English and responsive layouts | Implemented |
+| Editor, live preview and HTML export | Implemented |
+| Signup, sign-in and cloud-saved drafts | Initial implementation |
+| Email verification and password recovery | Not enabled |
+| Publish a portfolio to a personal subdomain | Not enabled |
+| User image upload and managed media library | Not enabled |
+| Billing and subscriptions | Not enabled |
+
+The gallery uses illustrative external photography. It is not a customer-media library. External media is subject to its own source terms; the MIT license below applies to this repository's code and accompanying original documentation, not third-party assets.
+
+## Architecture
+
+- **Frontend:** React, TypeScript, Vite, CSS, accessible UI states, and reduced-motion support.
+- **Edge / API:** Cloudflare Pages Functions proxy requests to a Cloudflare Worker.
+- **Data:** Cloudflare D1 stores account, session, and portfolio records.
+- **AI copy assistance:** the existing server-side Worker endpoint; provider credentials stay on the server.
+- **Build checks:** GitHub Actions runs the TypeScript production build and lint.
+
+Production configuration and secrets belong in Cloudflare-managed settings. Do not copy live credentials, environment values, customer data, or operational exports into source control.
+
+## Run it locally
+
+Requirements: a supported Node.js release and npm.
 
 ```sh
 cd app
@@ -27,14 +72,25 @@ npm ci
 npm run dev
 ```
 
-Create a production build with `npm run build`; run quality checks with `npm run lint`.
+Before submitting changes:
 
-## Infrastructure
+```sh
+npm run build
+npm run lint
+```
 
-- GitHub repository: [abdullahyelsayed-cpu/taqdom](https://github.com/abdullahyelsayed-cpu/taqdom) (private).
-- Cloudflare Pages: `taqdom-studio-preview`, build root `/app`, build command `npm ci && npm run build`, output `dist`.
-- API Worker: `taqdom-studio-api`.
-- D1 database: `taqdom-studio-dev`.
-- Secrets must only be kept in scoped Cloudflare secrets or a dedicated secrets manager. Never commit API keys or environment files.
+The frontend expects same-origin `/api/*` routes in the deployed environment. Some account and writing-assistant actions require the Cloudflare API service and D1 bindings.
 
-Read [AGENTS.md](AGENTS.md) and [TAQDOM_CODEX_HANDOFF_AR.md](TAQDOM_CODEX_HANDOFF_AR.md) before substantial changes. Payments stay out of scope until provider support, costs, legal terms, supported countries, currencies, and cancellation rules are confirmed.
+## Roadmap
+
+The next product milestones are deeper, genuinely distinct layout systems; richer typography and spacing controls; image uploads and asset management; better publishing and custom-subdomain controls; verified email and account recovery; accessibility and security reviews; and only then pricing and payments.
+
+Priorities will be driven by actual user feedback and the needs of future collaborators and supporters. No sponsor or partner is represented as confirmed unless announced with permission.
+
+## Contributing
+
+Thoughtful contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Keep both writing directions usable, test mobile layouts, respect reduced-motion settings, and never include credentials or real customer data in commits.
+
+## License
+
+The original project code is released under the [MIT License](LICENSE). Third-party libraries, fonts, and external media remain subject to their respective licenses and terms.
