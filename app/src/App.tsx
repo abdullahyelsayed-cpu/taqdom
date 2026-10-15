@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import './App.css'
 import './landing.css'
@@ -20,6 +20,7 @@ const jobs = [
   ['law', 'القانون', 'مستشار قانوني'], ['engineering', 'الهندسة', 'مهندس'], ['people', 'الموارد البشرية', 'متخصص موارد بشرية'], ['events', 'الفعاليات', 'منظم فعاليات'],
 ]
 const layouts = ['Editorial', 'Canvas', 'Orbit', 'Studio', 'Minimal']
+const demoPalettes: [string, string][] = [['#8b5cff','#67e5ff'], ['#67e5ff','#4f81ff'], ['#fc75d9','#9b75ff'], ['#9fffc0','#67e5ff'], ['#ffbb78','#fc75d9']]
 const colors = ['#8b5cff','#61dfff','#fa75d5','#b4a0ff','#5e83ff','#ff9e72','#7de5bb','#d7a5ff','#f1a8d8','#f7d78c']
 const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], layout: l, accent: colors[(j + l * 2) % colors.length], pale: ['#f8e8dd','#e9e7ff','#dff1ea','#fff0ce','#e4edf1'][(j + l) % 5] })))
 const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true} }
@@ -254,17 +255,207 @@ function BrandMark() {
   </svg>
 }
 
+function SpectralEngine() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const host = canvas?.parentElement
+    const context = canvas?.getContext('2d', { alpha: true })
+    if (!canvas || !host || !context) return
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    let width = 1
+    let height = 1
+    let frame = 0
+    let time = 0
+    let pointer = { x: -1000, y: -1000, active: false }
+    let particles: Array<{ x: number; y: number; vx: number; vy: number; radius: number; phase: number; hue: number }> = []
+
+    const seedParticles = () => {
+      const count = Math.min(84, Math.max(24, Math.round((width * height) / 22500)))
+      particles = Array.from({ length: count }, (_, index) => ({
+        x: (index * 0.61803398875 % 1) * width,
+        y: (index * 0.7548776662 % 1) * height,
+        vx: Math.sin(index * 12.3) * 0.12,
+        vy: Math.cos(index * 5.7) * 0.1,
+        radius: 0.7 + ((index * 7) % 10) / 10,
+        phase: index * 1.71,
+        hue: [260, 196, 292, 228][index % 4],
+      }))
+    }
+
+    const resize = () => {
+      const rect = host.getBoundingClientRect()
+      width = Math.max(1, rect.width)
+      height = Math.max(1, rect.height)
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
+      canvas.width = Math.round(width * dpr)
+      canvas.height = Math.round(height * dpr)
+      canvas.style.width = width + 'px'
+      canvas.style.height = height + 'px'
+      context.setTransform(dpr, 0, 0, dpr, 0, 0)
+      seedParticles()
+      draw(0, true)
+    }
+
+    const draw = (elapsed: number, staticFrame = false) => {
+      context.clearRect(0, 0, width, height)
+      const phase = staticFrame ? 0 : elapsed * 0.00019
+      const sky = context.createLinearGradient(0, height * 0.08, width, height * 0.92)
+      sky.addColorStop(0, 'rgba(145, 89, 255, 0.025)')
+      sky.addColorStop(0.52, 'rgba(57, 194, 255, 0.018)')
+      sky.addColorStop(1, 'rgba(239, 87, 218, 0.025)')
+      context.fillStyle = sky
+      context.fillRect(0, 0, width, height)
+
+      // Four fine spectral currents create depth without a heavy WebGL dependency.
+      for (let ribbon = 0; ribbon < 4; ribbon++) {
+        const center = height * (0.2 + ribbon * 0.195)
+        const amplitude = Math.min(height * 0.095, 95) * (0.65 + ribbon * 0.09)
+        const grad = context.createLinearGradient(0, center - amplitude, width, center + amplitude)
+        grad.addColorStop(0, 'rgba(171, 117, 255, 0)')
+        grad.addColorStop(0.22, 'rgba(157, 109, 255, 0.12)')
+        grad.addColorStop(0.52, 'rgba(102, 224, 255, 0.16)')
+        grad.addColorStop(0.78, 'rgba(240, 120, 244, 0.105)')
+        grad.addColorStop(1, 'rgba(171, 117, 255, 0)')
+        context.beginPath()
+        for (let segment = 0; segment <= 72; segment++) {
+          const x = width * segment / 72
+          const normalized = x / width
+          const wave = Math.sin(normalized * Math.PI * (1.45 + ribbon * 0.18) + phase * (ribbon % 2 ? -1 : 1) + ribbon * 1.5)
+            + 0.42 * Math.sin(normalized * Math.PI * 3.8 - phase * 1.4 + ribbon)
+          const y = center + wave * amplitude * 0.53
+          if (segment === 0) context.moveTo(x, y)
+          else context.lineTo(x, y)
+        }
+        context.strokeStyle = grad
+        context.lineWidth = ribbon === 1 ? 1.15 : 0.7
+        context.shadowColor = ribbon % 2 ? '#67e5ff' : '#a783ff'
+        context.shadowBlur = ribbon === 1 ? 14 : 8
+        context.stroke()
+      }
+      context.shadowBlur = 0
+
+      const pointerX = pointer.x
+      const pointerY = pointer.y
+      for (const particle of particles) {
+        if (!staticFrame) {
+          particle.x += particle.vx + Math.sin(phase * 3 + particle.phase) * 0.16
+          particle.y += particle.vy + Math.cos(phase * 2 + particle.phase) * 0.09
+          if (pointer.active) {
+            const dx = particle.x - pointerX
+            const dy = particle.y - pointerY
+            const distance = Math.sqrt(dx * dx + dy * dy)
+            if (distance > 0 && distance < 175) {
+              const force = (175 - distance) / 175 * 0.23
+              particle.x += dx / distance * force
+              particle.y += dy / distance * force
+            }
+          }
+          if (particle.x < -15) particle.x = width + 15
+          if (particle.x > width + 15) particle.x = -15
+          if (particle.y < -15) particle.y = height + 15
+          if (particle.y > height + 15) particle.y = -15
+        }
+      }
+
+      // Sparse connections form a living constellation; only near neighbours connect.
+      for (let i = 0; i < particles.length; i++) {
+        const a = particles[i]
+        for (let j = i + 1; j < particles.length; j++) {
+          const b = particles[j]
+          const dx = a.x - b.x
+          const dy = a.y - b.y
+          const distance = Math.sqrt(dx * dx + dy * dy)
+          if (distance > 122) continue
+          const alpha = (1 - distance / 122) * 0.18
+          context.beginPath()
+          context.moveTo(a.x, a.y)
+          context.lineTo(b.x, b.y)
+          context.strokeStyle = 'rgba(166, 157, 255, ' + alpha.toFixed(3) + ')'
+          context.lineWidth = 0.6
+          context.stroke()
+        }
+      }
+
+      for (const particle of particles) {
+        const pulse = staticFrame ? 0.55 : 0.35 + (Math.sin(phase * 7 + particle.phase) + 1) * 0.27
+        context.beginPath()
+        context.arc(particle.x, particle.y, particle.radius + pulse * 0.45, 0, Math.PI * 2)
+        context.fillStyle = 'hsla(' + particle.hue + ', 100%, 84%, ' + (0.24 + pulse * 0.44).toFixed(3) + ')'
+        context.shadowColor = 'hsla(' + particle.hue + ', 100%, 72%, 0.8)'
+        context.shadowBlur = particle.radius > 1.2 ? 9 : 4
+        context.fill()
+      }
+      context.shadowBlur = 0
+    }
+
+    const animate = (stamp: number) => {
+      if (document.visibilityState === 'hidden') { frame = 0; return }
+      time = stamp
+      draw(time)
+      frame = window.requestAnimationFrame(animate)
+    }
+    const onPointerMove = (event: PointerEvent) => {
+      const rect = host.getBoundingClientRect()
+      pointer = { x: event.clientX - rect.left, y: event.clientY - rect.top, active: true }
+    }
+    const onPointerLeave = () => { pointer.active = false; pointer.x = -1000; pointer.y = -1000 }
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        if (frame) window.cancelAnimationFrame(frame)
+        frame = 0
+      } else if (!reducedMotion.matches && !frame) {
+        frame = window.requestAnimationFrame(animate)
+      }
+    }
+    const onMotionPreference = () => {
+      if (reducedMotion.matches) {
+        if (frame) window.cancelAnimationFrame(frame)
+        frame = 0
+        draw(0, true)
+      } else if (document.visibilityState !== 'hidden' && !frame) {
+        frame = window.requestAnimationFrame(animate)
+      }
+    }
+
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null
+    observer?.observe(host)
+    resize()
+    window.addEventListener('pointermove', onPointerMove, { passive: true })
+    window.addEventListener('blur', onPointerLeave)
+    document.addEventListener('visibilitychange', onVisibility)
+    reducedMotion.addEventListener?.('change', onMotionPreference)
+    if (!reducedMotion.matches) frame = window.requestAnimationFrame(animate)
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      observer?.disconnect()
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('blur', onPointerLeave)
+      document.removeEventListener('visibilitychange', onVisibility)
+      reducedMotion.removeEventListener?.('change', onMotionPreference)
+    }
+  }, [])
+
+  return <canvas ref={canvasRef} className="spectral-engine-canvas" aria-hidden="true" />
+}
+
 function LandingPage({language,user,onLanguage,onStart,onLogin,onTemplate}:{language:'ar'|'en';user:User|null;onLanguage:()=>void;onStart:()=>void;onLogin:()=>void;onTemplate:(id:string)=>void}) {
   const en=language==='en'
+  const [demoPaletteIndex, setDemoPaletteIndex] = useState(0)
+  const [demoLayout, setDemoLayout] = useState(0)
+  const demoPalette = demoPalettes[demoPaletteIndex] || demoPalettes[0]
   const featured=[templates[0],templates[7],templates[15],templates[23],templates[31],templates[39]]
   const titles=en?['The designer','The storyteller','The maker','The independent','The builder','The founder']:['مصمم بذوق خاص','حكاية بصور','أفكار بتتحرك','شغل مستقل','مهندس التفاصيل','صاحب مشروع']
   return <div className="landing" dir={en?'ltr':'rtl'}>
     <header className="site-header"><a href="#" className="site-brand" onClick={e=>{e.preventDefault();window.scrollTo(0,0)}}><BrandMark/><span>taqdom<span className="site-brand-dot">.</span></span></a><nav className="site-nav-links"><a href="#gallery">{en?'Templates':'القوالب'}</a><a href="#studio">{en?'The studio':'المحرر'}</a><a href="#how-it-works">{en?'How it works':'إزاي بيشتغل'}</a></nav><div className="site-header-actions"><button className="site-lang" onClick={onLanguage}>{en?'عربي':'EN'}</button><button className="site-login" onClick={onLogin}>{user?(en?'My workspace':'مساحة عملي'):(en?'Sign in':'تسجيل الدخول')}</button><button className="site-cta-small" onClick={onStart}>{en?'Start for free':'ابدأ مجانًا'} <span>↗</span></button></div></header>
     <main>
-      <section className="lux-hero"><div className="aurora-field" aria-hidden="true"><span className="aurora-blob blob-violet"/><span className="aurora-blob blob-blue"/><span className="aurora-blob blob-magenta"/><span className="aurora-grid"/><span className="aurora-star star-a">✳</span><span className="aurora-star star-b">✦</span><span className="aurora-star star-c">+</span></div><div className="lux-hero-copy"><div className="lux-kicker"><span className="kicker-light"/> {en?'A more considered way to show up online':'مساحتك الرقمية… على مستوى شغلك'}</div><h1>{en?<>Your work.<br/>Your world.<br/><em>Your own corner.</em></>:<>شغلك يستحق<br/>موقع يخلّي الناس<br/><em>تقف عنده.</em></>}</h1><p>{en?'A beautifully considered personal website, shaped around you. Choose a visual direction, refine every detail, and share a home for your work — without writing code.':'ابني موقع شخصي يليق بطموحك. اختار اتجاه بصري مميز، ظبّط كل تفصيلة قدام عينك، وخلّي شغلك في مكان واحد يقدر أي حد يوصله — من غير كود.'}</p><div className="lux-hero-actions"><button className="lux-primary" onClick={onStart}>{en?'Create your website':'ابني موقعك دلوقتي'} <span>↗</span></button><a href="#gallery" className="lux-secondary">{en?'Explore the collection':'استكشف القوالب'} <span>↓</span></a></div><div className="hero-footnote"><span className="footnote-mark">✳</span><span>{en?'For creatives, professionals, students, and small businesses':'للمبدعين والمهنيين والطلبة وأصحاب المشاريع'}</span><span className="footnote-separator"/><span>{en?'Arabic & English':'عربي وإنجليزي'}</span></div></div>
+      <section className="lux-hero"><SpectralEngine/><div className="aurora-field" aria-hidden="true"><span className="aurora-blob blob-violet"/><span className="aurora-blob blob-blue"/><span className="aurora-blob blob-magenta"/><span className="aurora-grid"/><span className="aurora-star star-a">✳</span><span className="aurora-star star-b">✦</span><span className="aurora-star star-c">+</span></div><div className="lux-hero-copy"><div className="lux-kicker"><span className="kicker-light"/> {en?'A more considered way to show up online':'مساحتك الرقمية… على مستوى شغلك'}</div><h1>{en?<>Your work.<br/>Your world.<br/><em>Your own corner.</em></>:<>شغلك يستحق<br/>موقع يخلّي الناس<br/><em>تقف عنده.</em></>}</h1><p>{en?'A beautifully considered personal website, shaped around you. Choose a visual direction, refine every detail, and share a home for your work — without writing code.':'ابني موقع شخصي يليق بطموحك. اختار اتجاه بصري مميز، ظبّط كل تفصيلة قدام عينك، وخلّي شغلك في مكان واحد يقدر أي حد يوصله — من غير كود.'}</p><div className="lux-hero-actions"><button className="lux-primary" onClick={onStart}>{en?'Create your website':'ابني موقعك دلوقتي'} <span>↗</span></button><a href="#gallery" className="lux-secondary">{en?'Explore the collection':'استكشف القوالب'} <span>↓</span></a></div><div className="hero-footnote"><span className="footnote-mark">✳</span><span>{en?'For creatives, professionals, students, and small businesses':'للمبدعين والمهنيين والطلبة وأصحاب المشاريع'}</span><span className="footnote-separator"/><span>{en?'Arabic & English':'عربي وإنجليزي'}</span></div></div>
         <div className="lux-hero-stage" aria-label={en?'Interactive website builder preview':'معاينة استوديو بناء المواقع'}>
           <div className="aurora-orbit orbit-one"/><div className="aurora-orbit orbit-two"/><div className="aurora-orbit orbit-three"/>
-          <div className="hero-mockup">
+          <div className={`hero-mockup demo-layout-${demoLayout}`} style={{'--demo-accent':demoPalette[0],'--demo-contrast':demoPalette[1]} as CSSProperties}>
             <div className="mockup-browser-head"><div className="mockup-window-dots"><i/><i/><i/></div><div className="mockup-address"><span className="address-lock">⌑</span> mira.taqdom.me <span className="address-live">LIVE PREVIEW</span></div><div className="mockup-browser-actions"><span>↗</span><span>•••</span></div></div>
             <div className="mockup-app-bar"><div className="mockup-mini-brand"><BrandMark/><span>TAQDOM <small>STUDIO</small></span></div><div className="mockup-app-tabs"><span className="active">Design</span><span>Layers</span><span>Assets</span></div><div className="mockup-app-right"><span className="autosave-pill"><i/> Saved</span><b>Share ↗</b></div></div>
             <div className="mockup-builder">
@@ -275,11 +466,11 @@ function LandingPage({language,user,onLanguage,onStart,onLogin,onTemplate}:{lang
                 <div className="mockup-project-label"><span>SELECTED PROJECTS</span><span>SCROLL TO EXPLORE ↓</span></div>
                 <div className="mockup-project-row"><div className="mockup-project-art art-one"><img src={imageUrls[3]} alt="" loading="lazy"/><span>Forms of feeling</span></div><div className="mockup-project-art art-two"><img src={imageUrls[1]} alt="" loading="lazy"/><span>Future, in focus</span></div><div className="mockup-project-art art-three"><img src={imageUrls[4]} alt="" loading="lazy"/><span>Objects of joy</span></div></div>
               </div>
-              <aside className="mockup-inspector"><div className="inspector-title"><span>DESIGN PANEL</span><b>•••</b></div><div className="inspector-section"><span>Selected element</span><b className="inspector-selected">Hero section <i>⌄</i></b></div><div className="inspector-section"><span>Layout</span><div className="layout-selectors"><i className="picked">▦</i><i>▤</i><i>◫</i><i>▥</i></div></div><div className="inspector-section"><span>Typography</span><b className="inspector-font">Aa <small>Editorial display</small></b></div><div className="inspector-section"><span>Color system</span><div className="inspector-colors"><i/><i/><i/><i/><i/></div><small className="hex-label">#8B5CFF　 #B7F4FF</small></div><div className="inspector-section"><span>Spacing</span><div className="spacing-meter"><i/><i/><i/><i/><i/><i/></div></div><div className="inspector-footer"><span>✦ AI DESIGN ASSIST</span><i>↗</i></div></aside>
+              <aside className="mockup-inspector"><div className="inspector-title"><span>DESIGN PANEL</span><b>•••</b></div><div className="inspector-section"><span>Selected element</span><b className="inspector-selected">Hero section <i>⌄</i></b></div><div className="inspector-section"><span>Layout <small className="interactive-hint">LIVE</small></span><div className="layout-selectors">{['▦','▤','◫','▥'].map((symbol,index)=><button type="button" key={symbol} className={demoLayout===index?'picked':''} aria-label={'Preview layout '+(index+1)} aria-pressed={demoLayout===index} onClick={()=>setDemoLayout(index)}>{symbol}</button>)}</div></div><div className="inspector-section"><span>Typography</span><b className="inspector-font">Aa <small>Editorial display</small></b></div><div className="inspector-section"><span>Color system <small className="interactive-hint">LIVE</small></span><div className="inspector-colors">{demoPalettes.map(([primary,secondary],index)=><button type="button" key={primary} className={demoPaletteIndex===index?'picked':''} style={{'--swatch-a':primary,'--swatch-b':secondary} as CSSProperties} aria-label={'Use color palette '+(index+1)} aria-pressed={demoPaletteIndex===index} onClick={()=>setDemoPaletteIndex(index)}/>)}</div><small className="hex-label">{demoPalette[0].toUpperCase()}　 {demoPalette[1].toUpperCase()}</small></div><div className="inspector-section"><span>Spacing</span><div className="spacing-meter"><i/><i/><i/><i/><i/><i/></div></div><div className="inspector-footer"><span>✦ AI DESIGN ASSIST</span><i>↗</i></div></aside>
             </div>
             <div className="mockup-bottom-bar"><span><i/> Desktop canvas</span><span>Auto-layout enabled</span><span>⌘ K <small>Quick actions</small></span></div>
           </div>
-          <div className="floating-component floating-palette"><span className="palette-swatch"/> <div><b>Color system</b><small>Prism / 04</small></div><span className="palette-hex">#8B5CFF</span></div>
+          <div className="floating-component floating-palette"><span className="palette-swatch" style={{background:'linear-gradient(135deg,'+demoPalette[0]+','+demoPalette[1]+')'}}/> <div><b>{en?'Color system':'منظومة الألوان'}</b><small>{en?'Live art direction':'اتجاه بصري مباشر'}</small></div><span className="palette-hex">{demoPalette[0].toUpperCase()}</span></div>
           <div className="floating-component floating-published"><span className="published-icon">↗</span><div><b>{en?'Ready for the world':'جاهز للعالم'}</b><small>{en?'Responsive by design':'متجاوب تلقائيًا'}</small></div><span className="published-check">✓</span></div>
           <div className="stage-coordinate">30°02'40.8"N&nbsp; 31°14'08.2"E</div>
         </div>
