@@ -6,11 +6,11 @@ import { CareerAiError, improveCareerText } from './lib/ai'
 import { downloadPortfolioHtml } from './lib/portfolio-export'
 
 type Template = { id: string; profession: string; role: string; layout: number; accent: string; pale: string }
-type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; visible: Record<string, boolean> }
-type AppView = 'home' | 'editor' | 'preview' | 'auth' | 'dashboard'
+type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; visible: Record<string, boolean>; avatarUrl?: string; slug?: string }
+type AppView = 'home' | 'editor' | 'preview' | 'auth' | 'dashboard' | 'public'
 type AuthMode = 'register' | 'login'
 type User = { id: string; email: string; displayName: string; locale: 'ar' | 'en'; emailVerified: boolean; createdAt: string }
-type SavedPortfolio = { id: string; title: string; templateId: string; document: Portfolio; status: 'draft' | 'published'; createdAt: string; updatedAt: string }
+type SavedPortfolio = { id: string; title: string; slug?: string; templateId: string; document: Portfolio; status: 'draft' | 'published'; createdAt: string; updatedAt: string }
 type ApiError = Error & { code?: string }
 
 type SitePage = 'home' | 'about' | 'templates' | 'features' | 'pricing' | 'faq' | 'contact' | 'privacy' | 'terms' | 'not-found'
@@ -28,6 +28,12 @@ const sitePageLabels: Record<Exclude<SitePage, 'not-found'>, { en: string; ar: s
   pricing: { en: 'Pricing', ar: 'الأسعار' }, faq: { en: 'FAQ', ar: 'الأسئلة الشائعة' },
   contact: { en: 'Contact', ar: 'التواصل' }, privacy: { en: 'Privacy', ar: 'الخصوصية' },
   terms: { en: 'Terms', ar: 'الشروط' },
+}
+function parsePublicRoute(pathname: string, search: string): string | null {
+  const query = new URLSearchParams(search)
+  if (query.get('p')) return query.get('p')
+  const m = pathname.match(/^\/(?:en\/|ar\/)?(?:p|u)\/([^/?#]+)/)
+  return m ? decodeURIComponent(m[1]) : null
 }
 function resolveSiteRoute(pathname: string): { page: SitePage; language: SiteLanguage; known: boolean } {
   const raw = pathname.replace(/\/index\.html$/, '/').replace(/\/+$/, '') || '/'
@@ -188,7 +194,7 @@ const layouts = ['Editorial', 'Canvas', 'Orbit', 'Studio', 'Minimal']
 const demoPalettes: [string, string][] = [['#8b5cff','#67e5ff'], ['#67e5ff','#4f81ff'], ['#fc75d9','#9b75ff'], ['#9fffc0','#67e5ff'], ['#ffbb78','#fc75d9']]
 const colors = ['#8b5cff','#61dfff','#fa75d5','#b4a0ff','#5e83ff','#ff9e72','#7de5bb','#d7a5ff','#f1a8d8','#f7d78c']
 const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], layout: l, accent: colors[(j + l * 2) % colors.length], pale: ['#f8e8dd','#e9e7ff','#dff1ea','#fff0ce','#e4edf1'][(j + l) % 5] })))
-const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true} }
+const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true}, avatarUrl:'', slug:'' }
 const imageUrls = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=76',
   'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=720&q=74',
@@ -215,6 +221,8 @@ function readSaved(): Portfolio {
       templateId: typeof saved.templateId === 'string' && templates.some(t => t.id === saved.templateId) ? saved.templateId : initial.templateId,
       projects,
       visible: { about: typeof visible.about === 'boolean' ? visible.about : initial.visible.about, projects: typeof visible.projects === 'boolean' ? visible.projects : initial.visible.projects, contact: typeof visible.contact === 'boolean' ? visible.contact : initial.visible.contact },
+      avatarUrl: typeof saved.avatarUrl === 'string' ? saved.avatarUrl.slice(0, 1000) : '',
+      slug: typeof saved.slug === 'string' ? saved.slug.slice(0, 80) : '',
     }
   } catch { return initial }
 }
@@ -245,14 +253,18 @@ function normalisePortfolio(value: unknown, fallback: Portfolio): Portfolio {
     templateId: typeof raw.templateId === 'string' && templates.some(t => t.id === raw.templateId) ? raw.templateId : fallback.templateId,
     projects: Array.isArray(raw.projects) ? raw.projects.filter((p): p is string => typeof p === 'string').slice(0,24) : fallback.projects,
     visible: { ...fallback.visible, ...(raw.visible && typeof raw.visible === 'object' ? raw.visible : {}) },
+    avatarUrl: typeof raw.avatarUrl === 'string' ? raw.avatarUrl : (fallback.avatarUrl || ''),
+    slug: typeof raw.slug === 'string' ? raw.slug : (fallback.slug || ''),
   }
 }
 
 export default function App() {
   const query = new URLSearchParams(location.search)
   const siteRoute = resolveSiteRoute(location.pathname)
+  const publicRouteId = parsePublicRoute(location.pathname, location.search)
   const [portfolio, setPortfolio] = useState<Portfolio>(readSaved)
-  const [view, setView] = useState<AppView>(query.has('preview') ? 'preview' : query.has('auth') ? 'auth' : 'home')
+  const [publicIdentifier, setPublicIdentifier] = useState<string | null>(publicRouteId)
+  const [view, setView] = useState<AppView>(publicRouteId ? 'public' : query.has('preview') ? 'preview' : query.has('auth') ? 'auth' : 'home')
   const [language, setLanguage] = useState<SiteLanguage>(() => query.get('lang') === 'ar' ? 'ar' : query.get('lang') === 'en' ? 'en' : siteRoute.language)
   const [authMode, setAuthMode] = useState<AuthMode>(query.get('auth') === 'login' ? 'login' : 'register')
   const [category, setCategory] = useState('الكل')
@@ -269,6 +281,9 @@ export default function App() {
   const [portfolioId, setPortfolioId] = useState<string|null>(null)
   const [accountError, setAccountError] = useState('')
   const [accountBusy, setAccountBusy] = useState(false)
+  const [publishModalOpen, setPublishModalOpen] = useState(false)
+  const [publishing, setPublishing] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const en = language === 'en'
   const toggleLanguage = () => {
     const next: SiteLanguage = language === 'en' ? 'ar' : 'en'
@@ -330,9 +345,100 @@ export default function App() {
   }, [portfolio, view, user, portfolioId])
 
   const update = (key: keyof Portfolio, value: unknown) => setPortfolio(p => ({ ...p, [key]: value }))
-  const goHome = () => { history.replaceState({}, '', location.pathname); setView('home'); setAccountError(''); window.scrollTo(0,0) }
+  const goHome = () => { setPublicIdentifier(null); history.replaceState({}, '', location.pathname); setView('home'); setAccountError(''); window.scrollTo(0,0) }
   const openAuth = (mode: AuthMode) => { setAuthMode(mode); history.pushState({}, '', '?auth=' + mode + '&lang=' + language); setView('auth'); setAccountError(''); window.scrollTo(0,0) }
-  const openDashboard = () => { history.replaceState({}, '', location.pathname); setView('dashboard'); setAccountError(''); window.scrollTo(0,0) }
+  const openDashboard = async () => {
+    history.replaceState({}, '', location.pathname); setView('dashboard'); setAccountError(''); window.scrollTo(0,0)
+    if (user) {
+      try {
+        const data = await apiRequest<{ portfolios: SavedPortfolio[] }>('/api/portfolios')
+        setAccountPortfolios(data.portfolios)
+      } catch { /* ignore */ }
+    }
+  }
+  const publishSite = async () => {
+    if (!user) { openAuth('register'); return }
+    setPublishing(true); setAccountError('')
+    try {
+      if (!portfolioId) {
+        const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'), templateId:portfolio.templateId, status:'published', document:{ ...portfolio, status:'published' } }) })
+        setPortfolioId(result.portfolio.id)
+        setPortfolio(p => ({ ...p, slug: result.portfolio.slug }))
+        setAccountPortfolios(items => [result.portfolio, ...items.filter(it => it.id !== result.portfolio.id)])
+      } else {
+        await apiRequest('/api/portfolios/' + portfolioId, {
+          method: 'PUT',
+          body: JSON.stringify({
+            title: portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'),
+            templateId: portfolio.templateId,
+            status: 'published',
+            document: { ...portfolio, status: 'published' }
+          })
+        })
+        setAccountPortfolios(items => items.map(it => it.id === portfolioId ? { ...it, status: 'published', title: portfolio.name || it.title } : it))
+      }
+      setSaved(true)
+      setPublishModalOpen(true)
+    } catch {
+      setAccountError(en ? 'Could not publish site. Please try again.' : 'تعذر نشر الموقع. يُرجى المحاولة مجددًا.')
+    } finally {
+      setPublishing(false)
+    }
+  }
+  const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert(en ? 'Please select an image file.' : 'يرجى اختيار ملف صورة.')
+      return
+    }
+    setAvatarUploading(true)
+    try {
+      const img = new Image()
+      const reader = new FileReader()
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          img.onload = () => {
+            const maxDim = 512
+            let width = img.width
+            let height = img.height
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width)
+                width = maxDim
+              } else {
+                width = Math.round((width * maxDim) / height)
+                height = maxDim
+              }
+            }
+            const canvas = document.createElement('canvas')
+            canvas.width = width
+            canvas.height = height
+            const ctx = canvas.getContext('2d')
+            if (!ctx) return reject(new Error('canvas_failed'))
+            ctx.drawImage(img, 0, 0, width, height)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.82)
+            resolve(dataUrl.split(',')[1])
+          }
+          img.onerror = () => reject(new Error('image_load_failed'))
+          img.src = reader.result as string
+        }
+        reader.onerror = () => reject(new Error('read_failed'))
+        reader.readAsDataURL(file)
+      })
+
+      const res = await apiRequest<{ ok: boolean; id: string; url: string }>('/api/media', {
+        method: 'POST',
+        body: JSON.stringify({ mimeType: 'image/jpeg', base64: base64Data })
+      })
+      update('avatarUrl', res.url)
+    } catch (err) {
+      console.error('Avatar upload failed', err)
+      alert(en ? 'Failed to upload photo. Please try again.' : 'فشل رفع الصورة. يُرجى المحاولة مجددًا.')
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
   const signOut = async () => {
     try { await apiRequest('/api/auth/logout', { method:'POST', body:'{}' }) } catch { /* local workspace still remains available */ }
     setUser(null); setAccountPortfolios([]); setPortfolioId(null); goHome()
@@ -403,6 +509,7 @@ export default function App() {
     } finally { setAiBusy(null) }
   }
 
+  if (view === 'public') return <PublicPortfolioPage idOrSlug={publicIdentifier || ''} language={language} onLanguage={toggleLanguage} onGoHome={goHome} onStart={()=>user ? openDashboard() : openAuth('register')} />
   if (view === 'home' && siteRoute.page !== 'home') return <ContentPage page={siteRoute.page} language={language} onLanguage={toggleLanguage} />
   if (view === 'home') return <LandingPage language={language} user={user} onLanguage={toggleLanguage} onStart={()=>user ? openDashboard() : openAuth('register')} onLogin={()=>user ? openDashboard() : openAuth('login')} onTemplate={chooseTemplate} />
   if (view === 'auth') return <AuthScreen mode={authMode} language={language} onLanguage={toggleLanguage} onBack={goHome} onMode={openAuth} onSuccess={handleAuthSuccess} />
@@ -418,6 +525,18 @@ export default function App() {
       <aside className={'editor-sidebar '+(mobilePanel?'panel-open':'')}><div className="sidebar-scroll">
         <div className="editor-side-title"><div><small>{en?'YOUR PORTFOLIO':'موقعك الشخصي'}</small><h2>{en?'Make it yours':'ظبّطه بطريقتك'}</h2></div><button className="close-panel" onClick={()=>setMobilePanel(false)}>×</button></div>
         <div className="editor-group-label">{en?'01 — Profile':'01 — بياناتك'}</div>
+        <div className="avatar-upload-control">
+          <div className="avatar-preview-wrap">
+            {portfolio.avatarUrl ? <img src={portfolio.avatarUrl} alt="Avatar" className="avatar-preview-thumb"/> : <span className="avatar-preview-empty">👤</span>}
+          </div>
+          <div className="avatar-upload-actions">
+            <label className="avatar-upload-btn">
+              {avatarUploading ? (en ? 'Uploading…' : 'جارٍ الرفع…') : (portfolio.avatarUrl ? (en ? 'Change photo' : 'تغيير الصورة') : (en ? 'Upload photo' : 'رفع صورة شخصية'))}
+              <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleAvatarFile} style={{ display: 'none' }} disabled={avatarUploading} />
+            </label>
+            {portfolio.avatarUrl && <button type="button" className="avatar-remove-btn" onClick={() => update('avatarUrl', '')}>{en ? 'Remove' : 'حذف'}</button>}
+          </div>
+        </div>
         <label className="field-label">{en?'Your name':'الاسم'}<input value={portfolio.name} onChange={e=>update('name',e.target.value)}/></label>
         <label className="field-label">{en?'What you do':'ما طبيعة عملك؟'}<input value={portfolio.role} maxLength={180} onChange={e=>update('role',e.target.value)}/></label>
         <button type="button" className="ai-action" disabled={aiBusy!==null} onClick={()=>void improveText('headline')}>{aiBusy==='headline'?'✳ '+(en?'Improving…':'جارٍ التحسين…'):'✦ '+(en?'Improve headline with AI':'حسّن المسمى بالذكاء الاصطناعي')}</button>
@@ -432,11 +551,32 @@ export default function App() {
         <div className="control-section"><div className="control-heading"><b>{en?'Project names':'أسماء المشاريع'}</b></div>{portfolio.projects.map((project,index)=><label className="field-label project-field" key={index}>{en?'Project '+(index+1):'مشروع '+(index+1)}<input value={project} onChange={e=>update('projects',portfolio.projects.map((p,i)=>i===index?e.target.value:p))}/></label>)}<button className="add-project" onClick={()=>update('projects',[...portfolio.projects,''])}>＋ {en?'Add project':'إضافة مشروع'}</button></div>
         <div className="editor-group-label">{en?'03 — Templates':'03 — القوالب'}</div>
         <div className="control-section"><div className="control-heading"><b>{en?'Choose a direction':'اختر نمط الموقع'}</b><span>{templates.length} {en?'starting points':'بداية'}</span></div><input className="search-input" value={search} onChange={e=>{setSearch(e.target.value);setShowAllTemplates(false)}} placeholder={en?'Search profession or style…':'ابحث عن مجال أو تصميم…'}/><div className="category-pills">{['الكل',...jobs.map(j=>j[1])].map(c=><button className={category===c?'active':''} key={c} onClick={()=>{setCategory(c);setShowAllTemplates(false)}}>{c}</button>)}</div><div className="template-list">{filtered.slice(0,showAllTemplates?filtered.length:10).map(t=><button className={t.id===portfolio.templateId?'chosen':''} key={t.id} onClick={()=>update('templateId',t.id)}><span className="template-mini" style={{'--accent':t.accent,'--pale':t.pale} as CSSProperties}><i/></span><span><b>{t.profession}</b><small>{layouts[t.layout]}</small></span>{t.id===portfolio.templateId&&<b className="checkmark">✓</b>}</button>)}</div>{filtered.length>10&&<button className="show-more" onClick={()=>setShowAllTemplates(v=>!v)}>{showAllTemplates?(en?'Show fewer':'عرض أقل'):(en?'Show all '+filtered.length:'اعرض كل الـ '+filtered.length)} {showAllTemplates?'↑':'↓'}</button>}</div>
-      </div><div className="sidebar-bottom"><button className="button button-primary button-wide" onClick={preview}>{en?'Preview my site':'عاين موقعي'} <span>↗</span></button><button className="button button-light button-wide" onClick={exportSite}>{en?'Export HTML':'نزّل نسخة HTML'} <span>↓</span></button><div className="local-note">{user?(saved?(en?'☁ Saved to your account':'☁ محفوظ على حسابك'):(en?'Saving to cloud…':'جارٍ الحفظ سحابيًا…')):(en?'Saved only on this device':'محفوظ على الجهاز فقط')}</div></div></aside>
-      <section className="editor-workspace"><div className="editor-toolbar"><div className="toolbar-start"><button className="mobile-panel-button" onClick={()=>setMobilePanel(true)}>☷ {en?'Edit':'تعديل'}</button><div className="mode-switch"><button className={device==='desktop'?'active':''} onClick={()=>setDevice('desktop')}>▣ <span>{en?'Desktop':'الحاسوب'}</span></button><button className={device==='mobile'?'active':''} onClick={()=>setDevice('mobile')}>▯ <span>{en?'Mobile':'الهاتف'}</span></button></div></div><div className="toolbar-end"><span className="canvas-live-status"><i/> {en?'Live preview':'معاينة مباشرة'}</span><button className="button button-primary toolbar-publish" onClick={preview}>{en?'Preview ↗':'معاينة ↗'}</button></div></div>
+      </div><div className="sidebar-bottom"><button className="button button-primary button-wide" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish site 🚀':'انشر موقعك 🚀')}</button><button className="button button-light button-wide" onClick={preview}>{en?'Preview my site':'عاين موقعي'} <span>↗</span></button><button className="button button-light button-wide" onClick={exportSite}>{en?'Export HTML':'نزّل نسخة HTML'} <span>↓</span></button><div className="local-note">{user?(saved?(en?'☁ Saved to your account':'☁ محفوظ على حسابك'):(en?'Saving to cloud…':'جارٍ الحفظ سحابيًا…')):(en?'Saved only on this device':'محفوظ على الجهاز فقط')}</div></div></aside>
+      <section className="editor-workspace"><div className="editor-toolbar"><div className="toolbar-start"><button className="mobile-panel-button" onClick={()=>setMobilePanel(true)}>☷ {en?'Edit':'تعديل'}</button><div className="mode-switch"><button className={device==='desktop'?'active':''} onClick={()=>setDevice('desktop')}>▣ <span>{en?'Desktop':'الحاسوب'}</span></button><button className={device==='mobile'?'active':''} onClick={()=>setDevice('mobile')}>▯ <span>{en?'Mobile':'الهاتف'}</span></button></div></div><div className="toolbar-end"><span className="canvas-live-status"><i/> {en?'Live preview':'معاينة مباشرة'}</span><button className="button button-light toolbar-publish" onClick={preview}>{en?'Preview ↗':'معاينة ↗'}</button><button className="button button-primary toolbar-publish" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish 🚀':'انشر موقعك 🚀')}</button></div></div>
         <div className="canvas-area"><div className={'canvas-browser '+(device==='mobile'?'mobile-frame':'')}><div className="canvas-browser-bar"><span className="browser-dots"><i/><i/><i/></span><span className="canvas-address">{(portfolio.name.toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/gi,'-').replace(/^-|-$/g,'')||'my-portfolio')}.taqdom.me</span><span className="canvas-zoom">{device==='desktop'?'100%':'390 px'}</span></div><PortfolioCanvas data={portfolio} template={chosen} language={language}/></div><p className="canvas-hint"><span>✦</span>{user?(en?'Your changes are saved to your account.':'تعديلاتك محفوظة على حسابك.'):(en?'This is a local demo. Create an account to save your project across devices.':'هذه معاينة محلية. أنشئ حسابًا لحفظ موقعك والوصول إليه من أي جهاز.')}</p></div>
       </section>
     </main>
+    {publishModalOpen && (
+      <div className="publish-modal-overlay" onClick={()=>setPublishModalOpen(false)}>
+        <div className="publish-modal-card" onClick={e=>e.stopPropagation()}>
+          <button className="close-modal" onClick={()=>setPublishModalOpen(false)}>×</button>
+          <div className="modal-icon">🎉</div>
+          <h3>{en?'Your site is live!':'مبروك! موقعك منشور الآن على الإنترنت'}</h3>
+          <p>{en?'Anyone with this link can now view your portfolio and get in touch with you.':'يمكن لأي شخص الآن فتح الرابط، تصفح معرض أعمالك، والتواصل معك مباشرة.'}</p>
+          <div className="publish-link-box">
+            <input readOnly value={`${window.location.origin}/p/${portfolio.slug || portfolioId || ''}`} id="publish-link-input"/>
+            <button onClick={()=>{
+              const el = document.getElementById('publish-link-input') as HTMLInputElement
+              if (el) { el.select(); navigator.clipboard.writeText(el.value); alert(en?'Link copied!':'تم نسخ الرابط بنجاح!') }
+            }}>{en?'Copy':'نسخ'}</button>
+          </div>
+          <div className="modal-actions">
+            <a href={`/p/${portfolio.slug || portfolioId || ''}`} target="_blank" rel="noopener noreferrer" className="button button-primary">{en?'Visit Public Site ↗':'زيارة موقعك الآن ↗'}</a>
+            <button className="button button-light" onClick={()=>setPublishModalOpen(false)}>{en?'Done':'إغلاق'}</button>
+          </div>
+        </div>
+      </div>
+    )}
   </div>
 }
 
@@ -823,7 +963,7 @@ function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onC
     <main className="dashboard-main"><div className="dashboard-welcome"><div><div className="section-overline">{en?'YOUR CREATIVE SPACE':'مساحتك الإبداعية'}</div><h1>{en?<>Good to have you,<br/><em>{user?.displayName || 'there'}.</em></>:<>مرحبًا بك،<br/><em>{user?.displayName || 'صاحب الحكاية'}.</em></>}</h1><p>{en?'Your projects live here. Open an existing site or create a new one when you are ready.':'ستجد مشروعاتك هنا. افتح موقعًا سابقًا أو أنشئ موقعًا جديدًا متى شئت.'}</p></div><div className="dashboard-welcome-art"><img src={imageUrls[3]} alt="" loading="lazy"/><div><span>TAQDOM STUDIO</span><b>{en?'Make it yours.':'اجعله معبّرًا عنك.'}</b></div></div></div>
       {error&&<div className="dashboard-error" role="status"><span>{error}</span><button onClick={onClearError}>×</button></div>}
       <div className="dashboard-project-heading"><div><span className="section-overline">{en?'YOUR PROJECTS':'مشاريعك'}</span><h2>{en?'A place for your next step':'كل مشروع له مكانه'}</h2></div><button className="dashboard-create" onClick={onCreate} disabled={busy}>{busy?(en?'Creating…':'جارٍ الإنشاء…'):(en?'＋ New website':'＋ موقع جديد')}</button></div>
-      {loading?<div className="dashboard-loading"><span className="loading-orbit"/> {en?'Loading your workspace…':'جارٍ تحميل مساحة العمل…'}</div>:items.length===0?<div className="dashboard-empty"><div className="empty-art"><span>✳</span><i/><b/></div><h3>{en?'Your first website starts here.':'موقعك الأول بانتظارك.'}</h3><p>{en?'Start with a blank canvas and shape your own corner of the internet.':'ابدأ بمساحة جديدة وأنشئ حضورك الخاص على الإنترنت.'}</p><button className="dashboard-create" onClick={onCreate} disabled={busy}>{en?'Create my first site':'أنشئ موقعي الأول'} ↗</button></div>:<div className="dashboard-project-grid">{items.map((item,index)=><button className="dashboard-project-card" key={item.id} onClick={()=>onOpen(item)}><div className={'dashboard-project-cover cover-'+(index%6)}><img src={imageUrls[index%imageUrls.length]} alt="" loading="lazy"/><span className="project-draft">{item.status==='published'?(en?'Published':'منشور'):(en?'Draft':'مسودة')}</span><div className="cover-brand">t<span>.</span></div><div className="cover-title">{item.document?.name||item.title}<small>{item.document?.role|| (en?'Personal portfolio':'موقع شخصي')}</small></div></div><div className="dashboard-project-info"><div><h3>{item.title}</h3><p>{en?'Edited':'آخر تعديل'} · {new Date(item.updatedAt).toLocaleDateString(en?'en-GB':'ar-EG',{day:'numeric',month:'short'})}</p></div><span>↗</span></div></button>)}</div>}
+      {loading?<div className="dashboard-loading"><span className="loading-orbit"/> {en?'Loading your workspace…':'جارٍ تحميل مساحة العمل…'}</div>:items.length===0?<div className="dashboard-empty"><div className="empty-art"><span>✳</span><i/><b/></div><h3>{en?'Your first website starts here.':'موقعك الأول بانتظارك.'}</h3><p>{en?'Start with a blank canvas and shape your own corner of the internet.':'ابدأ بمساحة جديدة وأنشئ حضورك الخاص على الإنترنت.'}</p><button className="dashboard-create" onClick={onCreate} disabled={busy}>{en?'Create my first site':'أنشئ موقعي الأول'} ↗</button></div>:<div className="dashboard-project-grid">{items.map((item,index)=><button className="dashboard-project-card" key={item.id} onClick={()=>onOpen(item)}><div className={'dashboard-project-cover cover-'+(index%6)}><img src={item.document?.avatarUrl || imageUrls[index%imageUrls.length]} alt="" loading="lazy"/><span className="project-draft">{item.status==='published'?(en?'Published 🌐':'منشور 🌐'):(en?'Draft 📝':'مسودة 📝')}</span><div className="cover-brand">t<span>.</span></div><div className="cover-title">{item.document?.name||item.title}<small>{item.document?.role|| (en?'Personal portfolio':'موقع شخصي')}</small></div></div><div className="dashboard-project-info"><div><h3>{item.title}</h3><p>{en?'Edited':'آخر تعديل'} · {new Date(item.updatedAt).toLocaleDateString(en?'en-GB':'ar-EG',{day:'numeric',month:'short'})}</p></div><span>↗</span></div></button>)}</div>}
       <div className="dashboard-help-row"><span className="help-star">✳</span><div><b>{en?'Small steps. Beautiful work.':'خطوات بسيطة، وشغل يبان.'}</b><p>{en?'You can edit your content, colors, and visible sections at any time.':'تقدر تعدّل المحتوى والألوان والأقسام في أي وقت.'}</p></div><button onClick={onHome}>{en?'Explore Taqdom':'استكشف تقدّم'} ↗</button></div>
     </main><footer className="dashboard-footer"><span>taqdom<span>.</span></span><span>{en?'Your space is yours.':'المساحة دي مساحتك.'}</span><small>{user?.email}</small></footer>
   </div>
@@ -833,5 +973,174 @@ function PortfolioCanvas({data,template,language}:{data:Portfolio;template:Templ
   const en=language==='en'
   const projects=en?['A calmer way to bank','Learning without limits','A brand built to grow']:data.projects
   const portraits=[imageUrls[0],imageUrls[2],imageUrls[5]]
-  return <article className={'portfolio-site layout-'+template.layout} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}><div className="site-nav"><span className="site-monogram">{data.name.split(' ').map(s=>s[0]).join('')}</span><div><a href="#about">{en?'About':'عنّي'}</a><a href="#work">{en?'Work':'أعمالي'}</a><a href="#contact">{en?'Contact':'تواصل'}</a></div><span className="site-availability"><i/>{en?'Open to work':'متاح للعمل'}</span></div><section className="site-hero"><div className="site-copy"><small className="site-eyebrow">✳ {en?template.profession.toUpperCase():'أهلاً، أنا '+data.name}</small><h1>{en?'Creating with care.':data.name}<br/><em>{en?'Making it matter.':data.role}</em></h1>{data.visible.about&&<p id="about">{en?'Good work starts with curiosity. I turn thoughtful ideas into work that makes everyday life a little better.':data.bio}</p>}<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a></div><div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={portraits[template.layout%3]} alt="" loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location}　·　2026</div></div></section>{data.visible.projects&&<section className="site-work" id="work"><div className="site-section-title"><div><small>01 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{en?'More coming soon':'المزيد قريباً'} ↗</span></div><div className="site-project-grid">{projects.map((name,i)=><div className={'site-project project-'+i} key={name}><div className="site-project-art"><img src={imageUrls[(i+template.layout+1)%imageUrls.length]} alt="" loading="lazy"/><span>{['milo','nūn','else'][i%3]}</span><b>{['✳','◡','✿'][i%3]}</b></div><h3>{name}</h3><small>{['Product design · 2026','Branding · 2025','Creative direction · 2024'][i%3]}</small></div>)}</div></section>}{data.visible.contact&&<section className="site-contact" id="contact"><div><small>02 / {en?'SAY HELLO':'كلمّني'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div><a href={'mailto:'+data.email}>{data.email} ↗</a></section>}<footer className="site-footer"><span>© {new Date().getFullYear()} {data.name}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer></article>
+  const avatarSrc = data.avatarUrl || portraits[template.layout%3]
+  const displayName = data.name || (en ? 'Your Name' : 'اسمك الشخصي')
+  const displayRole = data.role || (en ? template.role : 'مجال عملك')
+  const displayBio = data.bio || (en ? 'Good work starts with curiosity. I turn thoughtful ideas into work that makes everyday life a little better.' : 'أصمم منتجات رقمية بسيطة وقريبة من الناس.')
+  return <article className={'portfolio-site layout-'+template.layout} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}><div className="site-nav"><span className="site-monogram">{displayName.split(' ').map(s=>s[0]).join('')}</span><div><a href="#about">{en?'About':'عنّي'}</a><a href="#work">{en?'Work':'أعمالي'}</a><a href="#contact">{en?'Contact':'تواصل'}</a></div><span className="site-availability"><i/>{en?'Open to work':'متاح للعمل'}</span></div><section className="site-hero"><div className="site-copy"><small className="site-eyebrow">✳ {en?template.profession.toUpperCase():'أهلاً، أنا '+displayName}</small><h1>{displayName}<br/><em>{displayRole}</em></h1>{data.visible.about&&<p id="about">{displayBio}</p>}<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a></div><div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location || (en?'Remote':'عن بُعد')}　·　2026</div></div></section>{data.visible.projects&&<section className="site-work" id="work"><div className="site-section-title"><div><small>01 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{en?'More coming soon':'المزيد قريباً'} ↗</span></div><div className="site-project-grid">{projects.map((name,i)=><div className={'site-project project-'+i} key={name}><div className="site-project-art"><img src={imageUrls[(i+template.layout+1)%imageUrls.length]} alt="" loading="lazy"/><span>{['milo','nūn','else'][i%3]}</span><b>{['✳','◡','✿'][i%3]}</b></div><h3>{name}</h3><small>{['Product design · 2026','Branding · 2025','Creative direction · 2024'][i%3]}</small></div>)}</div></section>}{data.visible.contact&&<section className="site-contact" id="contact"><div><small>02 / {en?'SAY HELLO':'كلمّني'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div><a href={'mailto:'+data.email}>{data.email} ↗</a></section>}<footer className="site-footer"><span>© {new Date().getFullYear()} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer></article>
+}
+
+function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart }: {
+  idOrSlug: string
+  language: SiteLanguage
+  onLanguage: () => void
+  onGoHome: () => void
+  onStart: () => void
+}) {
+  const en = language === 'en'
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<{ id: string; title: string; document: Portfolio; templateId: string; status: string } | null>(null)
+  const [error, setError] = useState('')
+  const [senderName, setSenderName] = useState('')
+  const [senderEmail, setSenderEmail] = useState('')
+  const [message, setMessage] = useState('')
+  const [msgSending, setMsgSending] = useState(false)
+  const [msgSent, setMsgSent] = useState(false)
+  const [msgError, setMsgError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    apiRequest<{ portfolio: { id: string; title: string; document: Portfolio; templateId: string; status: string } }>(`/api/portfolios/public/${encodeURIComponent(idOrSlug)}`)
+      .then(res => {
+        if (!active) return
+        setData(res.portfolio)
+      })
+      .catch(() => {
+        if (!active) return
+        setError(en ? 'Portfolio not found or unavailable.' : 'معرض الأعمال غير موجود أو غير متاح حاليًا.')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => { active = false }
+  }, [idOrSlug, en])
+
+  const handleSendMessage = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!data?.id || !message.trim()) return
+    setMsgSending(true)
+    setMsgError('')
+    try {
+      await apiRequest('/api/messages', {
+        method: 'POST',
+        body: JSON.stringify({
+          portfolioId: data.id,
+          senderName,
+          senderEmail,
+          message
+        })
+      })
+      setMsgSent(true)
+      setMessage('')
+    } catch {
+      setMsgError(en ? 'Failed to send message. Please try again.' : 'تعذر إرسال الرسالة. يرجى المحاولة مجددًا.')
+    } finally {
+      setMsgSending(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="public-portfolio-shell" dir={en ? 'ltr' : 'rtl'}>
+        <div style={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
+          <div className="dashboard-loading">
+            <span className="loading-orbit" /> {en ? 'Loading portfolio…' : 'جارٍ تحميل موقع المعرض…'}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <div className="public-portfolio-shell" dir={en ? 'ltr' : 'rtl'}>
+        <header className="public-top-badge">
+          <button className="auth-brand" onClick={onGoHome} style={{ background: 'none', border: 0, color: '#fff', cursor: 'pointer' }}>
+            <BrandMark /><span>taqdom<span className="site-brand-dot">.</span></span>
+          </button>
+          <button className="site-lang" onClick={onLanguage}>{en ? 'العربية' : 'English'}</button>
+        </header>
+        <div style={{ display: 'grid', placeItems: 'center', minHeight: '50vh', textAlign: 'center', padding: '20px' }}>
+          <div>
+            <h2>{en ? 'Portfolio Not Found' : 'لم يتم العثور على الموقع'}</h2>
+            <p style={{ color: '#888', margin: '12px 0 24px' }}>{error || (en ? 'This portfolio link does not exist.' : 'رابط الموقع المطلوب غير موجود أو غير منشور.')}</p>
+            <button className="button button-primary" onClick={onGoHome}>{en ? 'Go to Taqdom' : 'الانتقال إلى تقدّم'}</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const chosenTemplate = templates.find(t => t.id === data.document.templateId) || templates[0]
+
+  return (
+    <div className="public-portfolio-shell" dir={en ? 'ltr' : 'rtl'}>
+      <header className="public-top-badge">
+        <a href="/" onClick={e => { e.preventDefault(); onGoHome() }}>
+          <BrandMark />
+          <span><b>{data.document.name || 'Taqdom'}</b> · {en ? 'Personal Portfolio' : 'معرض أعمال'}</span>
+        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button className="site-lang" onClick={onLanguage} style={{ color: '#aaa', background: 'none', border: 0, cursor: 'pointer' }}>
+            {en ? 'العربية' : 'English'}
+          </button>
+          <button className="badge-cta" onClick={onStart}>
+            {en ? 'Create your own free site 🚀' : 'أنشئ موقعك مجانًا 🚀'}
+          </button>
+        </div>
+      </header>
+
+      <main style={{ flex: 1, padding: '20px 10px' }}>
+        <PortfolioCanvas data={data.document} template={chosenTemplate} language={language} />
+
+        <div style={{ maxWidth: '640px', margin: '40px auto 20px', background: '#fff', border: '1px solid #ebe9e3', borderRadius: '16px', padding: '28px' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: '18px' }}>{en ? 'Send a message' : 'تواصل مع صاحب الموقع'}</h3>
+          <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#666' }}>
+            {en ? `Leave a message for ${data.document.name || 'the creator'}.` : `أرسل رسالة مباشرة إلى ${data.document.name || 'صاحب الموقع'}.`}
+          </p>
+          {msgSent ? (
+            <div className="msg-success-badge">
+              ✓ {en ? 'Your message has been sent successfully!' : 'تم إرسال رسالتك بنجاح! سيتم إخطار صاحب الموقع.'}
+            </div>
+          ) : (
+            <form onSubmit={handleSendMessage} className="public-contact-form">
+              <input
+                type="text"
+                placeholder={en ? 'Your name' : 'اسمك'}
+                value={senderName}
+                onChange={e => setSenderName(e.target.value)}
+                maxLength={100}
+                required
+              />
+              <input
+                type="email"
+                placeholder={en ? 'Your email address' : 'بريدك الإلكتروني'}
+                value={senderEmail}
+                onChange={e => setSenderEmail(e.target.value)}
+                maxLength={254}
+                required
+              />
+              <textarea
+                placeholder={en ? 'Your message…' : 'اكتب رسالتك هنا…'}
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                rows={3}
+                maxLength={1500}
+                required
+              />
+              {msgError && <p style={{ color: '#d9534f', fontSize: '12px', margin: 0 }}>{msgError}</p>}
+              <button type="submit" className="button button-primary" style={{ alignSelf: 'flex-start' }} disabled={msgSending}>
+                {msgSending ? (en ? 'Sending…' : 'جارٍ الإرسال…') : (en ? 'Send Message ✉' : 'إرسال الرسالة ✉')}
+              </button>
+            </form>
+          )}
+        </div>
+      </main>
+
+      <footer className="public-bottom-badge">
+        <span>© {new Date().getFullYear()} {data.document.name || 'Taqdom'}</span>
+        <span>{en ? 'Powered by' : 'مدعوم بواسطة'} <a href="https://taqdom.me" target="_blank" rel="noreferrer">taqdom.me</a></span>
+      </footer>
+    </div>
+  )
 }

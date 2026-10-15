@@ -17,3 +17,5 @@
 /ar/privacy/ /privacy/ 301
 /ar/terms /terms/ 301
 /ar/terms/ /terms/ 301
+/p/* /index.html 200
+/u/* /index.html 200
