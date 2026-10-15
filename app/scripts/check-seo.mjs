@@ -30,13 +30,21 @@ for (const route of routes) {
   assert(/<title>[^<]{4,180}<\/title>/.test(html), `${route.file}: missing useful title`)
   assert(/<meta name="description" content="[^"]{40,190}"\s*\/>/.test(html), `${route.file}: missing or too-short description`)
   assert(html.includes('application/ld+json'), `${route.file}: missing structured data`)
+  if (route.path !== '/' && route.path !== '/en/') {
+    const homeCrumb = route.lang === 'ar'
+      ? `"name":"الرئيسية","item":"${origin}/"`
+      : `"name":"Home","item":"${origin}/en/"`
+    assert(html.includes(homeCrumb), `${route.file}: breadcrumb must point to the matching locale homepage`)
+  }
   assert(html.includes('type="module"') && /src="\/assets\/[^" ]+\.js"/.test(html), `${route.file}: missing built app entry point`)
 }
 
 let sitemap = ''
 let robots = ''
+let redirects = ''
 try { sitemap = await read('sitemap.xml') } catch { problems.push('Missing dist/sitemap.xml') }
 try { robots = await read('robots.txt') } catch { problems.push('Missing dist/robots.txt') }
+try { redirects = await read('_redirects') } catch { problems.push('Missing dist/_redirects') }
 try { await read('404.html') } catch { problems.push('Missing dist/404.html') }
 try { await read('site.webmanifest') } catch { problems.push('Missing dist/site.webmanifest') }
 
@@ -48,6 +56,13 @@ if (sitemap) {
   assert(JSON.stringify(locs.sort()) === JSON.stringify(expected), 'Sitemap URLs do not match the published route inventory')
   assert((sitemap.match(/hreflang="en"/g) || []).length >= routes.length, 'Sitemap is missing English hreflang alternates')
   assert((sitemap.match(/hreflang="ar"/g) || []).length >= routes.length, 'Sitemap is missing Arabic hreflang alternates')
+}
+if (redirects) {
+  assert(redirects.includes('/ar/ /ar/') === false, 'Legacy Arabic redirects contain a loop')
+  assert(redirects.includes('/ar/ / 301'), 'Missing legacy Arabic homepage redirect')
+  for (const slug of ['about', 'templates', 'features', 'pricing', 'faq', 'contact', 'privacy', 'terms']) {
+    assert(redirects.includes(`/ar/${slug}/ /${slug}/ 301`), `Missing legacy redirect for /ar/${slug}/`)
+  }
 }
 if (robots) {
   assert(robots.includes(`Sitemap: ${origin}/sitemap.xml`), 'robots.txt does not advertise sitemap.xml')
