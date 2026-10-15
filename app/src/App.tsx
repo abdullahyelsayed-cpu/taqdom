@@ -245,9 +245,10 @@ function normalisePortfolio(value: unknown, fallback: Portfolio): Portfolio {
 
 export default function App() {
   const query = new URLSearchParams(location.search)
+  const siteRoute = resolveSiteRoute(location.pathname)
   const [portfolio, setPortfolio] = useState<Portfolio>(readSaved)
   const [view, setView] = useState<AppView>(query.has('preview') ? 'preview' : query.has('auth') ? 'auth' : 'home')
-  const [language, setLanguage] = useState<'ar'|'en'>(query.get('lang') === 'en' ? 'en' : 'ar')
+  const [language, setLanguage] = useState<SiteLanguage>(() => query.get('lang') === 'ar' ? 'ar' : query.get('lang') === 'en' ? 'en' : siteRoute.language)
   const [authMode, setAuthMode] = useState<AuthMode>(query.get('auth') === 'login' ? 'login' : 'register')
   const [category, setCategory] = useState('الكل')
   const [search, setSearch] = useState('')
@@ -264,10 +265,32 @@ export default function App() {
   const [accountError, setAccountError] = useState('')
   const [accountBusy, setAccountBusy] = useState(false)
   const en = language === 'en'
+  const toggleLanguage = () => {
+    const next: SiteLanguage = language === 'en' ? 'ar' : 'en'
+    if (view === 'home') {
+      window.location.assign(localizedSitePath(next, siteRoute.page))
+      return
+    }
+    setLanguage(next)
+    const nextUrl = new URL(window.location.href)
+    nextUrl.searchParams.set('lang', next)
+    history.replaceState({}, '', nextUrl.pathname + nextUrl.search + nextUrl.hash)
+  }
   const chosen = templates.find(t => t.id === portfolio.templateId) || templates[0]
   const filtered = useMemo(() => templates.filter(t => (category === 'الكل' || t.profession === category) && (!search || (t.profession + t.role + layouts[t.layout]).toLowerCase().includes(search.toLowerCase()))), [category, search])
 
-  useEffect(() => { document.documentElement.lang = language; document.documentElement.dir = en ? 'ltr' : 'rtl' }, [language, en])
+  useEffect(() => {
+    document.documentElement.lang = language
+    document.documentElement.dir = en ? 'ltr' : 'rtl'
+    const seo = getContentPageCopy(siteRoute.page, en)
+    document.title = seo.title
+    document.querySelector('meta[name="description"]')?.setAttribute('content', seo.description)
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', seo.title)
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', seo.description)
+    document.querySelector('meta[property="og:locale"]')?.setAttribute('content', en ? 'en_US' : 'ar')
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', new URL(localizedSitePath(language, siteRoute.page), location.origin).href)
+    document.querySelector('meta[name="robots"]')?.setAttribute('content', siteRoute.page === 'not-found' ? 'noindex, follow' : 'index, follow')
+  }, [language, en])
   useEffect(() => {
     let active = true
     apiRequest<{user:User}>('/api/auth/me').then(async result => {
@@ -298,7 +321,7 @@ export default function App() {
 
   const update = (key: keyof Portfolio, value: unknown) => setPortfolio(p => ({ ...p, [key]: value }))
   const goHome = () => { history.replaceState({}, '', location.pathname); setView('home'); setAccountError(''); window.scrollTo(0,0) }
-  const openAuth = (mode: AuthMode) => { setAuthMode(mode); history.pushState({}, '', '?auth=' + mode + (en ? '&lang=en' : '')); setView('auth'); setAccountError(''); window.scrollTo(0,0) }
+  const openAuth = (mode: AuthMode) => { setAuthMode(mode); history.pushState({}, '', '?auth=' + mode + '&lang=' + language); setView('auth'); setAccountError(''); window.scrollTo(0,0) }
   const openDashboard = () => { history.replaceState({}, '', location.pathname); setView('dashboard'); setAccountError(''); window.scrollTo(0,0) }
   const signOut = async () => {
     try { await apiRequest('/api/auth/logout', { method:'POST', body:'{}' }) } catch { /* local workspace still remains available */ }
@@ -370,15 +393,16 @@ export default function App() {
     } finally { setAiBusy(null) }
   }
 
-  if (view === 'home') return <LandingPage language={language} user={user} onLanguage={()=>setLanguage(en?'ar':'en')} onStart={()=>user ? openDashboard() : openAuth('register')} onLogin={()=>user ? openDashboard() : openAuth('login')} onTemplate={chooseTemplate} />
-  if (view === 'auth') return <AuthScreen mode={authMode} language={language} onLanguage={()=>setLanguage(en?'ar':'en')} onBack={goHome} onMode={openAuth} onSuccess={handleAuthSuccess} />
+  if (view === 'home' && siteRoute.page !== 'home') return <ContentPage page={siteRoute.page} language={language} onLanguage={toggleLanguage} />
+  if (view === 'home') return <LandingPage language={language} user={user} onLanguage={toggleLanguage} onStart={()=>user ? openDashboard() : openAuth('register')} onLogin={()=>user ? openDashboard() : openAuth('login')} onTemplate={chooseTemplate} />
+  if (view === 'auth') return <AuthScreen mode={authMode} language={language} onLanguage={toggleLanguage} onBack={goHome} onMode={openAuth} onSuccess={handleAuthSuccess} />
   if (view === 'dashboard') return <Dashboard language={language} user={user} loading={accountLoading} busy={accountBusy} items={accountPortfolios} error={accountError} onLanguage={()=>setLanguage(en?'ar':'en')} onHome={goHome} onCreate={()=>void createPortfolio()} onOpen={openPortfolio} onLogout={()=>void signOut()} onClearError={()=>setAccountError('')} />
   if (view === 'preview') return <div className="preview-screen" style={vars}><div className="preview-bar"><button onClick={()=>{history.replaceState({},'',location.pathname);setView('editor')}}>← {en?'Back to editor':'العودة للمحرر'}</button><span className="preview-status"><i/>{en?'Private preview':'معاينة خاصة'}</span><button className="small-action" onClick={exportSite}>{en?'Download HTML':'تنزيل HTML'} ↓</button></div><PortfolioCanvas data={portfolio} template={chosen} language={language}/></div>
 
   return <div className="app-shell editor-mode">
     <header className="topbar"><a className="brand" href="#" onClick={e=>{e.preventDefault();user?openDashboard():goHome()}}><BrandMark/><span>taqdom<span className="brand-dot">.</span></span></a>
       <div className="editor-breadcrumb">{en?'My workspace':'مساحة عملي'} <b>/</b> <strong>{portfolio.name || (en?'New portfolio':'موقعي الجديد')}</strong></div>
-      <div className="top-actions"><span className={'save-indicator '+(saved?'is-saved':'')}><i/>{saved?(en?'Saved':'تم الحفظ'):(en?'Saving…':'جارٍ الحفظ…')}</span><button className="lang-switch" onClick={()=>setLanguage(en?'ar':'en')}>{en?'عربي':'EN'}</button>{user?<button className="button button-light hide-mobile" onClick={openDashboard}>{en?'Workspace':'مساحة العمل'}</button>:<button className="button button-light hide-mobile" onClick={()=>openAuth('register')}>{en?'Create account':'إنشاء حساب'}</button>}<button className="button button-dark hide-mobile" onClick={exportSite}>{en?'Export site':'نزّل الموقع'} <span>↓</span></button></div>
+      <div className="top-actions"><span className={'save-indicator '+(saved?'is-saved':'')}><i/>{saved?(en?'Saved':'تم الحفظ'):(en?'Saving…':'جارٍ الحفظ…')}</span><button className="lang-switch" onClick={toggleLanguage}>{en?'عربي':'EN'}</button>{user?<button className="button button-light hide-mobile" onClick={openDashboard}>{en?'Workspace':'مساحة العمل'}</button>:<button className="button button-light hide-mobile" onClick={()=>openAuth('register')}>{en?'Create account':'إنشاء حساب'}</button>}<button className="button button-dark hide-mobile" onClick={exportSite}>{en?'Export site':'نزّل الموقع'} <span>↓</span></button></div>
     </header>
     <main className="editor-layout">
       <aside className={'editor-sidebar '+(mobilePanel?'panel-open':'')}><div className="sidebar-scroll">
