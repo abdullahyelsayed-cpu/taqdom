@@ -5,11 +5,11 @@ import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('../dist/', import.meta.url))
 const origin = 'https://taqdom.me'
 const routes = [
-  { file: 'index.html', path: '/', lang: 'en', ar: '/ar/' },
-  { file: 'ar/index.html', path: '/ar/', lang: 'ar', en: '/' },
+  { file: 'index.html', path: '/', lang: 'ar', en: '/en/' },
+  { file: 'en/index.html', path: '/en/', lang: 'en', ar: '/' },
   ...['about', 'templates', 'features', 'pricing', 'faq', 'contact', 'privacy', 'terms'].flatMap((slug) => [
-    { file: `${slug}/index.html`, path: `/${slug}/`, lang: 'en', ar: `/ar/${slug}/` },
-    { file: `ar/${slug}/index.html`, path: `/ar/${slug}/`, lang: 'ar', en: `/${slug}/` },
+    { file: `${slug}/index.html`, path: `/${slug}/`, lang: 'ar', en: `/en/${slug}/` },
+    { file: `en/${slug}/index.html`, path: `/en/${slug}/`, lang: 'en', ar: `/${slug}/` },
   ]),
 ]
 const problems = []
