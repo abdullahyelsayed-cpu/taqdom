@@ -37,7 +37,7 @@ The experience is designed for **Arabic and English**, including right-to-left a
 
 ## Product status
 
-Taqdom is an active build, not a claim that every part of a full website-builder platform is finished.
+Taqdom is free for everyone. There are no paid plans or subscriptions. The product is still actively developing, and not every capability of a full website-builder platform is complete.
 
 | Area | Current state |
 | --- | --- |
@@ -48,7 +48,7 @@ Taqdom is an active build, not a claim that every part of a full website-builder
 | Email verification and password recovery | Not enabled |
 | Publish a portfolio to a personal subdomain | Not enabled |
 | User image upload and managed media library | Not enabled |
-| Billing and subscriptions | Not enabled |
+| Access and pricing | Free for everyone; no paid plans or subscriptions |
 
 The gallery uses illustrative external photography. It is not a customer-media library. External media is subject to its own source terms; the MIT license below applies to this repository's code and accompanying original documentation, not third-party assets.
 
@@ -83,7 +83,7 @@ The frontend expects same-origin `/api/*` routes in the deployed environment. So
 
 ## Roadmap
 
-The next product milestones are deeper, genuinely distinct layout systems; richer typography and spacing controls; image uploads and asset management; better publishing and custom-subdomain controls; verified email and account recovery; accessibility and security reviews; and only then pricing and payments.
+The next product milestones are deeper, genuinely distinct layout systems; richer typography and spacing controls; image uploads and asset management; better publishing and custom-subdomain controls; verified email and account recovery; and accessibility and security reviews. Taqdom is intended to remain free for everyone; paid plans and subscriptions are out of scope.
 
 Priorities will be driven by actual user feedback and the needs of future collaborators and supporters. No sponsor or partner is represented as confirmed unless announced with permission.
 
