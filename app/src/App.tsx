@@ -301,7 +301,10 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.lang = language
-    document.documentElement.dir = en ? 'ltr' : 'rtl'
+    if (view === 'public') {
+      document.title = en ? 'Portfolio | Taqdom' : 'معرض أعمال | تقدّم'
+      return
+    }
     const seo = getContentPageCopy(siteRoute.page, en)
     document.title = seo.title
     document.querySelector('meta[name="description"]')?.setAttribute('content', seo.description)
@@ -1004,6 +1007,9 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
       .then(res => {
         if (!active) return
         setData(res.portfolio)
+        if (res.portfolio?.document?.name) {
+          document.title = `${res.portfolio.document.name} — ${en ? 'Personal Portfolio' : 'معرض أعمال'}`
+        }
       })
       .catch(() => {
         if (!active) return
