@@ -32,7 +32,7 @@ The experience is designed for **Arabic and English**, including right-to-left a
 - **Visual portfolio editor** — edit profile content, accent colors, project names, and visible sections with a live preview.
 - **Template starting points** — 14 professional categories combined with five shared layout systems. These are 70 starting combinations, not 70 completely unique designs.
 - **Account workspace** — signup, sign-in, session handling, and account-owned portfolio records stored via the backend.
-- **AI writing helper** — optional, user-triggered help for improving a selected headline or biography. Users review changes before using them.
+- **AI writing helper** — optional, user-triggered help for improving a selected headline or biography. It uses Cloudflare's native Workers AI binding (`AI`) with a server-selected model; this deployment does not need an external vendor API key. Users review changes before using suggestions.
 - **Portable output** — export a standalone HTML copy of the portfolio.
 
 ## Product status
@@ -57,7 +57,7 @@ The gallery uses illustrative external photography. It is not a customer-media l
 - **Frontend:** React, TypeScript, Vite, CSS, accessible UI states, and reduced-motion support.
 - **Edge / API:** Cloudflare Pages Functions proxy requests to a Cloudflare Worker.
 - **Data:** Cloudflare D1 stores account, session, and portfolio records.
-- **AI copy assistance:** the existing server-side Worker endpoint; provider credentials stay on the server.
+- **AI copy assistance:** the Worker calls Cloudflare Workers AI through the `AI` resource binding, with the model selected by the non-secret `MODEL` variable. The current deployment requires no external vendor API key. `ALLOWED_ORIGINS` is also a non-secret configuration variable; D1 and Workers AI are resource bindings.
 - **Build checks:** GitHub Actions runs the TypeScript production build and lint.
 
 Production configuration and secrets belong in Cloudflare-managed settings. Do not copy live credentials, environment values, customer data, or operational exports into source control.
