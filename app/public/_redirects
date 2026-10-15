@@ -1,0 +1,19 @@
+# Keep old Arabic-prefixed URLs working while making Arabic the canonical locale.
+/ar / 301
+/ar/ / 301
+/ar/about /about/ 301
+/ar/about/ /about/ 301
+/ar/templates /templates/ 301
+/ar/templates/ /templates/ 301
+/ar/features /features/ 301
+/ar/features/ /features/ 301
+/ar/pricing /pricing/ 301
+/ar/pricing/ /pricing/ 301
+/ar/faq /faq/ 301
+/ar/faq/ /faq/ 301
+/ar/contact /contact/ 301
+/ar/contact/ /contact/ 301
+/ar/privacy /privacy/ 301
+/ar/privacy/ /privacy/ 301
+/ar/terms /terms/ 301
+/ar/terms/ /terms/ 301
