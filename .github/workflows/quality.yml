@@ -35,6 +35,8 @@ jobs:
         run: npm ci
       - name: TypeScript and production build
         run: npm run build
+      - name: Validate localized pages, sitemap, and SEO metadata
+        run: npm run check:seo
       - name: Lint
         run: npm run lint
 

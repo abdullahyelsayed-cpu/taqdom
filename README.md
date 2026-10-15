@@ -62,6 +62,18 @@ The gallery uses illustrative external photography. It is not a customer-media l
 
 Production configuration and secrets belong in Cloudflare-managed settings. Do not copy live credentials, environment values, customer data, or operational exports into source control.
 
+## International pages and SEO
+
+The English homepage is served at `/`. Modern Standard Arabic has a separate, right-to-left route at `/ar/`. The core informational pages are available in both languages at clean paths such as `/features/` and `/ar/features/`.
+
+Each route has its own HTML title and description, canonical URL, reciprocal `hreflang` references, Open Graph metadata, and JSON-LD structured data. `app/public/sitemap.xml` lists the canonical English and Arabic pages, while `app/public/robots.txt` advertises the sitemap and keeps API routes out of crawl discovery. A branded 404 page is included.
+
+## Performance and quality
+
+The site uses smaller responsive external image variants, asynchronous font loading, resource hints for important image/font origins, lazy decoding for below-the-fold images, reduced-motion support, and immutable caching for versioned build assets. Real-world speed still depends on the visitor's device and third-party networks, so it should be measured rather than promised as a guaranteed score.
+
+After building, `npm run check:seo` verifies that localized routes, canonical and alternate-language URLs, structured data, sitemap entries, and support files are present. CI runs this check alongside the production build, lint, and a full Git-history secret scan.
+
 ## Run it locally
 
 Requirements: a supported Node.js release and npm.

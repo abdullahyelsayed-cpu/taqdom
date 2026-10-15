@@ -1,0 +1,21 @@
+{
+  "id": "/",
+  "name": "Taqdom — Your Vision. Our Technology.",
+  "short_name": "Taqdom",
+  "description": "A free bilingual visual studio for personal websites and portfolios.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050817",
+  "theme_color": "#050817",
+  "lang": "en",
+  "dir": "auto",
+  "icons": [
+    {
+      "src": "/taqdom-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
