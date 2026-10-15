@@ -1,15 +1,15 @@
 {
   "id": "/",
-  "name": "Taqdom — Your Vision. Our Technology.",
-  "short_name": "Taqdom",
-  "description": "A free bilingual visual studio for personal websites and portfolios.",
+  "name": "تقدّم — مساحة رقمية لأعمالك",
+  "short_name": "تقدّم",
+  "description": "استوديو بصري مجاني لإنشاء المواقع الشخصية ومعارض الأعمال باللغتين العربية والإنجليزية.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#050817",
   "theme_color": "#050817",
-  "lang": "en",
-  "dir": "auto",
+  "lang": "ar",
+  "dir": "rtl",
   "icons": [
     {
       "src": "/taqdom-mark.svg",
