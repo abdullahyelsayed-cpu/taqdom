@@ -28,9 +28,9 @@ for (const route of routes) {
   assert(html.includes(`hreflang="en" href="${origin}${route.lang === 'en' ? route.path : route.en}"`), `${route.file}: English hreflang does not match`)
   assert(html.includes(`hreflang="ar" href="${origin}${route.lang === 'ar' ? route.path : route.ar}"`), `${route.file}: Arabic hreflang does not match`)
   assert(/<title>[^<]{4,180}<\/title>/.test(html), `${route.file}: missing useful title`)
-  assert(/<meta name="description" content="[^"]{40,190}"\/>/.test(html), `${route.file}: missing or too-short description`)
+  assert(/<meta name="description" content="[^"]{40,190}"\s*\/>/.test(html), `${route.file}: missing or too-short description`)
   assert(html.includes('application/ld+json'), `${route.file}: missing structured data`)
-  assert(html.includes('src="/src/main.tsx"'), `${route.file}: missing app entry point`)
+  assert(html.includes('type="module"') && /src="\/assets\/[^" ]+\.js"/.test(html), `${route.file}: missing built app entry point`)
 }
 
 let sitemap = ''
