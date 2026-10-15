@@ -5,17 +5,17 @@
     <lastmod>2026-10-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
-    <loc>https://taqdom.me/ar/</loc>
+    <loc>https://taqdom.me/en/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
@@ -23,143 +23,143 @@
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/about/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/about/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/about/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/about/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/about/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
-    <loc>https://taqdom.me/ar/about/</loc>
+    <loc>https://taqdom.me/en/about/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/about/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/about/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/about/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/about/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/about/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
     <loc>https://taqdom.me/templates/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/templates/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/templates/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/templates/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/templates/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/templates/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
-    <loc>https://taqdom.me/ar/templates/</loc>
+    <loc>https://taqdom.me/en/templates/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/templates/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/templates/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/templates/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/templates/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/templates/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
     <loc>https://taqdom.me/features/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/features/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/features/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/features/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/features/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/features/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
-    <loc>https://taqdom.me/ar/features/</loc>
+    <loc>https://taqdom.me/en/features/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/features/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/features/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/features/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/features/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/features/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
     <loc>https://taqdom.me/pricing/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/pricing/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/pricing/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/pricing/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/pricing/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/pricing/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
-    <loc>https://taqdom.me/ar/pricing/</loc>
+    <loc>https://taqdom.me/en/pricing/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/pricing/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/pricing/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/pricing/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/pricing/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/pricing/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
     <loc>https://taqdom.me/faq/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/faq/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/faq/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/faq/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/faq/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/faq/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
-    <loc>https://taqdom.me/ar/faq/</loc>
+    <loc>https://taqdom.me/en/faq/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/faq/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/faq/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/faq/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/faq/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/faq/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
     <loc>https://taqdom.me/contact/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/contact/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/contact/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/contact/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/contact/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/contact/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
-    <loc>https://taqdom.me/ar/contact/</loc>
+    <loc>https://taqdom.me/en/contact/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/contact/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/contact/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/contact/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/contact/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/contact/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
     <loc>https://taqdom.me/privacy/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/privacy/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/privacy/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
-    <loc>https://taqdom.me/ar/privacy/</loc>
+    <loc>https://taqdom.me/en/privacy/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/privacy/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/privacy/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
     <loc>https://taqdom.me/terms/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/terms/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/terms/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/terms/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
   <url>
-    <loc>https://taqdom.me/ar/terms/</loc>
+    <loc>https://taqdom.me/en/terms/</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/terms/"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/ar/terms/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/terms/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://taqdom.me/en/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://taqdom.me/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://taqdom.me/"/>
   </url>
 </urlset>
