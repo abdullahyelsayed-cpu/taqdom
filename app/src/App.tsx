@@ -13,6 +13,166 @@ type User = { id: string; email: string; displayName: string; locale: 'ar' | 'en
 type SavedPortfolio = { id: string; title: string; templateId: string; document: Portfolio; status: 'draft' | 'published'; createdAt: string; updatedAt: string }
 type ApiError = Error & { code?: string }
 
+type SitePage = 'home' | 'about' | 'templates' | 'features' | 'pricing' | 'faq' | 'contact' | 'privacy' | 'terms' | 'not-found'
+type SiteLanguage = 'en' | 'ar'
+type ContentBlock = { heading: string; text: string; bullets?: string[] }
+type ContentPageCopy = { title: string; description: string; eyebrow: string; heading: string; lead: string; blocks: ContentBlock[] }
+
+const sitePagePaths: Record<Exclude<SitePage, 'not-found'>, string> = {
+  home: '/', about: '/about/', templates: '/templates/', features: '/features/',
+  pricing: '/pricing/', faq: '/faq/', contact: '/contact/', privacy: '/privacy/', terms: '/terms/',
+}
+const sitePageLabels: Record<Exclude<SitePage, 'not-found'>, { en: string; ar: string }> = {
+  home: { en: 'Home', ar: 'الرئيسية' }, about: { en: 'About', ar: 'نبذة عن تقدّم' },
+  templates: { en: 'Templates', ar: 'القوالب' }, features: { en: 'Features', ar: 'المميزات' },
+  pricing: { en: 'Pricing', ar: 'الأسعار' }, faq: { en: 'FAQ', ar: 'الأسئلة الشائعة' },
+  contact: { en: 'Contact', ar: 'التواصل' }, privacy: { en: 'Privacy', ar: 'الخصوصية' },
+  terms: { en: 'Terms', ar: 'الشروط' },
+}
+function resolveSiteRoute(pathname: string): { page: SitePage; language: SiteLanguage; known: boolean } {
+  const raw = pathname.replace(/\/index\.html$/, '/').replace(/\/+$/, '') || '/'
+  const isArabic = raw === '/ar' || raw.startsWith('/ar/')
+  const unprefixed = (isArabic ? raw.replace(/^\/ar(?=\/|$)/, '') : raw).replace(/\/+$/, '') || '/'
+  const entry = Object.entries(sitePagePaths).find(([, value]) => (value.replace(/\/+$/, '') || '/') === unprefixed)
+  return { page: entry ? entry[0] as SitePage : (unprefixed === '/' ? 'home' : 'not-found'), language: isArabic ? 'ar' : 'en', known: Boolean(entry) }
+}
+function localizedSitePath(language: SiteLanguage, page: SitePage): string {
+  if (page === 'not-found') return language === 'ar' ? '/ar/' : '/'
+  const path = sitePagePaths[page]
+  return language === 'ar' ? (page === 'home' ? '/ar/' : '/ar' + path) : path
+}
+function getContentPageCopy(page: SitePage, en: boolean): ContentPageCopy {
+  const copy: Record<SitePage, { en: ContentPageCopy; ar: ContentPageCopy }> = {
+    home: {
+      en: { title: 'Taqdom — Your Vision. Our Technology.', description: 'Build a personal website and portfolio with Taqdom, a bilingual visual studio with live preview and optional AI writing assistance.', eyebrow: 'A personal website studio', heading: 'Your work deserves a place of its own.', lead: 'Create a polished online presence, shape your portfolio, and share your work with the world.', blocks: [] },
+      ar: { title: 'تقدّم — مساحة رقمية لأعمالك', description: 'أنشئ موقعًا شخصيًا ومعرض أعمال باستخدام تقدّم، مع معاينة مباشرة ودعم العربية والإنجليزية ومساعدة اختيارية للكتابة.', eyebrow: 'استوديو المواقع الشخصية', heading: 'أعمالك تستحق مساحة خاصة بها.', lead: 'أنشئ حضورًا رقميًا احترافيًا، وصمّم معرض أعمالك، وشاركه مع العالم.', blocks: [] },
+    },
+    about: {
+      en: { title: 'About Taqdom | A Free Personal Website Studio', description: 'Learn about Taqdom’s mission to make personal websites and portfolios accessible to everyone, in Arabic and English, for free.', eyebrow: 'About Taqdom', heading: 'The internet should have room for everyone.', lead: 'Taqdom is a free visual studio for building a personal website or portfolio without starting from code.', blocks: [
+        { heading: 'Built for many kinds of work', text: 'From designers and developers to students, independent professionals, and small businesses, Taqdom helps people present their work in one shareable place.' },
+        { heading: 'A bilingual experience', text: 'The product supports English and Modern Standard Arabic, with left-to-right and right-to-left layouts.' },
+        { heading: 'Free by design', text: 'Taqdom is intended to remain free for everyone. There are no paid plans or subscriptions. Some advanced publishing capabilities are still in development.' },
+      ] },
+      ar: { title: 'نبذة عن تقدّم | استوديو مجاني للمواقع الشخصية', description: 'تعرّف على هدف تقدّم في إتاحة المواقع الشخصية ومعارض الأعمال للجميع مجانًا، باللغتين العربية والإنجليزية.', eyebrow: 'نبذة عن تقدّم', heading: 'يجب أن تتسع شبكة الإنترنت للجميع.', lead: 'تقدّم استوديو بصري مجاني لإنشاء موقع شخصي أو معرض أعمال دون الحاجة إلى البدء بكتابة الشيفرة.', blocks: [
+        { heading: 'مناسب لمجالات متعددة', text: 'يساعد تقدّم المصممين والمطورين والطلاب والمهنيين المستقلين والمشروعات الصغيرة على عرض أعمالهم في مكان واحد يسهل مشاركته.' },
+        { heading: 'تجربة ثنائية اللغة', text: 'يدعم المنتج اللغة الإنجليزية والعربية الفصحى الحديثة، مع تخطيطات من اليمين إلى اليسار ومن اليسار إلى اليمين.' },
+        { heading: 'مجاني للجميع', text: 'صُمّم تقدّم ليظل متاحًا للجميع مجانًا، دون خطط مدفوعة أو اشتراكات. لا تزال بعض إمكانات النشر المتقدمة قيد التطوير.' },
+      ] },
+    },
+    templates: {
+      en: { title: 'Portfolio Templates | Taqdom', description: 'Explore portfolio starting points for design, technology, business, education, healthcare, and more. Customize your site for free.', eyebrow: 'Template library', heading: 'Find a direction. Make it your own.', lead: 'Explore starting points for different professions, then customize your content, colors, and visible sections.', blocks: [
+        { heading: 'Design & creative', text: 'Visual starting points for designers, photographers, writers, and creative professionals.' },
+        { heading: 'Technology & engineering', text: 'Portfolio starting points for developers, engineers, and technical specialists.' },
+        { heading: 'Business & services', text: 'Personal website directions for consultants, entrepreneurs, marketers, educators, and other professionals.' },
+        { heading: 'Know what “70+” means', text: 'The current gallery combines 14 professional categories with five shared layout systems. These are starting combinations, not 70 entirely unique designs.' },
+      ] },
+      ar: { title: 'قوالب معارض الأعمال | تقدّم', description: 'استكشف بدايات تصميمية لمعارض الأعمال في مجالات التصميم والتقنية والأعمال والتعليم والصحة وغيرها، وخصّص موقعك مجانًا.', eyebrow: 'مكتبة القوالب', heading: 'اختر اتجاهًا بصريًا واجعله يعكس هويتك.', lead: 'استكشف بدايات تصميمية لمجالات مهنية مختلفة، ثم خصّص المحتوى والألوان والأقسام الظاهرة.', blocks: [
+        { heading: 'التصميم والإبداع', text: 'بدايات بصرية للمصممين والمصورين والكتّاب وغيرهم من أصحاب الأعمال الإبداعية.' },
+        { heading: 'التقنية والهندسة', text: 'بدايات مناسبة لمعارض أعمال المطورين والمهندسين والمتخصصين التقنيين.' },
+        { heading: 'الأعمال والخدمات', text: 'اتجاهات للمواقع الشخصية للاستشاريين ورواد الأعمال والمسوقين والمعلمين وغيرهم من المهنيين.' },
+        { heading: 'ماذا تعني «أكثر من 70»؟', text: 'تجمع المكتبة الحالية بين 14 مجالًا مهنيًا وخمسة أنظمة تخطيط مشتركة. إنها تركيبات بداية وليست 70 تصميمًا مختلفًا بالكامل.' },
+      ] },
+    },
+    features: {
+      en: { title: 'Features | Taqdom Website Studio', description: 'Discover Taqdom’s live portfolio preview, visual editing, bilingual layouts, HTML export, saved drafts, and optional AI writing assistant.', eyebrow: 'Product features', heading: 'A clearer way to shape your online presence.', lead: 'The current studio combines visual editing with practical ways to review and share your work.', blocks: [
+        { heading: 'Live visual preview', text: 'Edit portfolio content and design choices while seeing a preview of the result.' },
+        { heading: 'Arabic and English', text: 'Switch between English and Modern Standard Arabic, including right-to-left and left-to-right presentation.' },
+        { heading: 'Optional AI writing assistance', text: 'Ask the writing assistant to improve selected headline or biography text. Review suggestions before using them.' },
+        { heading: 'Portable HTML export', text: 'Download a standalone HTML version of your current portfolio for a portable copy.' },
+        { heading: 'Account and saved drafts', text: 'Create an account to use the current account workspace and save portfolio drafts to the service.' },
+        { heading: 'Publishing roadmap', text: 'Custom personal subdomains and a managed media library are not enabled in the current product yet.' },
+      ] },
+      ar: { title: 'مميزات استوديو تقدّم للمواقع الشخصية', description: 'اكتشف المعاينة المباشرة وتحرير معرض الأعمال ودعم اللغتين وتصدير HTML والمسودات المحفوظة ومساعد الكتابة الاختياري.', eyebrow: 'مميزات المنتج', heading: 'طريقة أوضح لبناء حضورك الرقمي.', lead: 'يجمع الاستوديو الحالي بين التحرير البصري وأدوات عملية لمراجعة أعمالك ومشاركتها.', blocks: [
+        { heading: 'معاينة بصرية مباشرة', text: 'عدّل محتوى معرض أعمالك وخيارات التصميم مع مشاهدة المعاينة الناتجة.' },
+        { heading: 'العربية والإنجليزية', text: 'انتقل بين الإنجليزية والعربية الفصحى الحديثة، مع دعم اتجاه الكتابة من اليمين إلى اليسار ومن اليسار إلى اليمين.' },
+        { heading: 'مساعدة اختيارية للكتابة بالذكاء الاصطناعي', text: 'اطلب من مساعد الكتابة تحسين نص العنوان أو النبذة التي تحددها، ثم راجع الاقتراحات قبل استخدامها.' },
+        { heading: 'تصدير HTML قابل للنقل', text: 'نزّل نسخة HTML مستقلة من معرض أعمالك للاحتفاظ بنسخة قابلة للنقل.' },
+        { heading: 'حساب ومسودات محفوظة', text: 'أنشئ حسابًا لاستخدام مساحة العمل الحالية وحفظ مسودات معرض أعمالك على الخدمة.' },
+        { heading: 'خطة تطوير النشر', text: 'النطاقات الشخصية الفرعية ومكتبة الوسائط المُدارة غير مفعّلة في المنتج الحالي حتى الآن.' },
+      ] },
+    },
+    pricing: {
+      en: { title: 'Free Portfolio Builder — No Subscription | Taqdom', description: 'Taqdom is free for everyone. Create and customize a personal portfolio without paid plans or subscriptions.', eyebrow: 'Free for everyone', heading: 'Your website. Your work. No subscription.', lead: 'Taqdom is free to use. There are no paid plans and no subscription fees.', blocks: [
+        { heading: 'Included at no cost', text: 'Use the current portfolio editor, preview your work, explore the available template combinations, switch between languages, and export a standalone HTML copy.' },
+        { heading: 'Account features', text: 'The current account experience supports sign-in and saving portfolio drafts. Availability depends on the running service.' },
+        { heading: 'No paid plans', text: 'Taqdom is intended to remain free for everyone; paid plans, billing, and subscriptions are out of scope.' },
+      ] },
+      ar: { title: 'منشئ معارض أعمال مجاني دون اشتراك | تقدّم', description: 'تقدّم مجاني للجميع. أنشئ معرض أعمال شخصيًا وخصّصه دون خطط مدفوعة أو رسوم اشتراك.', eyebrow: 'مجاني للجميع', heading: 'موقعك وأعمالك، دون اشتراك.', lead: 'استخدام تقدّم مجاني بالكامل؛ لا توجد خطط مدفوعة أو رسوم اشتراك.', blocks: [
+        { heading: 'مميزات متاحة مجانًا', text: 'استخدم محرر معرض الأعمال الحالي، وعاين أعمالك، واستكشف تركيبات القوالب المتاحة، وانتقل بين اللغتين، وصدّر نسخة HTML مستقلة.' },
+        { heading: 'مميزات الحساب', text: 'تدعم تجربة الحساب الحالية تسجيل الدخول وحفظ مسودات معارض الأعمال. يعتمد التوفر على حالة الخدمة.' },
+        { heading: 'لا توجد خطط مدفوعة', text: 'يهدف تقدّم إلى البقاء مجانيًا للجميع؛ فالخطط المدفوعة والفوترة والاشتراكات خارج نطاق المشروع.' },
+      ] },
+    },
+    faq: {
+      en: { title: 'Frequently Asked Questions | Taqdom', description: 'Answers about Taqdom, free access, portfolio templates, languages, AI writing assistance, and publishing capabilities.', eyebrow: 'Help center', heading: 'Frequently asked questions.', lead: 'Straightforward answers about the product as it exists today.', blocks: [
+        { heading: 'Is Taqdom free?', text: 'Yes. Taqdom is intended to stay free for everyone, with no paid plans or subscription fees.' },
+        { heading: 'Do I need to know how to code?', text: 'No coding is required to edit the current portfolio fields and choose among available design starting points.' },
+        { heading: 'Does it support Arabic?', text: 'Yes. The site supports English and Modern Standard Arabic, including right-to-left layouts.' },
+        { heading: 'Are there 70 unique templates?', text: 'Not exactly. The current library combines 14 professional categories with five shared layout systems, creating 70 starting combinations.' },
+        { heading: 'Can I publish to my own subdomain?', text: 'Personal subdomain publishing is not enabled in the current product yet.' },
+        { heading: 'How does the AI writing helper work?', text: 'It is optional. When you request an improvement, the selected headline or biography text is sent to the server-side AI endpoint for a suggestion.' },
+        { heading: 'Can I export my portfolio?', text: 'The current editor can export a standalone HTML copy of the portfolio.' },
+      ] },
+      ar: { title: 'الأسئلة الشائعة | تقدّم', description: 'إجابات عن الاستخدام المجاني والقوالب واللغات ومساعدة الكتابة بالذكاء الاصطناعي وإمكانات النشر في تقدّم.', eyebrow: 'مركز المساعدة', heading: 'الأسئلة الشائعة.', lead: 'إجابات واضحة عن إمكانات المنتج الحالية.', blocks: [
+        { heading: 'هل استخدام تقدّم مجاني؟', text: 'نعم. يهدف تقدّم إلى البقاء مجانيًا للجميع، دون خطط مدفوعة أو رسوم اشتراك.' },
+        { heading: 'هل أحتاج إلى معرفة البرمجة؟', text: 'لا تحتاج إلى كتابة الشيفرة لتحرير الحقول الحالية لمعرض الأعمال والاختيار من بدايات التصميم المتاحة.' },
+        { heading: 'هل يدعم الموقع اللغة العربية؟', text: 'نعم. يدعم الموقع الإنجليزية والعربية الفصحى الحديثة، بما في ذلك تخطيطات الكتابة من اليمين إلى اليسار.' },
+        { heading: 'هل توجد 70 قالبًا مختلفًا بالكامل؟', text: 'ليس تمامًا. تجمع المكتبة الحالية بين 14 مجالًا مهنيًا وخمسة أنظمة تخطيط مشتركة، لتنتج 70 تركيبة بداية.' },
+        { heading: 'هل يمكنني النشر على نطاق فرعي خاص بي؟', text: 'لم يتم تفعيل نشر المواقع على النطاقات الشخصية الفرعية في المنتج الحالي بعد.' },
+        { heading: 'كيف يعمل مساعد الكتابة بالذكاء الاصطناعي؟', text: 'المساعد اختياري. عند طلب التحسين، يُرسل نص العنوان أو النبذة المحددة إلى واجهة الذكاء الاصطناعي على الخادم لتقديم اقتراح.' },
+        { heading: 'هل يمكن تصدير معرض الأعمال؟', text: 'يمكن للمحرر الحالي تصدير نسخة HTML مستقلة من معرض الأعمال.' },
+      ] },
+    },
+    contact: {
+      en: { title: 'Contact Taqdom | Help and Feedback', description: 'Contact the Taqdom project through GitHub to report an issue, share feedback, or ask a product question.', eyebrow: 'Contact', heading: 'Help shape what comes next.', lead: 'Questions, bug reports, and thoughtful feedback help improve the project.', blocks: [
+        { heading: 'Report a bug', text: 'Use GitHub Issues for reproducible bugs, including the page, browser, and steps needed to reproduce the problem.' },
+        { heading: 'Share an idea', text: 'Open a feature request and describe the problem you are trying to solve, rather than prescribing a specific implementation.' },
+        { heading: 'Security and privacy', text: 'Do not post access tokens, passwords, session cookies, or private user data in public issues. Follow the private reporting guidance in the security policy.' },
+      ] },
+      ar: { title: 'التواصل مع تقدّم | المساعدة والملاحظات', description: 'تواصل مع مشروع تقدّم عبر GitHub للإبلاغ عن مشكلة أو مشاركة ملاحظات أو طرح سؤال حول المنتج.', eyebrow: 'التواصل', heading: 'ساهم في تشكيل الخطوات القادمة.', lead: 'تساعد الأسئلة وتقارير الأخطاء والملاحظات المفيدة على تطوير المشروع.', blocks: [
+        { heading: 'الإبلاغ عن مشكلة', text: 'استخدم GitHub Issues للإبلاغ عن الأخطاء القابلة لإعادة الإنتاج، مع ذكر الصفحة والمتصفح وخطوات إظهار المشكلة.' },
+        { heading: 'مشاركة فكرة', text: 'قدّم اقتراحًا جديدًا واشرح المشكلة التي تريد حلها بدلًا من فرض طريقة تنفيذ محددة.' },
+        { heading: 'الأمان والخصوصية', text: 'لا تنشر مفاتيح الوصول أو كلمات المرور أو ملفات تعريف الارتباط للجلسات أو بيانات المستخدمين الخاصة في البلاغات العامة. اتبع تعليمات الإبلاغ الخاص في سياسة الأمان.' },
+      ] },
+    },
+    privacy: {
+      en: { title: 'Privacy Notice | Taqdom', description: 'Read how Taqdom handles account information, portfolio drafts, and text submitted to its optional AI writing assistant.', eyebrow: 'Privacy', heading: 'Your work deserves careful handling.', lead: 'This notice summarizes the current product behavior; it is not a substitute for independent legal advice or a comprehensive compliance review.', blocks: [
+        { heading: 'Account and portfolio data', text: 'The account service processes information you provide for your account, authentication, and saved portfolio drafts. The current account and portfolio records use Cloudflare D1.' },
+        { heading: 'AI writing assistance', text: 'The AI helper is optional. Text is sent to the server-side writing endpoint only after you request an improvement. Avoid sending passwords, financial details, or other sensitive information.' },
+        { heading: 'Abuse prevention and technical data', text: 'The service may process technical request information to operate the site and enforce usage limits. The current AI endpoint uses a hashed IP-derived identifier for anonymous usage quotas.' },
+        { heading: 'Questions or requests', text: 'For privacy-related concerns, use the project’s contact options. Do not publish sensitive account details in a public issue.' },
+      ] },
+      ar: { title: 'إشعار الخصوصية | تقدّم', description: 'تعرّف على كيفية تعامل تقدّم مع بيانات الحساب ومسودات معارض الأعمال والنصوص المرسلة إلى مساعد الكتابة الاختياري.', eyebrow: 'الخصوصية', heading: 'تستحق أعمالك التعامل معها بعناية.', lead: 'يلخص هذا الإشعار سلوك المنتج الحالي، ولا يُعد بديلًا عن المشورة القانونية المستقلة أو مراجعة امتثال شاملة.', blocks: [
+        { heading: 'بيانات الحساب ومعرض الأعمال', text: 'تعالج خدمة الحساب المعلومات التي تقدمها لإنشاء الحساب والمصادقة وحفظ مسودات معرض الأعمال. تُخزَّن سجلات الحسابات ومعارض الأعمال الحالية باستخدام Cloudflare D1.' },
+        { heading: 'مساعدة الكتابة بالذكاء الاصطناعي', text: 'مساعد الذكاء الاصطناعي اختياري. لا يُرسل النص إلى واجهة الكتابة على الخادم إلا بعد طلبك تحسينه. تجنب إرسال كلمات المرور أو البيانات المالية أو غيرها من المعلومات الحساسة.' },
+        { heading: 'منع إساءة الاستخدام والبيانات التقنية', text: 'قد تعالج الخدمة معلومات تقنية عن الطلبات لتشغيل الموقع وتطبيق حدود الاستخدام. تستخدم واجهة الذكاء الاصطناعي الحالية معرّفًا مشتقًا من عنوان IP ومحوّلًا إلى قيمة مجزأة لتحديد حصص الاستخدام المجهول.' },
+        { heading: 'الأسئلة أو الطلبات', text: 'للمخاوف المتعلقة بالخصوصية، استخدم قنوات التواصل الخاصة بالمشروع. لا تنشر تفاصيل الحساب الحساسة في بلاغ عام.' },
+      ] },
+    },
+    terms: {
+      en: { title: 'Terms of Use | Taqdom', description: 'Read the basic terms for using Taqdom’s free portfolio editor, exported HTML, optional AI writing assistance, and project content.', eyebrow: 'Terms of use', heading: 'Use the studio thoughtfully.', lead: 'These plain-language terms describe the current project at a high level and are not a substitute for formal legal advice.', blocks: [
+        { heading: 'Free access and availability', text: 'Taqdom is intended to be free for everyone. The service is under active development, so features may change and uninterrupted availability is not guaranteed.' },
+        { heading: 'Your content', text: 'You remain responsible for the text, images, and other material you add or publish. Use assets you have permission to use and avoid including private information about others.' },
+        { heading: 'AI-generated suggestions', text: 'AI writing suggestions may be inaccurate or unsuitable. Review and edit them before use; you are responsible for the final content you publish.' },
+        { heading: 'Third-party services and assets', text: 'The service relies on third-party infrastructure, libraries, fonts, and some illustrative external images, which remain subject to their own terms and licenses.' },
+        { heading: 'Open-source code', text: 'The project’s original code is made available under the MIT License. That license does not automatically apply to third-party images, fonts, or dependencies.' },
+      ] },
+      ar: { title: 'شروط الاستخدام | تقدّم', description: 'اقرأ الشروط الأساسية لاستخدام محرر معارض الأعمال المجاني ومساعدة الكتابة الاختيارية وتصدير HTML ومحتوى المشروع.', eyebrow: 'شروط الاستخدام', heading: 'استخدم الاستوديو بمسؤولية.', lead: 'توضح هذه الشروط المبسطة طبيعة المشروع الحالية على مستوى عام، ولا تحل محل المشورة القانونية الرسمية.', blocks: [
+        { heading: 'الاستخدام المجاني والتوفر', text: 'يهدف تقدّم إلى البقاء مجانيًا للجميع. لا يزال تطوير الخدمة مستمرًا؛ لذلك قد تتغير المميزات ولا يُضمن استمرار التوفر دون انقطاع.' },
+        { heading: 'المحتوى الخاص بك', text: 'تتحمل مسؤولية النصوص والصور والمواد الأخرى التي تضيفها أو تنشرها. استخدم مواد تملك حق استخدامها، وتجنب إدراج معلومات خاصة بأشخاص آخرين.' },
+        { heading: 'اقتراحات الذكاء الاصطناعي', text: 'قد تكون الاقتراحات غير دقيقة أو غير مناسبة. راجعها وعدّلها قبل الاستخدام؛ فأنت مسؤول عن المحتوى النهائي الذي تنشره.' },
+        { heading: 'الخدمات والمواد التابعة لجهات أخرى', text: 'تعتمد الخدمة على بنية تحتية ومكتبات وخطوط وبعض الصور التوضيحية الخارجية التابعة لجهات أخرى، وتظل خاضعة لشروطها وتراخيصها الخاصة.' },
+        { heading: 'الكود مفتوح المصدر', text: 'الكود الأصلي للمشروع متاح بموجب ترخيص MIT. لا يشمل هذا الترخيص تلقائيًا الصور أو الخطوط أو الاعتماديات التابعة لجهات أخرى.' },
+      ] },
+    },
+    'not-found': {
+      en: { title: 'Page Not Found | Taqdom', description: 'The page you are looking for could not be found. Visit Taqdom home to continue.', eyebrow: '404 · Page not found', heading: 'This page is not here.', lead: 'The address may be incorrect or the page may have moved. Start again from the home page.', blocks: [] },
+      ar: { title: 'الصفحة غير موجودة | تقدّم', description: 'تعذر العثور على الصفحة المطلوبة. انتقل إلى الصفحة الرئيسية لمتابعة استخدام تقدّم.', eyebrow: '404 · الصفحة غير موجودة', heading: 'هذه الصفحة غير متاحة.', lead: 'قد يكون العنوان غير صحيح أو ربما نُقلت الصفحة. يمكنك البدء مجددًا من الصفحة الرئيسية.', blocks: [] },
+    },
+  }
+  return en ? copy[page].en : copy[page].ar
+}
+
 const jobs = [
   ['design', 'التصميم', 'مصمم منتجات رقمية'], ['code', 'البرمجة', 'مطوّر برمجيات'], ['photo', 'التصوير', 'مصوّر فوتوغرافي'],
   ['writing', 'الكتابة', 'كاتب ومحرر'], ['consulting', 'الاستشارات', 'مستشار أعمال'], ['education', 'التعليم', 'مدرّس'],
