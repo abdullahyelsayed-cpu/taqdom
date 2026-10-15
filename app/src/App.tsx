@@ -31,15 +31,20 @@ const sitePageLabels: Record<Exclude<SitePage, 'not-found'>, { en: string; ar: s
 }
 function resolveSiteRoute(pathname: string): { page: SitePage; language: SiteLanguage; known: boolean } {
   const raw = pathname.replace(/\/index\.html$/, '/').replace(/\/+$/, '') || '/'
-  const isArabic = raw === '/ar' || raw.startsWith('/ar/')
-  const unprefixed = (isArabic ? raw.replace(/^\/ar(?=\/|$)/, '') : raw).replace(/\/+$/, '') || '/'
+  const isEnglish = raw === '/en' || raw.startsWith('/en/')
+  const hasLegacyArabicPrefix = raw === '/ar' || raw.startsWith('/ar/')
+  const unprefixed = (isEnglish || hasLegacyArabicPrefix ? raw.replace(/^\/(?:en|ar)(?=\/|$)/, '') : raw).replace(/\/+$/, '') || '/'
   const entry = Object.entries(sitePagePaths).find(([, value]) => (value.replace(/\/+$/, '') || '/') === unprefixed)
-  return { page: entry ? entry[0] as SitePage : (unprefixed === '/' ? 'home' : 'not-found'), language: isArabic ? 'ar' : 'en', known: Boolean(entry) }
+  return {
+    page: entry ? entry[0] as SitePage : (unprefixed === '/' ? 'home' : 'not-found'),
+    language: isEnglish ? 'en' : 'ar',
+    known: Boolean(entry),
+  }
 }
 function localizedSitePath(language: SiteLanguage, page: SitePage): string {
-  if (page === 'not-found') return language === 'ar' ? '/ar/' : '/'
+  if (page === 'not-found') return language === 'ar' ? '/' : '/en/'
   const path = sitePagePaths[page]
-  return language === 'ar' ? (page === 'home' ? '/ar/' : '/ar' + path) : path
+  return language === 'ar' ? path : (page === 'home' ? '/en/' : '/en' + path)
 }
 function getContentPageCopy(page: SitePage, en: boolean): ContentPageCopy {
   const copy: Record<SitePage, { en: ContentPageCopy; ar: ContentPageCopy }> = {
