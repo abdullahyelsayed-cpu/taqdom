@@ -28,13 +28,13 @@ export async function onRequest(context) {
     redirect: 'manual',
   };
   if (request.method !== 'GET' && request.method !== 'HEAD') {
-    init.body = request.body;
+    init.body = await request.arrayBuffer();
   }
 
   try {
     return await api.fetch(new Request(target.toString(), init));
-  } catch {
-    return Response.json({ error: 'api_unavailable' }, {
+  } catch (err) {
+    return Response.json({ error: 'api_unavailable', detail: String(err && err.message || err) }, {
       status: 502,
       headers: { 'cache-control': 'no-store' },
     });
