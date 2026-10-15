@@ -1,5 +1,6 @@
-# Old Arabic-prefixed URLs now redirect to the Arabic canonical routes./ar / 301
-/ar/ /
+# Keep old Arabic-prefixed URLs working while making Arabic the canonical locale.
+/ar / 301
+/ar/ / 301
 /ar/about /about/ 301
 /ar/about/ /about/ 301
 /ar/templates /templates/ 301
