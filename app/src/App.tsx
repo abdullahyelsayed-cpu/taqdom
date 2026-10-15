@@ -31,15 +31,16 @@ const sitePageLabels: Record<Exclude<SitePage, 'not-found'>, { en: string; ar: s
 }
 function resolveSiteRoute(pathname: string): { page: SitePage; language: SiteLanguage; known: boolean } {
   const raw = pathname.replace(/\/index\.html$/, '/').replace(/\/+$/, '') || '/'
-  const isArabic = raw === '/ar' || raw.startsWith('/ar/')
-  const unprefixed = (isArabic ? raw.replace(/^\/ar(?=\/|$)/, '') : raw).replace(/\/+$/, '') || '/'
+  const isEnglish = raw === '/en' || raw.startsWith('/en/')
+  const isArabic = !isEnglish
+  const unprefixed = (isEnglish ? raw.replace(/^\/en(?=\/|$)/, '') : (raw === '/ar' || raw.startsWith('/ar/') ? raw.replace(/^\/ar(?=\/|$)/, '') : raw)).replace(/\/+$/, '') || '/'
   const entry = Object.entries(sitePagePaths).find(([, value]) => (value.replace(/\/+$/, '') || '/') === unprefixed)
-  return { page: entry ? entry[0] as SitePage : (unprefixed === '/' ? 'home' : 'not-found'), language: isArabic ? 'ar' : 'en', known: Boolean(entry) }
+  return { page: entry ? entry[0] as SitePage : (unprefixed === '/' ? 'home' : 'not-found'), language: isEnglish ? 'en' : 'ar', known: Boolean(entry) }
 }
 function localizedSitePath(language: SiteLanguage, page: SitePage): string {
-  if (page === 'not-found') return language === 'ar' ? '/ar/' : '/'
+  if (page === 'not-found') return language === 'ar' ? '/' : '/en/'
   const path = sitePagePaths[page]
-  return language === 'ar' ? (page === 'home' ? '/ar/' : '/ar' + path) : path
+  return language === 'ar' ? path : (page === 'home' ? '/en/' : '/en' + path)
 }
 function getContentPageCopy(page: SitePage, en: boolean): ContentPageCopy {
   const copy: Record<SitePage, { en: ContentPageCopy; ar: ContentPageCopy }> = {
@@ -652,7 +653,7 @@ function LandingPage({language,user,onLanguage,onStart,onLogin,onTemplate}:{lang
     <main>
       <section className="lux-hero" id="home"><SpectralEngine/><div className="aurora-field" aria-hidden="true"><span className="aurora-blob blob-violet"/><span className="aurora-blob blob-blue"/><span className="aurora-blob blob-magenta"/><span className="aurora-grid"/><span className="aurora-star star-a">✳</span><span className="aurora-star star-b">✦</span><span className="aurora-star star-c">+</span></div><div className="lux-hero-copy"><div className="lux-kicker"><span className="kicker-light"/> {en?'AI-POWERED PORTFOLIO STUDIO':'استوديو إنشاء المواقع الشخصية'}</div><h1>{en?<>Your Vision.<br/>Our <em>Technology.</em></>:<>رؤيتك.<br/>بتقنية <em>متقدمة.</em></>}</h1><p>{en?'Create a stunning, professional website or portfolio in minutes — no coding skills needed. Build your personal brand and show the world what you can do.':'أنشئ موقعًا شخصيًا وبورتفوليو احترافيًا في دقائق — دون الحاجة إلى كتابة الشيفرة. ابنِ هويتك الرقمية وأظهر للعالم قدراتك وأعمالك بأفضل صورة.'}</p><div className="lux-hero-actions"><button className="lux-primary" onClick={onStart}>{en?'Start Building Now':'ابدأ إنشاء موقعك'} <span>↗</span></button><a href="#studio" className="lux-secondary"><span className="watch-play" aria-hidden="true">▷</span>{en?'Explore the Studio':'استكشف الاستوديو'} <span>↗</span></a></div><div className="hero-proof-row"><span className="proof-live-dot"/><span>{en?'Arabic + English':'العربية والإنجليزية'}</span><span className="proof-separator">·</span><span>{en?'Desktop + mobile':'الحاسوب والهاتف'}</span><span className="proof-separator">·</span><span>{en?'No code needed':'دون الحاجة إلى كتابة الشيفرة'}</span></div></div>
         <div className="lux-hero-stage" aria-label={en?'Interactive website builder preview':'معاينة استوديو بناء المواقع'}>
-          <div className="hero-crystal-float" aria-hidden="true"><span className="crystal-aura"/><img src="/taqdom-mark.svg" alt="" fetchPriority="high"/><span className="crystal-glint"/></div>
+          <div className="hero-crystal-float" aria-hidden="true"><span className="crystal-aura"/><img src="/taqdom-mark.svg?v=20261015" alt="" fetchPriority="high"/><span className="crystal-glint"/></div>
           <div className="hero-light-orbit" aria-hidden="true"/>
           <div className="aurora-orbit orbit-one"/><div className="aurora-orbit orbit-two"/><div className="aurora-orbit orbit-three"/>
           <div className={`hero-mockup demo-layout-${demoLayout}`} style={{'--demo-accent':demoPalette[0],'--demo-contrast':demoPalette[1]} as CSSProperties}>
