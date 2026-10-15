@@ -284,6 +284,9 @@ export default function App() {
   const [publishModalOpen, setPublishModalOpen] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [inboxOpen, setInboxOpen] = useState(false)
+  const [inboxLoading, setInboxLoading] = useState(false)
+  const [inboxMessages, setInboxMessages] = useState<Array<{ id: string; sender_name: string; sender_email: string; message: string; created_at: string }>>([])
   const en = language === 'en'
   const toggleLanguage = () => {
     const next: SiteLanguage = language === 'en' ? 'ar' : 'en'
@@ -462,6 +465,19 @@ export default function App() {
     } catch (error) { setAccountError(error instanceof Error && error.message === 'portfolio_limit_reached' ? (en ? 'You reached the current project limit.' : 'وصلت للحد الحالي للمشاريع.') : (en ? 'We could not create your site. Please try again.' : 'تعذر إنشاء موقعك. يُرجى المحاولة مجددًا.')) }
     finally { setAccountBusy(false) }
   }
+  const openInbox = async () => {
+    if (!portfolioId) return
+    setInboxOpen(true)
+    setInboxLoading(true)
+    try {
+      const res = await apiRequest<{ messages: Array<{ id: string; sender_name: string; sender_email: string; message: string; created_at: string }> }>(`/api/messages/${portfolioId}`)
+      setInboxMessages(res.messages || [])
+    } catch {
+      setInboxMessages([])
+    } finally {
+      setInboxLoading(false)
+    }
+  }
   const openPortfolio = (item: SavedPortfolio) => {
     const next = normalisePortfolio(item.document, initial)
     setPortfolio(next); setPortfolioId(item.id); history.replaceState({}, '', location.pathname); setView('editor'); setAccountError(''); window.scrollTo(0,0)
@@ -555,7 +571,7 @@ export default function App() {
         <div className="editor-group-label">{en?'03 — Templates':'03 — القوالب'}</div>
         <div className="control-section"><div className="control-heading"><b>{en?'Choose a direction':'اختر نمط الموقع'}</b><span>{templates.length} {en?'starting points':'بداية'}</span></div><input className="search-input" value={search} onChange={e=>{setSearch(e.target.value);setShowAllTemplates(false)}} placeholder={en?'Search profession or style…':'ابحث عن مجال أو تصميم…'}/><div className="category-pills">{['الكل',...jobs.map(j=>j[1])].map(c=><button className={category===c?'active':''} key={c} onClick={()=>{setCategory(c);setShowAllTemplates(false)}}>{c}</button>)}</div><div className="template-list">{filtered.slice(0,showAllTemplates?filtered.length:10).map(t=><button className={t.id===portfolio.templateId?'chosen':''} key={t.id} onClick={()=>update('templateId',t.id)}><span className="template-mini" style={{'--accent':t.accent,'--pale':t.pale} as CSSProperties}><i/></span><span><b>{t.profession}</b><small>{layouts[t.layout]}</small></span>{t.id===portfolio.templateId&&<b className="checkmark">✓</b>}</button>)}</div>{filtered.length>10&&<button className="show-more" onClick={()=>setShowAllTemplates(v=>!v)}>{showAllTemplates?(en?'Show fewer':'عرض أقل'):(en?'Show all '+filtered.length:'اعرض كل الـ '+filtered.length)} {showAllTemplates?'↑':'↓'}</button>}</div>
       </div><div className="sidebar-bottom"><button className="button button-primary button-wide" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish site 🚀':'انشر موقعك 🚀')}</button><button className="button button-light button-wide" onClick={preview}>{en?'Preview my site':'عاين موقعي'} <span>↗</span></button><button className="button button-light button-wide" onClick={exportSite}>{en?'Export HTML':'نزّل نسخة HTML'} <span>↓</span></button><div className="local-note">{user?(saved?(en?'☁ Saved to your account':'☁ محفوظ على حسابك'):(en?'Saving to cloud…':'جارٍ الحفظ سحابيًا…')):(en?'Saved only on this device':'محفوظ على الجهاز فقط')}</div></div></aside>
-      <section className="editor-workspace"><div className="editor-toolbar"><div className="toolbar-start"><button className="mobile-panel-button" onClick={()=>setMobilePanel(true)}>☷ {en?'Edit':'تعديل'}</button><div className="mode-switch"><button className={device==='desktop'?'active':''} onClick={()=>setDevice('desktop')}>▣ <span>{en?'Desktop':'الحاسوب'}</span></button><button className={device==='mobile'?'active':''} onClick={()=>setDevice('mobile')}>▯ <span>{en?'Mobile':'الهاتف'}</span></button></div></div><div className="toolbar-end"><span className="canvas-live-status"><i/> {en?'Live preview':'معاينة مباشرة'}</span><button className="button button-light toolbar-publish" onClick={preview}>{en?'Preview ↗':'معاينة ↗'}</button><button className="button button-primary toolbar-publish" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish 🚀':'انشر موقعك 🚀')}</button></div></div>
+      <section className="editor-workspace"><div className="editor-toolbar"><div className="toolbar-start"><button className="mobile-panel-button" onClick={()=>setMobilePanel(true)}>☷ {en?'Edit':'تعديل'}</button><div className="mode-switch"><button className={device==='desktop'?'active':''} onClick={()=>setDevice('desktop')}>▣ <span>{en?'Desktop':'الحاسوب'}</span></button><button className={device==='mobile'?'active':''} onClick={()=>setDevice('mobile')}>▯ <span>{en?'Mobile':'الهاتف'}</span></button></div></div><div className="toolbar-end"><span className="canvas-live-status"><i/> {en?'Live preview':'معاينة مباشرة'}</span>{portfolioId && <button type="button" className="button button-light toolbar-inbox" onClick={()=>void openInbox()}>📬 {en?'Inbox':'الرسائل'}</button>}<button className="button button-light toolbar-publish" onClick={preview}>{en?'Preview ↗':'معاينة ↗'}</button><button className="button button-primary toolbar-publish" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish 🚀':'انشر موقعك 🚀')}</button></div></div>
         <div className="canvas-area"><div className={'canvas-browser '+(device==='mobile'?'mobile-frame':'')}><div className="canvas-browser-bar"><span className="browser-dots"><i/><i/><i/></span><span className="canvas-address">{(portfolio.name.toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/gi,'-').replace(/^-|-$/g,'')||'my-portfolio')}.taqdom.me</span><span className="canvas-zoom">{device==='desktop'?'100%':'390 px'}</span></div><PortfolioCanvas data={portfolio} template={chosen} language={language}/></div><p className="canvas-hint"><span>✦</span>{user?(en?'Your changes are saved to your account.':'تعديلاتك محفوظة على حسابك.'):(en?'This is a local demo. Create an account to save your project across devices.':'هذه معاينة محلية. أنشئ حسابًا لحفظ موقعك والوصول إليه من أي جهاز.')}</p></div>
       </section>
     </main>
@@ -576,6 +592,37 @@ export default function App() {
           <div className="modal-actions">
             <a href={`/p/${portfolio.slug || portfolioId || ''}`} target="_blank" rel="noopener noreferrer" className="button button-primary">{en?'Visit Public Site ↗':'زيارة موقعك الآن ↗'}</a>
             <button className="button button-light" onClick={()=>setPublishModalOpen(false)}>{en?'Done':'إغلاق'}</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {inboxOpen && (
+      <div className="publish-modal-overlay" onClick={()=>setInboxOpen(false)}>
+        <div className="publish-modal-card" onClick={e=>e.stopPropagation()} style={{ maxWidth:'560px', width:'92%' }}>
+          <button className="close-modal" onClick={()=>setInboxOpen(false)}>×</button>
+          <div className="modal-icon">📬</div>
+          <h3>{en ? 'Visitor Messages' : 'رسائل الزوار المستلمة'}</h3>
+          <p>{en ? 'Messages sent to you from your published portfolio page.' : 'الرسائل التي أرسلها لك الزوار عبر نموذج التواصل في موقعك المنشور.'}</p>
+          {inboxLoading ? (
+            <div style={{ padding:'24px', textAlign:'center', color:'#8b8a99' }}>{en ? 'Loading messages…' : 'جارٍ تحميل الرسائل…'}</div>
+          ) : inboxMessages.length === 0 ? (
+            <div style={{ padding:'24px', textAlign:'center', color:'#8b8a99' }}>{en ? 'No messages received yet.' : 'لا توجد رسائل مستلمة بعد.'}</div>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:'10px', maxHeight:'320px', overflowY:'auto', textAlign: en ? 'left' : 'right', padding:'4px' }}>
+              {inboxMessages.map(msg => (
+                <div key={msg.id} style={{ background:'#191924', border:'1px solid #ffffff14', borderRadius:'10px', padding:'12px 14px' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'6px' }}>
+                    <strong style={{ color:'#fff', fontSize:'13px' }}>{msg.sender_name || (en ? 'Anonymous visitor' : 'زائر')}</strong>
+                    <small style={{ color:'#8b8a99', fontSize:'11px' }}>{msg.created_at}</small>
+                  </div>
+                  {msg.sender_email && <div style={{ fontSize:'12px', color:'#a78bfa', marginBottom:'6px' }}><a href={`mailto:${msg.sender_email}`} style={{ color:'inherit', textDecoration:'none' }}>✉ {msg.sender_email}</a></div>}
+                  <p style={{ margin:0, fontSize:'13px', color:'#e2e0ea', whiteSpace:'pre-wrap', lineHeight:1.5 }}>{msg.message}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="modal-actions" style={{ marginTop:'16px' }}>
+            <button className="button button-light" onClick={()=>setInboxOpen(false)}>{en ? 'Close' : 'إغلاق'}</button>
           </div>
         </div>
       </div>
