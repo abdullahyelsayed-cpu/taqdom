@@ -687,6 +687,58 @@ function LandingPage({language,user,onLanguage,onStart,onLogin,onTemplate}:{lang
   </div>
 }
 
+
+function ContentPage({ page, language, onLanguage }: { page: SitePage; language: SiteLanguage; onLanguage: () => void }) {
+  const en = language === 'en'
+  const copy = getContentPageCopy(page, en)
+  const navPages: Exclude<SitePage, 'not-found'>[] = ['home', 'templates', 'features', 'pricing', 'about', 'faq', 'contact']
+  const homeHref = localizedSitePath(language, 'home')
+  const loginHref = homeHref + '?auth=login&lang=' + language
+  const registerHref = homeHref + '?auth=register&lang=' + language
+  const categories = en
+    ? [['Design & creative', 'Designers, photographers, writers'], ['Technology & IT', 'Developers and technical specialists'], ['Business & finance', 'Consultants and entrepreneurs'], ['Education', 'Teachers and students'], ['Healthcare', 'Health professionals'], ['Architecture & engineering', 'Architects and engineers'], ['Marketing & communication', 'Marketing, content, and media']]
+    : [['التصميم والإبداع', 'المصممون والمصورون والكتّاب'], ['التقنية وتكنولوجيا المعلومات', 'المطورون والمتخصصون التقنيون'], ['الأعمال والتمويل', 'الاستشاريون ورواد الأعمال'], ['التعليم', 'المعلمون والطلاب'], ['الرعاية الصحية', 'المتخصصون في الصحة'], ['العمارة والهندسة', 'المهندسون والمعماريون'], ['التسويق والتواصل', 'التسويق والمحتوى والإعلام']]
+  const isFaq = page === 'faq'
+  return <div className="landing content-page-shell" dir={en ? 'ltr' : 'rtl'}>
+    <header className="site-header content-site-header">
+      <a href={homeHref} className="site-brand"><BrandMark/><span className="brand-word-stack"><b>TAQDOM</b><small>{en ? 'Build Your Digital Future' : 'ابنِ مستقبلك الرقمي'}</small></span></a>
+      <nav className="site-nav-links" aria-label={en ? 'Main navigation' : 'التنقل الرئيسي'}>
+        {navPages.slice(0, 5).map(key => <a key={key} href={localizedSitePath(language, key)} aria-current={page === key ? 'page' : undefined}>{sitePageLabels[key][language]}</a>)}
+      </nav>
+      <div className="site-header-actions">
+        <button className="site-lang" onClick={onLanguage} aria-label={en ? 'Switch language to Arabic' : 'Switch language to English'}>{en ? 'العربية' : 'English'}</button>
+        <a className="site-login" href={loginHref}>{en ? 'Log in' : 'تسجيل الدخول'}</a>
+        <a className="site-cta-small" href={registerHref}>{en ? 'Get Started' : 'ابدأ الآن'} <span>↗</span></a>
+      </div>
+    </header>
+    <main className="content-main">
+      <nav className="content-breadcrumbs" aria-label={en ? 'Breadcrumb' : 'مسار التنقل'}>
+        <a href={homeHref}>{en ? 'Home' : 'الرئيسية'}</a><span aria-hidden="true">/</span><span aria-current="page">{page === 'not-found' ? (en ? 'Not found' : 'غير موجودة') : sitePageLabels[page][language]}</span>
+      </nav>
+      <section className="content-page-hero">
+        <span className="content-kicker"><i/>{copy.eyebrow}</span>
+        <h1>{copy.heading}</h1>
+        <p>{copy.lead}</p>
+        <div className="content-hero-note"><span>✧</span>{en ? 'Free for everyone · English & Arabic' : 'مجاني للجميع · العربية والإنجليزية'}</div>
+      </section>
+      {page === 'templates' && <section className="content-category-grid" aria-label={en ? 'Portfolio categories' : 'مجالات معارض الأعمال'}>
+        {categories.map(([title, description], index) => <article className="content-category-card" key={title}><span className="content-card-index">{String(index + 1).padStart(2, '0')}</span><h2>{title}</h2><p>{description}</p></article>)}
+      </section>}
+      {page === 'pricing' && <section className="free-plan-panel"><div className="free-plan-orbit" aria-hidden="true"/><span className="free-plan-badge">{en ? 'NO PAYMENT REQUIRED' : 'لا يلزم الدفع'}</span><strong>{en ? '0' : '٠'} <small>{en ? 'forever' : 'دائمًا'}</small></strong><p>{en ? 'No paid tiers. No subscription. No payment card.' : 'لا توجد باقات مدفوعة أو اشتراكات أو حاجة إلى بطاقة دفع.'}</p><a className="content-primary-button" href={registerHref}>{en ? 'Create your free account' : 'أنشئ حسابك المجاني'} <span>↗</span></a></section>}
+      {isFaq ? <section className="content-faq-list">{copy.blocks.map((block, index) => <details className="content-faq-item" key={block.heading} open={index === 0}><summary><span>{block.heading}</span><i>＋</i></summary><p>{block.text}</p></details>)}</section>
+        : <section className="content-block-grid">{copy.blocks.map((block, index) => <article className="content-info-card" key={block.heading}><span className="content-card-index">{String(index + 1).padStart(2, '0')}</span><h2>{block.heading}</h2><p>{block.text}</p></article>)}</section>}
+      {page === 'contact' && <section className="content-link-panel"><div><span className="content-kicker"><i/>{en ? 'PROJECT SUPPORT' : 'دعم المشروع'}</span><h2>{en ? 'Open a GitHub issue' : 'افتح بلاغًا على GitHub'}</h2><p>{en ? 'For bugs or feature requests, include the page, browser, and steps to reproduce. Never include secrets or private user data.' : 'للإبلاغ عن الأخطاء أو طلب ميزة، اذكر الصفحة والمتصفح وخطوات إعادة المشكلة. لا ترفق أسرارًا أو بيانات شخصية خاصة.'}</p></div><a href="https://github.com/abdullahyelsayed-cpu/taqdom/issues" target="_blank" rel="noopener noreferrer">{en ? 'Visit GitHub Issues' : 'الانتقال إلى بلاغات GitHub'} ↗</a></section>}
+      <section className="content-cta-panel"><div><span className="content-kicker"><i/>{en ? 'START FOR FREE' : 'ابدأ مجانًا'}</span><h2>{en ? 'Make room for your next idea.' : 'امنح فكرتك مساحة للنمو.'}</h2><p>{en ? 'Create a portfolio, refine the details, and share your work.' : 'أنشئ معرض أعمالك، واضبط تفاصيله، وشارك أعمالك.'}</p></div><a className="content-primary-button" href={registerHref}>{en ? 'Start building' : 'ابدأ الإنشاء'} <span>↗</span></a></section>
+    </main>
+    <footer className="lux-footer content-site-footer">
+      <a href={homeHref} className="site-brand"><BrandMark/><span className="brand-word-stack"><b>TAQDOM</b><small>{en ? 'Build Your Digital Future' : 'ابنِ مستقبلك الرقمي'}</small></span></a>
+      <span>{en ? 'A free space for your work.' : 'مساحة مجانية لأعمالك.'}</span>
+      <nav aria-label={en ? 'Footer navigation' : 'روابط التذييل'}>{navPages.slice(1).map(key => <a key={key} href={localizedSitePath(language, key)}>{sitePageLabels[key][language]}</a>)}<a href={localizedSitePath(language, 'privacy')}>{sitePageLabels.privacy[language]}</a><a href={localizedSitePath(language, 'terms')}>{sitePageLabels.terms[language]}</a></nav>
+      <small>© TAQDOM.ME · {en ? 'Free for everyone' : 'مجاني للجميع'}</small>
+    </footer>
+  </div>
+}
+
 function AuthScreen({mode,language,onLanguage,onBack,onMode,onSuccess}:{mode:AuthMode;language:'ar'|'en';onLanguage:()=>void;onBack:()=>void;onMode:(mode:AuthMode)=>void;onSuccess:(user:User)=>void}) {
   const en=language==='en'
   const [displayName,setDisplayName]=useState('')
