@@ -231,6 +231,8 @@ function sanitizeDocument(input) {
     return str(p, 160);
   }) : [];
   const accent = typeof input.accent === "string" && /^#[0-9a-f]{6}$/i.test(input.accent) ? input.accent : "#b7ff64";
+  const allowedBackgroundStyles = ["signature", "aurora", "glass", "orbit", "calm"];
+  const backgroundStyle = allowedBackgroundStyles.includes(input.backgroundStyle) ? input.backgroundStyle : "signature";
   return {
     name: str(input.name, 120),
     role: str(input.role, 180),
@@ -239,6 +241,7 @@ function sanitizeDocument(input) {
     location: str(input.location, 160),
     accent,
     avatarUrl: str(input.avatarUrl, 1e3),
+    backgroundStyle,
     templateId: str(input.templateId, 100) || "design-0",
     projects,
     visible: {
