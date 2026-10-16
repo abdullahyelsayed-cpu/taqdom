@@ -396,7 +396,8 @@ function normalisePortfolio(value: unknown, fallback: Portfolio): Portfolio {
 }
 
 export default function App() {
-  const query = new URLSearchParams(location.search)
+  const queryString = location.search
+  const query = new URLSearchParams(queryString)
   const siteRoute = resolveSiteRoute(location.pathname)
   const publicRouteId = parsePublicRoute(location.pathname, location.search, location.hostname)
   const [portfolio, setPortfolio] = useState<Portfolio>(readSaved)
@@ -472,39 +473,84 @@ export default function App() {
     document.querySelector('meta[property="og:locale"]')?.setAttribute('content', en ? 'en_US' : 'ar')
     document.querySelector('link[rel="canonical"]')?.setAttribute('href', new URL(localizedSitePath(language, siteRoute.page), location.origin).href)
     document.querySelector('meta[name="robots"]')?.setAttribute('content', siteRoute.page === 'not-found' || query.has('auth') || query.has('preview') || view !== 'home' ? 'noindex, follow' : 'index, follow')
-  }, [language, en, view])
+  }, [language, en, view, siteRoute.page, queryString])
   useEffect(() => {
     let active = true
-    // Public content pages do not need an authentication round trip.
+    // The marketing pages do not need account data, but the home page should
+    // restore an existing session whenever the visitor returns to it.
     if (view !== 'home' || siteRoute.page !== 'home') {
       setAccountLoading(false)
       return () => { active = false }
     }
+    setAccountLoading(true)
     apiRequest<{user:User}>('/api/auth/me').then(async result => {
       if (!active) return
       setUser(result.user)
-      try { const data = await apiRequest<{portfolios:SavedPortfolio[]}>('/api/portfolios'); if (active) setAccountPortfolios(data.portfolios) }
-      catch { if (active) setAccountError(en ? 'Could not load your saved sites.' : 'تعذر تحميل مواقعك المحفوظة.') }
-    }).catch(() => { if (active) setUser(null) }).finally(() => { if (active) setAccountLoading(false) })
+      try {
+        const data = await apiRequest<{portfolios:SavedPortfolio[]}>('/api/portfolios')
+        if (active) setAccountPortfolios(data.portfolios)
+      } catch {
+        if (active) setAccountError(en ? 'Could not load your saved sites.' : 'تعذر تحميل مواقعك المحفوظة.')
+      }
+    }).catch(() => {
+      if (active) setUser(null)
+    }).finally(() => {
+      if (active) setAccountLoading(false)
+    })
     return () => { active = false }
-  }, [])
+  }, [view, siteRoute.page, en])
+
+  const savePortfolioNow = async (snapshot: Portfolio, force = false) => {
+    const generation = ++saveGenerationRef.current
+    try { localStorage.setItem('taqdom.portfolio', JSON.stringify(snapshot)) } catch { /* browser storage may be disabled */ }
+    setSaved(false)
+    saveQueueRef.current = saveQueueRef.current.catch(() => undefined).then(async () => {
+      if (!force && generation !== saveGenerationRef.current) return
+      if (view !== 'editor' || !user || !portfolioId) {
+        if (generation === saveGenerationRef.current) setSaved(true)
+        return
+      }
+      const response = await apiRequest<{ revision: number }>('/api/portfolios/' + portfolioId, {
+        method: 'PUT',
+        body: JSON.stringify({
+          title: snapshot.name || (en ? 'My portfolio' : 'موقعي الشخصي'),
+          templateId: snapshot.templateId,
+          document: snapshot,
+          baseRevision: portfolioRevisionRef.current,
+        }),
+      })
+      const nextRevision = Number(response.revision || (portfolioRevisionRef.current + 1))
+      portfolioRevisionRef.current = nextRevision
+      if (generation === saveGenerationRef.current) {
+        setPortfolioRevision(nextRevision)
+        setSaved(true)
+      }
+    }).catch(error => {
+      if (generation === saveGenerationRef.current) {
+        setSaved(false)
+        setAccountError(error instanceof Error && error.message === 'portfolio_conflict'
+          ? (en ? 'This site changed in another tab. Refresh it before continuing.' : 'الموقع اتغير في تبويب آخر. حدّث الصفحة قبل الاستمرار.')
+          : (en ? 'Cloud save failed. Your latest edit remains on this device.' : 'فشل الحفظ السحابي. آخر تعديل ما زال محفوظًا على الجهاز.'))
+      }
+    })
+    return saveQueueRef.current
+  }
 
   useEffect(() => {
     if (view === 'preview') return
+    if (saveTimerRef.current !== null) window.clearTimeout(saveTimerRef.current)
     setSaved(false)
-    const id = window.setTimeout(async () => {
-      try { localStorage.setItem('taqdom.portfolio', JSON.stringify(portfolio)) } catch { /* browser storage may be disabled */ }
-      if (view === 'editor' && user && portfolioId) {
-        try {
-          await apiRequest('/api/portfolios/' + portfolioId, { method:'PUT', body:JSON.stringify({ title: portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'), templateId:portfolio.templateId, document:portfolio }) })
-          setSaved(true)
-        } catch { setSaved(false); setAccountError(en ? 'Cloud save failed. Your latest edit remains on this device.' : 'فشل الحفظ السحابي. آخر تعديل ما زال محفوظًا على الجهاز.') }
-      } else {
-        setSaved(true)
-      }
+    saveTimerRef.current = window.setTimeout(() => {
+      saveTimerRef.current = null
+      void savePortfolioNow(portfolio)
     }, 450)
-    return () => window.clearTimeout(id)
-  }, [portfolio, view, user, portfolioId])
+    return () => {
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current)
+        saveTimerRef.current = null
+      }
+    }
+  }, [portfolio, view, user, portfolioId, en])
 
   useEffect(() => {
     if (suppressHistoryRef.current) {
