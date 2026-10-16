@@ -42,7 +42,7 @@ await test('proxies tenant homepage to apex without changing browser host', asyn
   }
   const response = await router.fetch(req('https://alice.taqdom.me/'), {})
   assert.equal(response.status, 200)
-  assert.equal(captured.url, 'https://taqdom.me/')
+  assert.equal(captured.url, 'https://taqdom.me/p/alice')
   assert.equal(captured.headers.get('Origin'), 'https://taqdom.me')
   assert.equal(captured.headers.get('X-Taqdom-Tenant'), 'alice')
   assert.equal(response.headers.get('x-taqdom-tenant'), 'alice')
