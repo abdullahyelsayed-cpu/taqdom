@@ -1477,13 +1477,13 @@ function PortfolioCanvas({data,template,language,contactContent}:{data:Portfolio
       <div className="site-copy">
         <small className="site-eyebrow">✳ {en?template.professionEn.toUpperCase():'أهلاً، أنا '+displayName}</small>
         <h1>{displayName}<br/><em>{displayRole}</em></h1>
-        {data.bio.trim()&&<p className="site-hero-summary">{data.bio}</p>}
+        {data.visible.about&&data.bio.trim()&&<p className="site-hero-summary">{data.bio.length>170?data.bio.slice(0,167).trimEnd()+'…':data.bio}</p>}
         {data.visible.contact&&data.email&&<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a>}
       </div>
       <div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location||(en?'Remote':'عن بُعد')}</div></div>
     </section>
     <div className={'site-sections composition-'+template.layout} data-section-container="true">
-      {sectionOrder.map(key=><div className={'site-section-slot slot-'+key} key={key} data-section={key}>{sectionNodes[key]}</div>)}
+      {sectionOrder.filter(key=>sectionAvailable[key]).map(key=><div className={'site-section-slot slot-'+key} key={key} data-section={key}>{sectionNodes[key]}</div>)}
     </div>
     <footer className="site-footer"><span>© {new Date().getFullYear()} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer>
   </article>
