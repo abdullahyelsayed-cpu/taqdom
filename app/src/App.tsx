@@ -1419,15 +1419,15 @@ function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onC
   </div>
 }
 
-function PortfolioCanvas({data,template,language,contactContent}:{data:Portfolio;template:Template;language:'ar'|'en';contactContent?:ReactNode}) {
+function PortfolioCanvas({data,template,language,contactContent,showSampleContent=true}:{data:Portfolio;template:Template;language:'ar'|'en';contactContent?:ReactNode;showSampleContent?:boolean}) {
   const en=language==='en'
   const enteredProjects=data.projects.filter(name=>typeof name==='string' && name.trim().length>0)
-  const projects=enteredProjects.length?enteredProjects:(en?['A calmer way to bank','Learning without limits','A brand built to grow']:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو إبداعي'])
+  const projects=enteredProjects.length?enteredProjects:(showSampleContent?(en?['A calmer way to bank','Learning without limits','A brand built to grow']:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو إبداعي']):[])
   const portraits=[imageUrls[0],imageUrls[2],imageUrls[5]]
   const avatarSrc=data.avatarUrl || portraits[template.layout%3]
   const displayName=data.name || (en?'Your Name':'اسمك الشخصي')
   const displayRole=data.role || (en?template.roleEn:template.role)
-  const displayBio=data.bio || (en?'Good work starts with curiosity. I turn thoughtful ideas into work that makes everyday life a little better.':'أصمم منتجات رقمية بسيطة وقريبة من الناس.')
+  const displayBio=data.bio || (showSampleContent?(en?'Good work starts with curiosity. I turn thoughtful ideas into work that makes everyday life a little better.':'أصمم منتجات رقمية بسيطة وقريبة من الناس.'): '')
   const projectTypes=en
     ? ['Product design · 2026','Brand identity · 2025','Creative direction · 2024']
     : ['تصميم منتجات · 2026','هوية بصرية · 2025','إخراج إبداعي · 2024']
@@ -1445,7 +1445,7 @@ function PortfolioCanvas({data,template,language,contactContent}:{data:Portfolio
     contact:{en:'Contact',ar:'تواصل'}
   }
   const sectionAvailable: Record<PortfolioSectionKey,boolean>={
-    about:Boolean(data.visible.about),
+    about:Boolean(data.visible.about&&(showSampleContent||data.bio.trim()||data.location.trim())),
     skills:Boolean(data.visible.skills&&skills.length),
     experience:Boolean(data.visible.experience&&experience.length),
     projects:Boolean(data.visible.projects&&projects.length),
@@ -1453,7 +1453,7 @@ function PortfolioCanvas({data,template,language,contactContent}:{data:Portfolio
     contact:Boolean(data.visible.contact)
   }
   const sectionNodes: Record<PortfolioSectionKey,ReactNode>={
-    about:data.visible.about?<section className="site-about" id="about"><div className="site-section-title"><div><small>01 / {en?'A LITTLE ABOUT ME':'نبذة عني'}</small><h2>{en?'Thoughtful work starts with a point of view.':'كل عمل مميز يبدأ برؤية.'}</h2></div></div><p className="site-about-copy">{displayBio}</p>{data.location&&<p className="site-about-location">⌖ {data.location}</p>}</section>:null,
+    about:data.visible.about&&(showSampleContent||data.bio.trim()||data.location.trim())?<section className="site-about" id="about"><div className="site-section-title"><div><small>01 / {en?'A LITTLE ABOUT ME':'نبذة عني'}</small><h2>{en?'Thoughtful work starts with a point of view.':'كل عمل مميز يبدأ برؤية.'}</h2></div></div>{displayBio&&<p className="site-about-copy">{displayBio}</p>}{data.location&&<p className="site-about-location">⌖ {data.location}</p>}</section>:null,
     skills:data.visible.skills&&skills.length>0?<section className="site-skills" id="skills"><div className="site-section-title"><div><small>02 / {en?'CAPABILITIES':'المهارات'}</small><h2>{en?'What I bring to the table':'ما أقدمه من مهارات'}</h2></div><span>{skills.length} {en?'specialties':'مهارات'}</span></div><div className="site-skill-tags">{skills.map((skill,index)=><span className="site-skill-pill" key={skill+'-'+index}><i>{String(index+1).padStart(2,'0')}</i>{skill}</span>)}</div></section>:null,
     experience:data.visible.experience&&experience.length>0?<section className="site-experience" id="experience"><div className="site-section-title"><div><small>03 / {en?'THE JOURNEY':'الخبرات'}</small><h2>{en?'Where I’ve made a difference':'محطات من رحلتي المهنية'}</h2></div></div><div className="site-experience-list">{experience.map((entry,index)=><article className="site-experience-entry" key={entry.role+'-'+entry.company+'-'+index}><span className="experience-index">{String(index+1).padStart(2,'0')}</span><div className="experience-main"><h3>{entry.role||(en?'Professional role':'خبرة مهنية')}</h3>{entry.company&&<p className="experience-company">{entry.company}</p>}{entry.description&&<p className="experience-description">{entry.description}</p>}</div>{entry.period&&<span className="experience-period">{entry.period}</span>}</article>)}</div></section>:null,
     projects:data.visible.projects&&projects.length>0?<section className="site-work" id="work"><div className="site-section-title"><div><small>04 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{projects.length} {en?'projects':'مشاريع'}</span></div><div className="site-project-grid">{projects.map((name,index)=>{const detail=data.projectDetails?.[index]||emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,imageUrls[(index+template.layout+1)%imageUrls.length]);const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(index%3)} key={name+'-'+index}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}><img src={image} alt={detail.description||name} loading="lazy"/><span>{projectTypes[index%projectTypes.length]}</span><b>{['✳','◡','✿'][index%3]}</b></div><h3>{name||(en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[index%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>:null,
@@ -1632,7 +1632,7 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
       </header>
 
       <main style={{ flex: 1, padding: '20px 10px' }}>
-        <PortfolioCanvas data={data.document} template={chosenTemplate} language={language} contactContent={data.document.visible.contact ? (<section className={'portfolio-contact-panel layout-'+chosenTemplate.layout+' mood-'+(data.document.backgroundStyle || 'signature')} dir={en?'ltr':'rtl'} style={{'--accent':data.document.accent,'--pale':chosenTemplate.pale} as CSSProperties}>
+        <PortfolioCanvas data={data.document} template={chosenTemplate} language={language} showSampleContent={false} contactContent={data.document.visible.contact ? (<section className={'portfolio-contact-panel layout-'+chosenTemplate.layout+' mood-'+(data.document.backgroundStyle || 'signature')} dir={en?'ltr':'rtl'} style={{'--accent':data.document.accent,'--pale':chosenTemplate.pale} as CSSProperties}>
           <div className="portfolio-contact-head">
             <div>
               <small>{en?'03 / LET’S CONNECT':'03 / لنتواصل'}</small>
