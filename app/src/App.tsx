@@ -722,8 +722,41 @@ export default function App() {
       } catch { /* ignore */ }
     }
   }
+  const flushPendingSave = async () => {
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+    }
+    await savePortfolioNow(portfolio, true)
+  }
+
+  const deleteAccount = async () => {
+    if (!user) return
+    const confirmed = window.confirm(en
+      ? 'Delete your Taqdom account, saved sites, images, and visitor messages permanently? This cannot be undone.'
+      : 'هل تريد حذف حساب تقدّم نهائيًا مع المواقع والصور ورسائل الزوار؟ لا يمكن التراجع عن هذا الإجراء؟')
+    if (!confirmed) return
+    setAccountBusy(true)
+    try {
+      await apiRequest('/api/auth/account', { method:'DELETE', body:'{}' })
+      try { localStorage.removeItem('taqdom.portfolio') } catch {}
+      setUser(null)
+      setAccountPortfolios([])
+      setPortfolioId(null)
+      setPortfolioSlug('')
+      setPortfolioRevision(1)
+      portfolioRevisionRef.current = 1
+      goHome()
+    } catch {
+      setAccountError(en ? 'Could not delete your account. Please try again.' : 'تعذر حذف الحساب. حاول مرة أخرى.')
+    } finally {
+      setAccountBusy(false)
+    }
+  }
+
   const publishSite = async () => {
     if (!user) { openAuth('register'); return }
+    if (portfolioId) await flushPendingSave()
     const requestedSlug = portfolioSlug.trim().toLowerCase()
     if (!isValidPortfolioSubdomain(requestedSlug)) {
       setAccountError(en
@@ -741,19 +774,26 @@ export default function App() {
         })
         savedItem = result.portfolio
         setPortfolioId(savedItem.id)
+        const nextRevision = Number(savedItem.revision || 1)
+        setPortfolioRevision(nextRevision)
+        portfolioRevisionRef.current = nextRevision
         setPortfolio(p => ({ ...p, slug: savedItem.slug }))
       } else {
-        await apiRequest<{ok:boolean;status:'published'}>('/api/portfolios/' + portfolioId, {
+        const result = await apiRequest<{ok:boolean;status:'published';revision:number}>('/api/portfolios/' + portfolioId, {
           method: 'PUT',
           body: JSON.stringify({
             title: portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'),
             templateId: portfolio.templateId,
             slug: requestedSlug,
             status: 'published',
-            document: { ...portfolio, status: 'published' }
+            document: { ...portfolio, status: 'published' },
+            baseRevision: portfolioRevisionRef.current
           })
         })
-        savedItem = { id:portfolioId, title:portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'), slug:requestedSlug, templateId:portfolio.templateId, document:portfolio, status:'published', createdAt:'', updatedAt:new Date().toISOString() }
+        const nextRevision = Number(result.revision || (portfolioRevisionRef.current + 1))
+        setPortfolioRevision(nextRevision)
+        portfolioRevisionRef.current = nextRevision
+        savedItem = { id:portfolioId, title:portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'), slug:requestedSlug, templateId:portfolio.templateId, document:portfolio, status:'published', revision:nextRevision, createdAt:'', updatedAt:new Date().toISOString() }
       }
       setPortfolioSlug(savedItem.slug || requestedSlug)
       setSaved(true)
@@ -765,18 +805,32 @@ export default function App() {
         ? (en ? 'That subdomain is already in use. Choose another one.' : 'اسم النطاق ده مستخدم بالفعل. اختار اسمًا تاني.')
         : code === 'invalid_subdomain'
           ? (en ? 'That subdomain is not allowed. Check the name and try again.' : 'اسم النطاق غير صالح. راجع الاسم وحاول مرة أخرى.')
-          : (en ? 'Could not publish site. Please try again.' : 'تعذر نشر الموقع. يُرجى المحاولة مجددًا.'))
+          : code === 'portfolio_conflict'
+            ? (en ? 'This site changed in another tab. Reload it before publishing again.' : 'الموقع اتغير في تبويب آخر. أعد تحميله قبل النشر مرة أخرى.')
+            : (en ? 'Could not publish site. Please try again.' : 'تعذر نشر الموقع. يُرجى المحاولة مجددًا.'))
     } finally {
       setPublishing(false)
     }
   }
+  const discardMedia = async (url: string | undefined) => {
+    const id = mediaIdFromUrl(url)
+    if (!id || !user) return
+    try { await apiRequest('/api/media/' + id, { method:'DELETE', body:'{}' }) } catch { /* cleanup is best-effort */ }
+  }
+
   const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    e.target.value = ''
     if (!file.type.startsWith('image/')) {
       alert(en ? 'Please select an image file.' : 'يرجى اختيار ملف صورة.')
       return
     }
+    if (file.size > 12 * 1024 * 1024) {
+      alert(en ? 'Choose an image smaller than 12 MB.' : 'اختر صورة أصغر من 12 ميجابايت.')
+      return
+    }
+    const previousUrl = portfolio.avatarUrl
     setAvatarUploading(true)
     try {
       const img = new Image()
@@ -814,9 +868,10 @@ export default function App() {
 
       const res = await apiRequest<{ ok: boolean; id: string; url: string }>('/api/media', {
         method: 'POST',
-        body: JSON.stringify({ mimeType: 'image/jpeg', base64: base64Data })
+        body: JSON.stringify({ mimeType: 'image/jpeg', base64: base64Data, portfolioId: portfolioId || undefined })
       })
       update('avatarUrl', res.url)
+      if (previousUrl && previousUrl !== res.url) void discardMedia(previousUrl)
     } catch (err) {
       console.error('Avatar upload failed', err)
       alert(en ? 'Failed to upload photo. Please try again.' : 'فشل رفع الصورة. يُرجى المحاولة مجددًا.')
@@ -870,11 +925,13 @@ export default function App() {
         reader.onerror = () => reject(new Error('read_failed'))
         reader.readAsDataURL(file)
       })
+      const previousUrl = portfolio.projectDetails[index]?.imageUrl || ''
       const result = await apiRequest<{ok:boolean; id:string; url:string}>('/api/media', {
         method:'POST',
-        body:JSON.stringify({mimeType:'image/jpeg',base64:base64Data})
+        body:JSON.stringify({mimeType:'image/jpeg',base64:base64Data,portfolioId:portfolioId || undefined})
       })
       updateProjectDetail(index, 'imageUrl', result.url)
+      if (previousUrl && previousUrl !== result.url) void discardMedia(previousUrl)
     } catch (error) {
       console.error('Project image upload failed', error)
       alert(en ? 'Could not upload this project image. Please try again.' : 'تعذر رفع صورة المشروع. حاول مرة أخرى.')
