@@ -1,0 +1,256 @@
+import assert from 'node:assert/strict'
+import { webcrypto } from 'node:crypto'
+import worker from '../index.js'
+
+if (!globalThis.crypto) globalThis.crypto = webcrypto
+
+const allowedOrigin = 'https://taqdom.me'
+const sessionCookie = '__Host-taqdom_session=test-session-token'
+const portfolioId = '11111111-1111-4111-8111-111111111111'
+const userRow = {
+  id: 'user-1',
+  email: 'test@example.invalid',
+  display_name: 'Test User',
+  locale: 'en',
+  email_verified: 0,
+  created_at: '2026-01-01 00:00:00'
+}
+
+function createDb(options = {}) {
+  const calls = []
+  const db = {
+    calls,
+    prepare(sql) {
+      const call = { sql, values: [] }
+      calls.push(call)
+      const statement = {
+        bind(...values) {
+          call.values = values
+          return statement
+        },
+        async first() {
+          if (sql.includes('JOIN users')) return options.userRow || null
+          if (sql.includes('SELECT mime_type, data_base64 FROM media')) return options.mediaRow || null
+          if (sql.includes('FROM portfolios WHERE (id=? OR slug=? COLLATE NOCASE)')) return options.publicPortfolio || null
+          if (sql.includes("SELECT id FROM portfolios WHERE id=? AND status='published'")) {
+            return options.publishedTarget ? { id: portfolioId } : null
+          }
+          if (sql.includes('SELECT status FROM portfolios WHERE id=? AND owner_id=?')) {
+            return options.currentPortfolioStatus ? { status: options.currentPortfolioStatus } : null
+          }
+          if (sql.includes('SELECT id FROM portfolios WHERE id=? AND owner_id=?')) {
+            return options.ownerPortfolio ? { id: portfolioId } : null
+          }
+          if (sql.includes('SELECT COUNT(*) AS total FROM portfolios')) return { total: 0 }
+          if (sql.includes('SELECT COUNT(*) AS total FROM auth_attempts')) return { total: 1 }
+          return null
+        },
+        async all() {
+          return { results: options.allResults || [] }
+        },
+        async run() {
+          if (sql.includes('INSERT INTO message_attempts')) {
+            return { meta: { changes: options.quotaChanges ?? 1 } }
+          }
+          if (sql.includes('INSERT INTO messages')) calls.push({kind: 'insert-message'})
+          if (sql.includes('INSERT INTO media')) calls.push({kind: 'insert-media', values: call.values})
+          if (sql.includes('UPDATE portfolios SET title')) calls.push({kind: 'update-portfolio', values: call.values})
+          return { meta: { changes: options.runChanges ?? 1 } }
+        }
+      }
+      return statement
+    }
+  }
+  return db
+}
+
+function makeEnv(db = createDb()) {
+  return {
+    TAQDOM_DB: db,
+    AI: { async run() { return { response: 'Test response' } } },
+    MODEL: '@cf/meta/llama-3.1-8b-instruct-fast',
+    ALLOWED_ORIGINS: 'https://taqdom.me,https://www.taqdom.me,https://taqdom-studio-preview.pages.dev'
+  }
+}
+
+function makeRequest(path, { method = 'GET', body, origin = allowedOrigin, cookie } = {}) {
+  const headers = new Headers()
+  if (origin !== null) headers.set('Origin', origin)
+  if (body !== undefined) headers.set('Content-Type', 'application/json')
+  if (cookie) headers.set('Cookie', cookie)
+  return new Request(new URL(path, 'https://taqdom.me'), {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body)
+  })
+}
+
+async function invoke(path, options = {}, env = makeEnv()) {
+  const response = await worker.fetch(makeRequest(path, options), env)
+  return { response, body: await response.clone().json().catch(() => null), env }
+}
+
+const results = []
+async function test(name, fn) {
+  try {
+    await fn()
+    results.push({ name, passed: true })
+    console.log('PASS ' + name)
+  } catch (error) {
+    results.push({ name, passed: false, error: String(error?.stack || error) })
+    console.error('FAIL ' + name + '\\n' + String(error?.stack || error))
+    process.exitCode = 1
+  }
+}
+
+await test('health endpoint confirms API and D1 binding', async () => {
+  const { response, body } = await invoke('/api/health')
+  assert.equal(response.status, 200)
+  assert.equal(body.ok, true)
+  assert.equal(body.databaseConfigured, true)
+})
+
+await test('unapproved origins are rejected without reflected CORS permission', async () => {
+  const { response } = await invoke('/api/health', { origin: 'https://attacker.pages.dev' })
+  assert.equal(response.status, 403)
+  assert.equal(response.headers.get('access-control-allow-origin'), null)
+})
+
+await test('public portfolio query filters by published status', async () => {
+  const db = createDb()
+  const { response, body } = await invoke('/api/portfolios/public/not-found', {}, makeEnv(db))
+  assert.equal(response.status, 404)
+  const query = db.calls.find(call => call.sql.includes('FROM portfolios WHERE (id=? OR slug=? COLLATE NOCASE)'))
+  assert.ok(query, 'public portfolio query should run')
+  assert.match(query.sql, /status='published'/)
+  assert.equal(body.error, 'not_found')
+})
+
+await test('a published portfolio can be returned by the public route', async () => {
+  const db = createDb({
+    publicPortfolio: {
+      id: portfolioId,
+      title: 'Published Test',
+      template_id: 'design-0',
+      slug: 'published-test',
+      status: 'published',
+      document_json: JSON.stringify({ name: 'Published Test', projects: [] }),
+      updated_at: '2026-01-01 00:00:00'
+    }
+  })
+  const { response, body } = await invoke('/api/portfolios/public/published-test', {}, makeEnv(db))
+  assert.equal(response.status, 200)
+  assert.equal(body.portfolio.status, 'published')
+  assert.equal(body.portfolio.title, 'Published Test')
+})
+
+await test('contact form cannot send to a draft or missing portfolio', async () => {
+  const db = createDb({ publishedTarget: false })
+  const { response, body } = await invoke('/api/messages', {
+    method: 'POST',
+    body: { portfolioId, senderName: 'Visitor', senderEmail: 'visitor@example.invalid', message: 'Hello there' }
+  }, makeEnv(db))
+  assert.equal(response.status, 404)
+  assert.equal(body.error, 'not_found')
+  assert.equal(db.calls.some(call => call.sql?.includes('INSERT INTO messages')), false)
+})
+
+await test('contact form returns 429 when the rate-limit quota is exhausted', async () => {
+  const db = createDb({ publishedTarget: true, quotaChanges: 0 })
+  const { response, body } = await invoke('/api/messages', {
+    method: 'POST',
+    body: { portfolioId, senderName: 'Visitor', senderEmail: 'visitor@example.invalid', message: 'Hello there' }
+  }, makeEnv(db))
+  assert.equal(response.status, 429)
+  assert.equal(body.error, 'message_rate_limit')
+  assert.equal(db.calls.some(call => call.sql?.includes('INSERT INTO messages')), false)
+})
+
+await test('contact form accepts a valid request under the test quota', async () => {
+  const db = createDb({ publishedTarget: true, quotaChanges: 1 })
+  const { response, body } = await invoke('/api/messages', {
+    method: 'POST',
+    body: { portfolioId, senderName: 'Visitor', senderEmail: 'visitor@example.invalid', message: 'Hello there' }
+  }, makeEnv(db))
+  assert.equal(response.status, 201)
+  assert.equal(body.ok, true)
+  assert.equal(db.calls.some(call => call.kind === 'insert-message'), true)
+})
+
+await test('oversized streamed JSON bodies are rejected', async () => {
+  const db = createDb()
+  const { response, body } = await invoke('/api/messages', {
+    method: 'POST',
+    body: { portfolioId, message: 'x'.repeat(9000) }
+  }, makeEnv(db))
+  assert.equal(response.status, 413)
+  assert.equal(body.error, 'request_too_large')
+  assert.equal(db.calls.length, 0)
+})
+
+await test('unauthenticated users cannot read portfolio inbox messages', async () => {
+  const { response, body } = await invoke('/api/messages/' + portfolioId, { origin: allowedOrigin })
+  assert.equal(response.status, 401)
+  assert.equal(body.error, 'not_authenticated')
+})
+
+await test('SVG uploads are rejected for an authenticated user', async () => {
+  const db = createDb({ userRow })
+  const env = makeEnv(db)
+  const { response, body } = await invoke('/api/media', {
+    method: 'POST',
+    cookie: sessionCookie,
+    body: { data: 'data:image/svg+xml;base64,PHN2Zy8+' }
+  }, env)
+  assert.equal(response.status, 400)
+  assert.equal(body.error, 'unsupported_or_invalid_image')
+  assert.equal(db.calls.some(call => call.sql?.includes('INSERT INTO media')), false)
+})
+
+await test('JPEG uploads pass type/signature validation for authenticated users', async () => {
+  const db = createDb({ userRow })
+  const env = makeEnv(db)
+  const bytes = new Uint8Array(16)
+  bytes.set([255, 216, 255], 0)
+  bytes.set([255, 217], bytes.length - 2)
+  const binary = Array.from(bytes, b => String.fromCharCode(b)).join('')
+  const base64 = btoa(binary)
+  const { response, body } = await invoke('/api/media', {
+    method: 'POST',
+    cookie: sessionCookie,
+    body: { data: 'data:image/jpeg;base64,' + base64 }
+  }, env)
+  assert.equal(response.status, 201)
+  assert.equal(body.ok, true)
+  assert.equal(db.calls.some(call => call.kind === 'insert-media'), true)
+})
+
+await test('legacy SVG media cannot be served as a public asset', async () => {
+  const db = createDb({ mediaRow: { mime_type: 'image/svg+xml', data_base64: 'PHN2Zy8+' } })
+  const response = await worker.fetch(makeRequest('/api/media/legacy-svg'), makeEnv(db))
+  assert.equal(response.status, 415)
+  assert.equal(response.headers.get('X-Content-Type-Options'), 'nosniff')
+  assert.match(response.headers.get('Content-Security-Policy') || '', /sandbox/)
+})
+
+await test('autosave preserves published status if status is omitted', async () => {
+  const db = createDb({ userRow, currentPortfolioStatus: 'published' })
+  const env = makeEnv(db)
+  const { response, body } = await invoke('/api/portfolios/' + portfolioId, {
+    method: 'PUT',
+    cookie: sessionCookie,
+    body: {
+      title: 'Updated title',
+      templateId: 'design-0',
+      document: { name: 'Updated title', projects: [] }
+    }
+  }, env)
+  assert.equal(response.status, 200)
+  assert.equal(body.status, 'published')
+  const update = db.calls.find(call => call.kind === 'update-portfolio')
+  assert.ok(update, 'update query should be executed')
+  assert.equal(update.values[2], 'published')
+})
+
+console.log('\\n' + results.filter(result => result.passed).length + '/' + results.length + ' API smoke tests passed.')
+if (results.some(result => !result.passed)) process.exitCode = 1
