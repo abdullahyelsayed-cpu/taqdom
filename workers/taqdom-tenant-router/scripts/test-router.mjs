@@ -78,16 +78,36 @@ await test('rejects multi-level and malformed tenant hosts', async () => {
   assert.equal(deep.status, 404)
   assert.equal(malformed.status, 404)
 })
-await test('does not cache authenticated API responses by tenant', async () => {
-  globalThis.fetch = async upstream => {
-    captured = {url:upstream.url,headers:new Headers(upstream.headers)}
-    return new Response('private', {status:200,headers:{'cache-control':'no-store'}})
-  }
+await test('blocks authenticated API routes on tenant hosts', async () => {
+  let called = false
+  globalThis.fetch = async () => { called = true; return new Response('unexpected') }
   const response = await router.fetch(req('https://alice.taqdom.me/api/auth/me', {
     headers:{Cookie:'__Host-taqdom_session=secret-session','Origin':'https://alice.taqdom.me'}
   }), {})
-  assert.equal(response.headers.get('cache-control'), 'no-store')
-  assert.equal(captured.url, 'https://taqdom.me/api/auth/me')
+  assert.equal(response.status, 404)
+  assert.equal(called, false)
+})
+
+await test('does not forward tenant-host cookies or authorization headers', async () => {
+  globalThis.fetch = async upstream => {
+    captured = {url:upstream.url,headers:new Headers(upstream.headers)}
+    return new Response('sent', {status:201,headers:{'cache-control':'no-store'}})
+  }
+  const response = await router.fetch(req('https://alice.taqdom.me/api/messages', {
+    method:'POST',
+    headers:{
+      Cookie:'__Host-taqdom_session=tenant-session',
+      Authorization:'Bearer tenant-token',
+      Origin:'https://alice.taqdom.me',
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify({portfolioId:'abc',message:'Hello'})
+  }), {})
+  assert.equal(response.status, 201)
+  assert.equal(captured.url, 'https://taqdom.me/api/messages')
+  assert.equal(captured.headers.get('Cookie'), null)
+  assert.equal(captured.headers.get('Authorization'), null)
+  assert.equal(captured.headers.get('Origin'), 'https://taqdom.me')
 })
 globalThis.fetch = originalFetch
 console.log('\\n' + checks.filter(item => item.passed).length + '/' + checks.length + ' tenant router tests passed.')
