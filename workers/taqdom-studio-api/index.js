@@ -281,6 +281,13 @@ function sanitizeDocument(input) {
   const accent = typeof input.accent === "string" && /^#[0-9a-f]{6}$/i.test(input.accent) ? input.accent : "#b7ff64";
   const allowedBackgroundStyles = ["signature", "aurora", "glass", "orbit", "calm"];
   const backgroundStyle = allowedBackgroundStyles.includes(input.backgroundStyle) ? input.backgroundStyle : "signature";
+  const allowedSectionOrder = ["about", "skills", "experience", "projects", "socials", "contact"];
+  const requestedSectionOrder = Array.isArray(input.sectionOrder) ? input.sectionOrder.filter(function(key) {
+    return allowedSectionOrder.includes(key);
+  }) : [];
+  const sectionOrder = [...new Set(requestedSectionOrder)].concat(allowedSectionOrder.filter(function(key) {
+    return !requestedSectionOrder.includes(key);
+  }));
   return {
     name: str(input.name, 120),
     role: str(input.role, 180),
@@ -296,6 +303,7 @@ function sanitizeDocument(input) {
     skills,
     experience,
     socialLinks,
+    sectionOrder,
     visible: {
       about: visible.about !== false,
       skills: visible.skills !== false,
