@@ -1,3 +1,5 @@
+type ExportProjectDetail = { description?: string; url?: string; imageUrl?: string }
+
 type ExportPortfolio = {
   name: string
   role: string
@@ -6,6 +8,7 @@ type ExportPortfolio = {
   location: string
   accent: string
   projects: string[]
+  projectDetails?: ExportProjectDetail[]
   visible: Record<string, boolean>
   avatarUrl?: string
   backgroundStyle?: 'signature' | 'aurora' | 'glass' | 'orbit' | 'calm'
@@ -64,6 +67,18 @@ function safeImageUrl(value: string | undefined): string {
   }
 }
 
+function safeExternalUrl(value: string | undefined): string {
+  const trimmed = String(value || '').trim()
+  if (!trimmed || /^(?:javascript|data|vbscript):/i.test(trimmed)) return ''
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed
+  try {
+    const url = new URL(candidate)
+    return (url.protocol === 'https:' || url.protocol === 'http:') && url.hostname.includes('.') ? url.href : ''
+  } catch {
+    return ''
+  }
+}
+
 /** Export a self-contained, responsive HTML portfolio that reflects the selected visual system and atmosphere. */
 export function downloadPortfolioHtml(
   portfolio: ExportPortfolio,
@@ -84,7 +99,16 @@ export function downloadPortfolioHtml(
     ? portfolio.projects.filter((project) => typeof project === 'string' && project.trim()).slice(0, 24)
     : []
   const projectMarkup = portfolio.visible.projects && projects.length
-    ? `<section id="work" class="section work"><div class="section-heading"><div><p class="kicker">01 / ${en ? 'SELECTED WORK' : 'أعمال مختارة'}</p><h2>${en ? 'A few things I’ve made' : 'أعمال صنعتها بشغف'}</h2></div><span class="section-note">${en ? 'Selected projects' : 'مشاريع مختارة'} ↗</span></div><div class="projects">${projects.map((project, index) => `<article class="project project-${index % 3}"><span class="project-number">${String(index + 1).padStart(2, '0')}</span><div class="project-art" aria-hidden="true"><i></i><b>${['✳', '◈', '✦'][index % 3]}</b></div><div><h3>${escapeHtml(project)}</h3><small>${en ? ['Digital experience','Visual identity','Creative direction'][index % 3] : ['تجربة رقمية','هوية بصرية','توجّه إبداعي'][index % 3]}</small></div></article>`).join('')}</div></section>`
+    ? `<section id="work" class="section work"><div class="section-heading"><div><p class="kicker">01 / ${en ? 'SELECTED WORK' : 'أعمال مختارة'}</p><h2>${en ? 'A few things I’ve made' : 'أعمال صنعتها بشغف'}</h2></div><span class="section-note">${en ? 'Selected projects' : 'مشاريع مختارة'} ↗</span></div><div class="projects">${projects.map((project, index) => {
+      const detail = portfolio.projectDetails?.[index] || {}
+      const cover = safeImageUrl(detail.imageUrl)
+      const href = safeExternalUrl(detail.url)
+      const description = typeof detail.description === 'string' ? detail.description.trim().slice(0, 600) : ''
+      const artwork = cover
+        ? `<div class="project-art has-photo"><img src="${escapeHtml(cover)}" alt="${escapeHtml(description || project)}" loading="lazy"></div>`
+        : `<div class="project-art" aria-hidden="true"><i></i><b>${['✳', '◈', '✦'][index % 3]}</b></div>`
+      return `<article class="project project-${index % 3}"><span class="project-number">${String(index + 1).padStart(2, '0')}</span>${artwork}<div><h3>${escapeHtml(project)}</h3>${description ? `<p class="project-description">${escapeHtml(description)}</p>` : ''}<small>${en ? ['Digital experience','Visual identity','Creative direction'][index % 3] : ['تجربة رقمية','هوية بصرية','توجّه إبداعي'][index % 3]}</small>${href ? `<a class="project-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${en ? 'View project' : 'عرض المشروع'} ↗</a>` : ''}</div></article>`
+    }).join('')}</div></section>`
     : ''
   const aboutMarkup = portfolio.visible.about && portfolio.bio.trim()
     ? `<section id="about" class="section about"><p class="kicker">02 / ${en ? 'ABOUT' : 'نبذة عني'}</p><h2>${en ? 'Thoughtful work starts with a point of view.' : 'كل عمل مميز يبدأ برؤية.'}</h2><p class="bio">${escapeHtml(portfolio.bio)}</p>${portfolio.location.trim() ? `<p class="location">⌖ ${escapeHtml(portfolio.location)}</p>` : ''}</section>`
@@ -140,6 +164,11 @@ h1{font-size:clamp(36px,5.7vw,76px);line-height:1.02;letter-spacing:-.065em;marg
 .project-art i{position:absolute;inset:22% 30%;z-index:1;background:linear-gradient(135deg,var(--accent),var(--glow-b));border-radius:48% 10% 48% 10%;filter:drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 46%,transparent));transform:rotate(-17deg)}
 .project-art b{position:absolute;z-index:2;bottom:5px;left:9px;font-size:22px;color:var(--ink);opacity:.85}
 .project h3{font-size:17px;line-height:1.3;margin:5px 0;color:var(--ink);overflow-wrap:anywhere}
+.project-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.project-art.has-photo:before{z-index:1;background:linear-gradient(0deg,#0006,transparent 75%)}
+.project-art.has-photo:after{display:none}
+.project-description{font-size:12px;line-height:1.8;color:var(--muted);margin:9px 0;white-space:pre-line}
+.project-link{display:inline-flex;align-items:center;gap:7px;margin-top:12px;font-size:11px;color:var(--accent);font-weight:750;text-decoration:none}
 .project small{font-size:9px;color:var(--muted)}
 .project-1 .project-art{border-radius:2px 2px 20px 2px}.project-1 .project-art i{border-radius:50%;transform:rotate(-8deg)}
 .project-2 .project-art{border-radius:var(--radius)}.project-2 .project-art i{border-radius:5px;transform:rotate(35deg)}
