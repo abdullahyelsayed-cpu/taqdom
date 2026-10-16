@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises'
 
 const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8')
 const studioCss = await readFile(new URL('../src/studio.css', import.meta.url), 'utf8')
+const exportSource = await readFile(new URL('../src/lib/portfolio-export.ts', import.meta.url), 'utf8')
+const apiSource = await readFile(new URL('../../workers/taqdom-studio-api/index.js', import.meta.url), 'utf8')
 
 const expected = ['Nexus', 'Forma', 'Pulse', 'Lumen', 'Vertex', 'Mono', 'Eclipse', 'Zenith', 'Vortex']
 const layoutMatch = app.match(/const layouts = \[([^\]]+)\]/)
@@ -31,6 +33,17 @@ for (let index = 0; index < expected.length; index += 1) {
 assert.ok(app.includes('126 Starting Combinations'), 'homepage copy should show the correct combination count')
 assert.ok(!app.includes('five shared layout systems'), 'outdated five-layout copy should be removed')
 assert.ok(app.includes('site-atmosphere atmosphere-'), 'each public portfolio should mount an ambient background layer')
+assert.ok(app.includes('background-mood-options'), 'studio should expose background presets in the editor')
+for (const mood of ['signature', 'aurora', 'glass', 'orbit', 'calm']) {
+  assert.ok(app.includes(`id: '${mood}'`), `${mood} background preset should be available in English and Arabic`)
+  assert.ok(studioCss.includes(`.mood-${mood}`), `${mood} background preset should have visual styling`)
+}
+assert.ok(apiSource.includes('const allowedBackgroundStyles = ["signature", "aurora", "glass", "orbit", "calm"]'), 'API must allowlist persisted background presets')
+assert.ok(apiSource.includes('    backgroundStyle,'), 'API must save the selected background preset')
+assert.ok(exportSource.includes('const themePalettes = ['), 'HTML export must define theme-specific palettes')
+assert.equal((exportSource.match(/page: '#/g) || []).length, 9, 'HTML export must keep all nine template palette definitions')
+assert.ok(exportSource.includes('class="theme-\${layout} mood-\${mood}"'), 'HTML export must preserve selected template and atmosphere')
+assert.ok(exportSource.includes('class="ambient"'), 'HTML export must preserve atmospheric backgrounds')
 assert.ok(studioCss.includes('.site-atmosphere:before'), 'ambient gradient mesh should be available')
 assert.ok(studioCss.includes('backdrop-filter:blur(22px)'), 'glassmorphism surfaces should be available')
 assert.ok(studioCss.includes('@keyframes taqdom-atmosphere-breathe'), 'ambient light should have gentle motion')
