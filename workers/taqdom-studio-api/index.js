@@ -449,15 +449,19 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     await env.TAQDOM_DB.prepare(
       "DELETE FROM media WHERE owner_id=? AND created_at < datetime('now','-1 day') AND NOT EXISTS (SELECT 1 FROM portfolios p WHERE p.owner_id=media.owner_id AND instr(p.document_json, '/api/media/' || media.id) > 0)"
     ).bind(session.row.id).run();
-    const usage = await env.TAQDOM_DB.prepare(
-      "SELECT COUNT(*) AS total, COALESCE(SUM(length(data_base64)),0) AS bytes FROM media WHERE owner_id=?"
-    ).bind(session.row.id).first();
-    if (Number(usage && usage.total || 0) >= 75) return reply({ error: "media_limit_reached", limit: 75 }, 429, corsHeaders);
-    if (Number(usage && usage.bytes || 0) + b64.length > 25e6) return reply({ error: "media_storage_limit_reached", maxBytes: 25e6 }, 429, corsHeaders);
     const id = crypto.randomUUID();
-    await env.TAQDOM_DB.prepare(
-      "INSERT INTO media (id, owner_id, mime_type, data_base64) VALUES (?, ?, ?, ?)"
-    ).bind(id, session.row.id, mimeType, b64).run();
+    // Enforce account quotas in the INSERT statement itself so concurrent uploads cannot
+    // pass a separate check and exceed the configured limits.
+    const stored = await env.TAQDOM_DB.prepare(
+      "INSERT INTO media (id, owner_id, mime_type, data_base64) SELECT ?, ?, ?, ? WHERE (SELECT COUNT(*) FROM media WHERE owner_id=?) < ? AND (SELECT COALESCE(SUM(length(data_base64)),0) FROM media WHERE owner_id=?) + length(?) <= ?"
+    ).bind(id, session.row.id, mimeType, b64, session.row.id, 75, session.row.id, b64, 25e6).run();
+    if (Number(stored && stored.meta && stored.meta.changes || 0) !== 1) {
+      const usage = await env.TAQDOM_DB.prepare(
+        "SELECT COUNT(*) AS total, COALESCE(SUM(length(data_base64)),0) AS bytes FROM media WHERE owner_id=?"
+      ).bind(session.row.id).first();
+      if (Number(usage && usage.total || 0) >= 75) return reply({ error: "media_limit_reached", limit: 75 }, 429, corsHeaders);
+      return reply({ error: "media_storage_limit_reached", maxBytes: 25e6 }, 429, corsHeaders);
+    }
     return reply({ ok: true, id, url: "/api/media/" + id }, 201, corsHeaders);
   }
   if (path === "/api/messages" && method === "POST") {
