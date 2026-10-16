@@ -78,10 +78,14 @@ export async function onRequest(context) {
         const payload = await response.json()
         const portfolio = payload?.portfolio
         const host = context.request.headers.get('host') || new URL(context.request.url).host
+        const tenant = context.request.headers.get('X-Taqdom-Tenant') || ''
+        const tenantHost = tenant && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(tenant) ? tenant + '.taqdom.me' : ''
         const isTenantHost = host.endsWith('.taqdom.me') && host !== 'taqdom.me'
-        const canonical = isTenantHost
-          ? 'https://' + host + '/'
-          : new URL(context.request.url).origin + '/p/' + encodeURIComponent(portfolio?.slug || rawIdentifier)
+        const canonical = tenantHost
+          ? 'https://' + tenantHost + '/'
+          : isTenantHost
+            ? 'https://' + host + '/'
+            : new URL(context.request.url).origin + '/p/' + encodeURIComponent(portfolio?.slug || rawIdentifier)
         html = injectPortfolioSeo(html, portfolio, canonical, new URL(context.request.url).origin)
       } else {
         html = html.replace(/<meta\\s+name="robots"\\s+content="[^"]*"\\s*\\/?>/i, '<meta name="robots" content="noindex, follow">')
