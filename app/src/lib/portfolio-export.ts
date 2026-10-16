@@ -15,6 +15,7 @@ type ExportPortfolio = {
   experience?: ExportExperience[]
   socialLinks?: ExportSocialLink[]
   visible: Record<string, boolean>
+  sectionOrder?: ExportSectionKey[]
   avatarUrl?: string
   backgroundStyle?: 'signature' | 'aurora' | 'glass' | 'orbit' | 'calm'
 }
@@ -27,6 +28,14 @@ type ExportTemplate = {
 }
 
 type PortfolioLocale = 'ar' | 'en'
+type ExportSectionKey = 'about' | 'skills' | 'experience' | 'projects' | 'socials' | 'contact'
+const exportSectionOrder: ExportSectionKey[] = ['about','skills','experience','projects','socials','contact']
+
+function normaliseExportSectionOrder(value: unknown): ExportSectionKey[] {
+  const raw = Array.isArray(value) ? value : []
+  const valid = raw.filter((item): item is ExportSectionKey => typeof item === 'string' && exportSectionOrder.includes(item as ExportSectionKey))
+  return [...new Set(valid), ...exportSectionOrder.filter(key => !valid.includes(key))]
+}
 
 const backgroundStyles = new Set(['signature', 'aurora', 'glass', 'orbit', 'calm'])
 
@@ -97,6 +106,7 @@ export function downloadPortfolioHtml(
   const email = safeEmail(portfolio.email)
   const layout = Number.isInteger(template.layout) && template.layout >= 0 && template.layout < themePalettes.length ? template.layout : 0
   const mood = backgroundStyles.has(portfolio.backgroundStyle || '') ? portfolio.backgroundStyle! : 'signature'
+  const sectionOrder = normaliseExportSectionOrder(portfolio.sectionOrder)
   const role = (en && template.roleEn ? template.roleEn : portfolio.role || template.profession).trim()
   const profession = en && template.professionEn ? template.professionEn : template.profession
   const avatar = safeImageUrl(portfolio.avatarUrl)
@@ -136,6 +146,25 @@ export function downloadPortfolioHtml(
   const heroMedia = avatar
     ? `<div class="hero-media"><div class="portrait-frame"><img src="${escapeHtml(avatar)}" alt="${escapeHtml(title)}" loading="lazy"><span>${en ? 'CREATIVE / 01' : 'إبداع / ٠١'}</span></div></div>`
     : `<div class="hero-media"><div class="visual-object" aria-hidden="true"><i></i><b>✦</b><span>${String(layout + 1).padStart(2, '0')}</span></div></div>`
+  const sectionMarkup: Record<ExportSectionKey,string> = { about:aboutMarkup, skills:skillsMarkup, experience:experienceMarkup, projects:projectMarkup, socials:socialMarkup, contact:contactMarkup }
+  const sectionAvailability: Record<ExportSectionKey,boolean> = {
+    about:Boolean(portfolio.visible.about && portfolio.bio.trim()),
+    skills:Boolean(portfolio.visible.skills && skills.length),
+    experience:Boolean(portfolio.visible.experience && experience.length),
+    projects:Boolean(portfolio.visible.projects && projects.length),
+    socials:Boolean(portfolio.visible.socials && socialLinks.length),
+    contact:Boolean(portfolio.visible.contact)
+  }
+  const sectionNames: Record<ExportSectionKey,{en:string;ar:string;id:string}> = {
+    about:{en:'About',ar:'نبذة',id:'about'},
+    skills:{en:'Skills',ar:'المهارات',id:'skills'},
+    experience:{en:'Experience',ar:'الخبرات',id:'experience'},
+    projects:{en:'Work',ar:'الأعمال',id:'work'},
+    socials:{en:'Social',ar:'روابطي',id:'socials'},
+    contact:{en:'Contact',ar:'تواصل',id:'contact'}
+  }
+  const navMarkup = sectionOrder.filter(key => sectionAvailability[key]).map(key => `<a href="#${sectionNames[key].id}">${en ? sectionNames[key].en : sectionNames[key].ar}</a>`).join('')
+  const orderedSectionsMarkup = sectionOrder.map(key => sectionMarkup[key]).join('')
   const themeRules = themePalettes.map((palette, index) => `
 body.theme-${index}{--page:${palette.page};--ink:${palette.ink};--muted:${palette.muted};--surface:${palette.surface};--line:${palette.line};--hero-bg:${palette.hero};--radius:${palette.radius};--glow-a:${palette.glowA};--glow-b:${palette.glowB};--glow-c:${palette.glowC};background:${palette.body};color:var(--ink)}
 body.theme-${index} .shell{background:linear-gradient(145deg, color-mix(in srgb,var(--page) 88%,white 3%),var(--page));border-color:var(--line);box-shadow:0 28px 100px #0002}
@@ -275,9 +304,9 @@ ${designRules}
 <body class="theme-${layout} mood-${mood}">
 <main class="shell">
 <div class="ambient" aria-hidden="true"><span class="orbit"></span></div>
-<nav><a class="brand" href="#top" style="color:var(--ink);text-decoration:none;font-weight:850;letter-spacing:.12em">TAQDOM<span style="color:var(--accent)">✦</span></a><div class="nav-links">${portfolio.visible.about && portfolio.bio.trim() ? `<a href="#about">${en ? 'About' : 'نبذة'}</a>` : ''}${portfolio.visible.skills && skills.length ? `<a href="#skills">${en ? 'Skills' : 'المهارات'}</a>` : ''}${portfolio.visible.experience && experience.length ? `<a href="#experience">${en ? 'Experience' : 'الخبرات'}</a>` : ''}${portfolio.visible.projects && projects.length ? `<a href="#work">${en ? 'Work' : 'الأعمال'}</a>` : ''}${portfolio.visible.socials && socialLinks.length ? `<a href="#socials">${en ? 'Social' : 'روابطي'}</a>` : ''}${portfolio.visible.contact ? `<a href="#contact">${en ? 'Contact' : 'تواصل'}</a>` : ''}</div><span class="availability">${en ? 'Available for work' : 'متاح للعمل'}</span></nav>
+<nav><a class="brand" href="#top" style="color:var(--ink);text-decoration:none;font-weight:850;letter-spacing:.12em">TAQDOM<span style="color:var(--accent)">✦</span></a><div class="nav-links">${navMarkup}</div><span class="availability">${en ? 'Available for work' : 'متاح للعمل'}</span></nav>
 <header id="top" class="hero"><div class="hero-copy"><p class="kicker">${escapeHtml(profession)} · ${en ? 'PERSONAL PORTFOLIO' : 'موقع شخصي'}</p><h1>${escapeHtml(title)}</h1><p class="role">${escapeHtml(role)}</p>${portfolio.visible.about && portfolio.bio.trim() ? `<p id="about-intro" class="hero-summary">${escapeHtml(portfolio.bio.slice(0, 240))}</p>` : ''}<div class="hero-actions">${email ? `<a class="primary" href="mailto:${escapeHtml(email)}">${en ? 'Let’s work together' : 'لنعمل معًا'} ↗</a>` : ''}${portfolio.visible.projects && projects.length ? `<a href="#work">${en ? 'Explore my work' : 'استكشف أعمالي'} ↓</a>` : ''}</div>${portfolio.location.trim() ? `<p class="location">⌖ ${escapeHtml(portfolio.location)}</p>` : ''}</div>${heroMedia}</header>
-${skillsMarkup}${experienceMarkup}${projectMarkup}${aboutMarkup}${socialMarkup}${contactMarkup}
+${orderedSectionsMarkup}
 <footer><span>© ${new Date().getFullYear()} ${escapeHtml(title)}</span><span>TAQDOM · ${en ? 'Build your digital future.' : 'ابنِ مستقبلك الرقمي.'}</span></footer>
 </main></body></html>`
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
