@@ -14,6 +14,7 @@ function tenantFromHostname(hostname) {
   const label = host.slice(0, -suffix.length)
   if (!label || label.includes('.') || label.length > 63) return null
   if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label)) return null
+  if (RESERVED_SUBDOMAINS.has(label)) return null
   return label
 }
 
