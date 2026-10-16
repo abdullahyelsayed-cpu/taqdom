@@ -1108,6 +1108,9 @@
 
 
 /* Customizable atmosphere presets exposed directly in the visual editor. */
+.portfolio-site.mood-signature .site-atmosphere:before{opacity:.68}
+.portfolio-site.mood-signature .atmosphere-glass{opacity:.62}
+
 .background-style-intro{margin:7px 0 12px;color:#8999be;font-size:10px;line-height:1.8}
 .background-mood-options{display:grid;grid-template-columns:1fr;gap:7px;margin-top:10px}
 .background-mood-option{
