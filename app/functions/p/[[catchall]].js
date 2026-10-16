@@ -29,11 +29,11 @@ function replaceMeta(html, selector, value) {
 }
 
 function replaceTitle(html, title) {
-  return html.replace(/<title>[^<]*<\\/title>/i, '<title>' + escapeHtml(title) + '</title>')
+  return html.replace(/<title>[^<]*<\/title>/i, '<title>' + escapeHtml(title) + '</title>')
 }
 
 function replaceCanonical(html, canonical) {
-  return html.replace(/(<link\\s+rel="canonical"\\s+href=")[^"]*("[^>]*>)/i, '$1' + escapeHtml(canonical) + '$2')
+  return html.replace(/(<link\s+rel="canonical"\s+href=")[^"]*("[^>]*>)/i, '$1' + escapeHtml(canonical) + '$2')
 }
 
 function replaceRobots(html, robots) {
