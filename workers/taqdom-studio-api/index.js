@@ -489,7 +489,10 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     const templateId = (typeof body.templateId === "string" ? body.templateId.slice(0, 100) : document.templateId) || "design-0";
     const requestedSlug = normalizeSubdomain(body.slug);
     if (body.slug !== void 0 && !isValidSubdomain(requestedSlug)) return reply({ error: "invalid_subdomain" }, 400, corsHeaders);
-    const slug = requestedSlug || "site-" + id.slice(0, 6);
+    const emailLocalPart = typeof session.row.email === "string" ? session.row.email.split("@")[0] : "";
+    const emailBase = normalizeSubdomain(toSlug(emailLocalPart).replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-+|-+$/g, "").slice(0, 20));
+    const generatedSlug = (isValidSubdomain(emailBase) ? emailBase : "site") + "-" + id.slice(0, 6);
+    const slug = requestedSlug || generatedSlug;
     const slugTaken = await env.TAQDOM_DB.prepare("SELECT id FROM portfolios WHERE lower(slug)=lower(?)").bind(slug).first();
     if (slugTaken) return reply({ error: "subdomain_taken" }, 409, corsHeaders);
     const status = body.status === "published" ? "published" : "draft";
