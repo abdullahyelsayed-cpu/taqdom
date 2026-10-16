@@ -88,7 +88,7 @@ export async function onRequest(context) {
             : new URL(context.request.url).origin + '/p/' + encodeURIComponent(portfolio?.slug || rawIdentifier)
         html = injectPortfolioSeo(html, portfolio, canonical, new URL(context.request.url).origin)
       } else {
-        html = html.replace(/<meta\\s+name="robots"\\s+content="[^"]*"\\s*\\/?>/i, '<meta name="robots" content="noindex, follow">')
+        html = html.replace(/<meta\s+name="robots"\s+content="[^"]*"\s*\/?>/i, '<meta name="robots" content="noindex, follow">')
       }
     } catch {
       // Keep the SPA fallback usable when the internal API is temporarily unavailable.
