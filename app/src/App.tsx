@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties, FormEvent } from 'react'
+import type { CSSProperties, FormEvent, ReactNode } from 'react'
 import './App.css'
 import './landing.css'
 import './studio.css'
@@ -10,7 +10,8 @@ type Template = { id: string; profession: string; role: string; professionEn: st
 type ProjectDetail = { description: string; url: string; imageUrl: string }
 type ExperienceEntry = { role: string; company: string; period: string; description: string }
 type SocialLink = { label: string; url: string }
-type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; projectDetails: ProjectDetail[]; skills: string[]; experience: ExperienceEntry[]; socialLinks: SocialLink[]; visible: Record<string, boolean>; backgroundStyle: BackgroundStyle; avatarUrl?: string; slug?: string }
+type PortfolioSectionKey = 'about' | 'skills' | 'experience' | 'projects' | 'socials' | 'contact'
+type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; projectDetails: ProjectDetail[]; skills: string[]; experience: ExperienceEntry[]; socialLinks: SocialLink[]; visible: Record<string, boolean>; sectionOrder: PortfolioSectionKey[]; backgroundStyle: BackgroundStyle; avatarUrl?: string; slug?: string }
 type AppView = 'home' | 'editor' | 'preview' | 'auth' | 'dashboard' | 'public'
 type AuthMode = 'register' | 'login'
 type User = { id: string; email: string; displayName: string; locale: 'ar' | 'en'; emailVerified: boolean; createdAt: string }
@@ -49,7 +50,12 @@ function normaliseProjectDetails(value: unknown, count: number): ProjectDetail[]
     }
   })
 }
-const portfolioSectionKeys = ['about','skills','experience','projects','socials','contact'] as const
+const portfolioSectionKeys: PortfolioSectionKey[] = ['about','skills','experience','projects','socials','contact']
+function normaliseSectionOrder(value: unknown): PortfolioSectionKey[] {
+  const raw = Array.isArray(value) ? value : []
+  const valid = raw.filter((item): item is PortfolioSectionKey => typeof item === 'string' && portfolioSectionKeys.includes(item as PortfolioSectionKey))
+  return [...new Set(valid), ...portfolioSectionKeys.filter(key => !valid.includes(key))]
+}
 function normaliseVisibleSections(value: unknown, fallback: Record<string, boolean>): Record<string, boolean> {
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {}
   return Object.fromEntries(portfolioSectionKeys.map(key => [key, typeof raw[key] === 'boolean' ? raw[key] as boolean : Boolean(fallback[key])]))
@@ -307,7 +313,7 @@ const backgroundStyles: { id: BackgroundStyle; en: string; ar: string; noteEn: s
   { id: 'calm', en: 'Calm', ar: 'هادئ وبسيط', noteEn: 'Quieter light and less texture', noteAr: 'إضاءة هادئة وتفاصيل أقل' },
 ]
 const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], professionEn: jobEnglish[j][0], roleEn: jobEnglish[j][1], layout: l, accent: colors[l], pale: stylePales[l] })))
-const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], projectDetails:[], skills:['تصميم تجربة المستخدم','Figma','النماذج الأولية','البحث والتجربة'], experience:[{role:'مصممة منتجات رقمية',company:'استوديو نون',period:'2024 — الآن',description:'تصميم تجارب رقمية واضحة وتطوير واجهات سهلة الاستخدام.'}], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, backgroundStyle:'signature', avatarUrl:'', slug:'' }
+const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], projectDetails:[], skills:['تصميم تجربة المستخدم','Figma','النماذج الأولية','البحث والتجربة'], experience:[{role:'مصممة منتجات رقمية',company:'استوديو نون',period:'2024 — الآن',description:'تصميم تجارب رقمية واضحة وتطوير واجهات سهلة الاستخدام.'}], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, sectionOrder:['about','skills','experience','projects','socials','contact'], backgroundStyle:'signature', avatarUrl:'', slug:'' }
 const imageUrls = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=76',
   'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=720&q=74',
@@ -338,6 +344,7 @@ function readSaved(): Portfolio {
       skills: Array.isArray(saved.skills) ? normaliseSkills(saved.skills) : initial.skills,
       experience: Array.isArray(saved.experience) ? normaliseExperience(saved.experience) : initial.experience,
       socialLinks: Array.isArray(saved.socialLinks) ? normaliseSocialLinks(saved.socialLinks) : initial.socialLinks,
+      sectionOrder: normaliseSectionOrder(saved.sectionOrder),
       visible: normaliseVisibleSections(visible, initial.visible),
       avatarUrl: typeof saved.avatarUrl === 'string' ? saved.avatarUrl.slice(0, 1000) : '',
       slug: typeof saved.slug === 'string' ? saved.slug.slice(0, 80) : '',
@@ -376,6 +383,7 @@ function normalisePortfolio(value: unknown, fallback: Portfolio): Portfolio {
     skills: normaliseSkills(raw.skills),
     experience: normaliseExperience(raw.experience),
     socialLinks: normaliseSocialLinks(raw.socialLinks),
+    sectionOrder: normaliseSectionOrder(raw.sectionOrder),
     visible: normaliseVisibleSections(raw.visible, fallback.visible),
     avatarUrl: typeof raw.avatarUrl === 'string' ? raw.avatarUrl : (fallback.avatarUrl || ''),
     slug: typeof raw.slug === 'string' ? raw.slug : (fallback.slug || ''),
