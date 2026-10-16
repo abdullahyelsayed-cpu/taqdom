@@ -82,7 +82,13 @@ function createDb(options = {}) {
             return { meta: { changes: options.quotaChanges ?? 1 } }
           }
           if (sql.includes('INSERT INTO messages')) calls.push({kind: 'insert-message'})
-          if (sql.includes('INSERT INTO media')) calls.push({kind: 'insert-media', values: call.values})
+          if (sql.includes('INSERT INTO media')) {
+            const usage = options.mediaUsage || { total: 0, bytes: 0 }
+            const imageBase64 = String(call.values[3] || '')
+            if (Number(usage.total || 0) >= 75 || Number(usage.bytes || 0) + imageBase64.length > 25e6) return { meta: { changes: 0 } }
+            calls.push({kind: 'insert-media', values: call.values})
+            return { meta: { changes: options.runChanges ?? 1 } }
+          }
           if (sql.includes('UPDATE portfolios SET title')) calls.push({kind: 'update-portfolio', values: call.values})
           if (sql.includes('INSERT INTO portfolios (id,owner_id,title,template_id,slug,status,document_json)')) calls.push({kind: 'insert-portfolio', values: call.values})
           return { meta: { changes: options.runChanges ?? 1 } }
