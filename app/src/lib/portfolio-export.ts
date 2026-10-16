@@ -17,6 +17,7 @@ type ExportPortfolio = {
   visible: Record<string, boolean>
   sectionOrder?: ExportSectionKey[]
   avatarUrl?: string
+  availableForWork?: boolean
   backgroundStyle?: 'signature' | 'aurora' | 'glass' | 'orbit' | 'calm'
 }
 
@@ -107,8 +108,8 @@ export function downloadPortfolioHtml(
   const layout = Number.isInteger(template.layout) && template.layout >= 0 && template.layout < themePalettes.length ? template.layout : 0
   const mood = backgroundStyles.has(portfolio.backgroundStyle || '') ? portfolio.backgroundStyle! : 'signature'
   const sectionOrder = normaliseExportSectionOrder(portfolio.sectionOrder)
-  const role = (en && template.roleEn ? template.roleEn : portfolio.role || template.profession).trim()
-  const profession = en && template.professionEn ? template.professionEn : template.profession
+  const role = typeof portfolio.role === 'string' ? portfolio.role.trim() : ''
+  const profession = role || (en ? 'PERSONAL PORTFOLIO' : 'معرض أعمال شخصي')
   const avatar = safeImageUrl(portfolio.avatarUrl)
   const projects = Array.isArray(portfolio.projects)
     ? portfolio.projects.filter((project) => typeof project === 'string' && project.trim()).slice(0, 24)
@@ -134,7 +135,7 @@ export function downloadPortfolioHtml(
       const artwork = cover
         ? `<div class="project-art has-photo"><img src="${escapeHtml(cover)}" alt="${escapeHtml(description || project)}" loading="lazy"></div>`
         : `<div class="project-art" aria-hidden="true"><i></i><b>${['✳', '◈', '✦'][index % 3]}</b></div>`
-      return `<article class="project project-${index % 3}"><span class="project-number">${String(index + 1).padStart(2, '0')}</span>${artwork}<div><h3>${escapeHtml(project)}</h3>${description ? `<p class="project-description">${escapeHtml(description)}</p>` : ''}<small>${en ? ['Digital experience','Visual identity','Creative direction'][index % 3] : ['تجربة رقمية','هوية بصرية','توجّه إبداعي'][index % 3]}</small>${href ? `<a class="project-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${en ? 'View project' : 'عرض المشروع'} ↗</a>` : ''}</div></article>`
+      return `<article class="project project-${index % 3}"><span class="project-number">${String(index + 1).padStart(2, '0')}</span>${artwork}<div><h3>${escapeHtml(project)}</h3>${description ? `<p class="project-description">${escapeHtml(description)}</p>` : ''}<small>${en ? 'PROJECT ' + String(index + 1).padStart(2, '0') : 'مشروع ' + String(index + 1).padStart(2, '0')}</small>${href ? `<a class="project-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${en ? 'View project' : 'عرض المشروع'} ↗</a>` : ''}</div></article>`
     }).join('')}</div></section>`
     : ''
   const aboutMarkup = portfolio.visible.about && portfolio.bio.trim()
@@ -164,7 +165,7 @@ export function downloadPortfolioHtml(
     contact:{en:'Contact',ar:'تواصل',id:'contact'}
   }
   const navMarkup = sectionOrder.filter(key => sectionAvailability[key]).map(key => `<a href="#${sectionNames[key].id}">${en ? sectionNames[key].en : sectionNames[key].ar}</a>`).join('')
-  const orderedSectionsMarkup = '<div class="site-sections composition-' + layout + '" data-section-order="' + sectionOrder.join(' ') + '">' + sectionOrder.map(key => '<div class="section-slot slot-' + key + '" data-section="' + key + '">' + sectionMarkup[key] + '</div>').join('') + '</div>'
+  const orderedSectionsMarkup = '<div class="site-sections composition-' + layout + '" data-section-order="' + sectionOrder.filter(key => sectionAvailability[key]).join(' ') + '">' + sectionOrder.filter(key => sectionAvailability[key]).map(key => '<div class="section-slot slot-' + key + '" data-section="' + key + '">' + sectionMarkup[key] + '</div>').join('') + '</div>'
   const themeRules = themePalettes.map((palette, index) => `
 body.theme-${index}{--page:${palette.page};--ink:${palette.ink};--muted:${palette.muted};--surface:${palette.surface};--line:${palette.line};--hero-bg:${palette.hero};--radius:${palette.radius};--glow-a:${palette.glowA};--glow-b:${palette.glowB};--glow-c:${palette.glowC};background:${palette.body};color:var(--ink)}
 body.theme-${index} .shell{background:linear-gradient(145deg, color-mix(in srgb,var(--page) 88%,white 3%),var(--page));border-color:var(--line);box-shadow:0 28px 100px #0002}
@@ -360,8 +361,8 @@ ${compositionRules}
 <body class="theme-${layout} mood-${mood}">
 <main class="shell">
 <div class="ambient" aria-hidden="true"><span class="orbit"></span></div>
-<nav><a class="brand" href="#top" style="color:var(--ink);text-decoration:none;font-weight:850;letter-spacing:.12em">TAQDOM<span style="color:var(--accent)">✦</span></a><div class="nav-links">${navMarkup}</div><span class="availability">${en ? 'Available for work' : 'متاح للعمل'}</span></nav>
-<header id="top" class="hero"><div class="hero-copy"><p class="kicker">${escapeHtml(profession)} · ${en ? 'PERSONAL PORTFOLIO' : 'موقع شخصي'}</p><h1>${escapeHtml(title)}</h1><p class="role">${escapeHtml(role)}</p>${portfolio.visible.about && portfolio.bio.trim() ? `<p id="about-intro" class="hero-summary">${escapeHtml(portfolio.bio.slice(0, 240))}</p>` : ''}<div class="hero-actions">${email ? `<a class="primary" href="mailto:${escapeHtml(email)}">${en ? 'Let’s work together' : 'لنعمل معًا'} ↗</a>` : ''}${portfolio.visible.projects && projects.length ? `<a href="#work">${en ? 'Explore my work' : 'استكشف أعمالي'} ↓</a>` : ''}</div>${portfolio.location.trim() ? `<p class="location">⌖ ${escapeHtml(portfolio.location)}</p>` : ''}</div>${heroMedia}</header>
+<nav><a class="brand" href="#top" style="color:var(--ink);text-decoration:none;font-weight:850;letter-spacing:.12em">TAQDOM<span style="color:var(--accent)">✦</span></a><div class="nav-links">${navMarkup}</div>${portfolio.availableForWork ? `<span class="availability">${en ? 'Available for work' : 'متاح للعمل'}</span>` : ''}</nav>
+<header id="top" class="hero"><div class="hero-copy"><p class="kicker">${escapeHtml(profession)} · ${en ? 'PERSONAL PORTFOLIO' : 'موقع شخصي'}</p><h1>${escapeHtml(title)}</h1>${role ? `<p class="role">${escapeHtml(role)}</p>` : ''}${portfolio.visible.about && portfolio.bio.trim() ? `<p id="about-intro" class="hero-summary">${escapeHtml(portfolio.bio.slice(0, 240))}</p>` : ''}<div class="hero-actions">${email ? `<a class="primary" href="mailto:${escapeHtml(email)}">${en ? 'Let’s work together' : 'لنعمل معًا'} ↗</a>` : ''}${portfolio.visible.projects && projects.length ? `<a href="#work">${en ? 'Explore my work' : 'استكشف أعمالي'} ↓</a>` : ''}</div>${portfolio.location.trim() ? `<p class="location">⌖ ${escapeHtml(portfolio.location)}</p>` : ''}</div>${heroMedia}</header>
 ${orderedSectionsMarkup}
 <footer><span>© ${new Date().getFullYear()} ${escapeHtml(title)}</span><span>TAQDOM · ${en ? 'Build your digital future.' : 'ابنِ مستقبلك الرقمي.'}</span></footer>
 </main></body></html>`
