@@ -5,6 +5,7 @@ const app = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8')
 const studioCss = await readFile(new URL('../src/studio.css', import.meta.url), 'utf8')
 const exportSource = await readFile(new URL('../src/lib/portfolio-export.ts', import.meta.url), 'utf8')
 const apiSource = await readFile(new URL('../../workers/taqdom-studio-api/index.js', import.meta.url), 'utf8')
+const workerSource = apiSource
 
 const expected = ['Nexus', 'Forma', 'Pulse', 'Lumen', 'Vertex', 'Mono', 'Eclipse', 'Zenith', 'Vortex']
 const layoutMatch = app.match(/const layouts = \[([^\]]+)\]/)
@@ -50,6 +51,21 @@ assert.ok(app.includes('const projectUrl=safeExternalUrl(detail.url)'), 'public 
 assert.ok(exportSource.includes('const detail = portfolio.projectDetails?.[index] || {}'), 'HTML export must include project metadata')
 assert.ok(exportSource.includes('const cover = safeImageUrl(detail.imageUrl)'), 'HTML export must retain project cover images')
 assert.ok(exportSource.includes('function safeExternalUrl(value: string | undefined)'), 'HTML export must validate project destinations')
+
+assert.ok(app.includes('type ExperienceEntry ='), 'portfolio model must include work experience')
+assert.ok(app.includes('type SocialLink ='), 'portfolio model must include social profile links')
+assert.ok(app.includes("['skills',en?'Skills':'المهارات']"), 'editor must allow hiding/showing the skills section')
+assert.ok(app.includes('const skills = normaliseSkills(data.skills)'), 'public template must render the skill list')
+assert.ok(app.includes('const experience = normaliseExperience(data.experience)'), 'public template must render work history')
+assert.ok(app.includes('const socialLinks = normaliseSocialLinks(data.socialLinks)'), 'public template must render external social profiles')
+assert.ok(workerSource.includes('const skills = Array.isArray(input.skills)'), 'API must accept a skill list')
+assert.ok(workerSource.includes('const experience = Array.isArray(input.experience)'), 'API must accept work experience')
+assert.ok(workerSource.includes('const socialLinks = Array.isArray(input.socialLinks)'), 'API must accept public profile links')
+assert.ok(workerSource.includes('socials: visible.socials !== false'), 'API must preserve visibility settings for social links')
+assert.ok(exportSource.includes('const skillsMarkup ='), 'standalone export must include the skills section')
+assert.ok(exportSource.includes('const experienceMarkup ='), 'standalone export must include the career timeline')
+assert.ok(exportSource.includes('const socialMarkup ='), 'standalone export must include social profile links')
+
 assert.ok(exportSource.includes('const themePalettes = ['), 'HTML export must define theme-specific palettes')
 assert.equal((exportSource.match(/page: '#/g) || []).length, 9, 'HTML export must keep all nine template palette definitions')
 assert.ok(exportSource.includes('class="theme-${layout} mood-${mood}"'), 'HTML export must preserve selected template and atmosphere')
