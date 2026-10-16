@@ -943,11 +943,55 @@ export default function App() {
     try { await apiRequest('/api/auth/logout', { method:'POST', body:'{}' }) } catch { /* local workspace still remains available */ }
     setUser(null); setAccountPortfolios([]); setPortfolioId(null); setPortfolioSlug(''); goHome()
   }
+  const hasMeaningfulDraft = (draft: Portfolio) => {
+    return draft.name.trim() !== initial.name ||
+      draft.role.trim() !== initial.role ||
+      draft.bio.trim() !== initial.bio ||
+      draft.email.trim() !== initial.email ||
+      draft.location.trim() !== initial.location ||
+      draft.projects.some((item, index) => item.trim() && item !== initial.projects[index]) ||
+      (draft.skills.length > 0 && JSON.stringify(draft.skills) !== JSON.stringify(initial.skills)) ||
+      (draft.experience.length > 0 && JSON.stringify(draft.experience) !== JSON.stringify(initial.experience)) ||
+      draft.socialLinks.length > 0 ||
+      Boolean(draft.avatarUrl) ||
+      draft.backgroundStyle !== initial.backgroundStyle ||
+      draft.accent !== initial.accent
+  }
+
   const handleAuthSuccess = async (nextUser: User) => {
-    setUser(nextUser); setAccountError(''); setView('dashboard'); history.replaceState({}, '', location.pathname)
-    try { const result = await apiRequest<{portfolios:SavedPortfolio[]}>('/api/portfolios'); setAccountPortfolios(result.portfolios) }
-    catch { setAccountError(en ? 'Your account is ready, but your workspace did not load. Refresh to retry.' : 'تم إنشاء حسابك، لكن تعذر تحميل مساحة العمل. حدّث الصفحة للمحاولة مجددًا.') }
-    window.scrollTo(0,0)
+    setUser(nextUser)
+    setAccountError('')
+    try {
+      const data = await apiRequest<{portfolios:SavedPortfolio[]}>('/api/portfolios')
+      setAccountPortfolios(data.portfolios)
+      if (authReturnViewRef.current === 'editor' && !portfolioId && hasMeaningfulDraft(portfolio)) {
+        const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', {
+          method:'POST',
+          body:JSON.stringify({
+            title: portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'),
+            templateId: portfolio.templateId,
+            document: portfolio,
+          })
+        })
+        const item = result.portfolio
+        setPortfolioId(item.id)
+        setPortfolioSlug(item.slug || '')
+        const nextRevision = Number(item.revision || 1)
+        setPortfolioRevision(nextRevision)
+        portfolioRevisionRef.current = nextRevision
+        setAccountPortfolios(items => [item, ...items])
+        history.replaceState({}, '', location.pathname)
+        setView('editor')
+        void window.scrollTo(0, 0)
+        return
+      }
+      history.replaceState({}, '', location.pathname)
+      setView('dashboard')
+    } catch {
+      setAccountError(en ? 'Your account is ready, but your workspace did not load. Refresh to retry.' : 'تم إنشاء حسابك، لكن تعذر تحميل مساحة العمل. حدّث الصفحة للمحاولة مجددًا.')
+      setView('dashboard')
+    }
+    void window.scrollTo(0, 0)
   }
   const createPortfolio = async () => {
     if (!user) { openAuth('register'); return }
