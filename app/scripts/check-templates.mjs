@@ -75,7 +75,7 @@ assert.ok(studioCss.includes('backdrop-filter:blur(22px)'), 'glassmorphism surfa
 assert.ok(studioCss.includes('@keyframes taqdom-atmosphere-breathe'), 'ambient light should have gentle motion')
 assert.ok(studioCss.includes('@media(prefers-reduced-motion:reduce)'), 'ambient motion must respect reduced-motion preference')
 
-assert.ok(app.includes("data.document.visible.contact && <section className={'portfolio-contact-panel layout-'"), 'public contact form must respect the section visibility switch')
+assert.ok(app.includes("contactContent={data.document.visible.contact ? ("), 'public contact form must respect the section visibility switch and remain part of the ordered contact section')
 assert.ok(app.includes('contact-visually-hidden'), 'public contact fields should have accessible labels')
 assert.ok(studioCss.includes('.portfolio-contact-panel.layout-0') && studioCss.includes('.portfolio-contact-panel.layout-8'), 'public contact form must support both cool and warm dark themes')
 assert.ok(studioCss.includes('.portfolio-contact-panel.layout-1') && studioCss.includes('.portfolio-contact-panel.layout-7'), 'public contact form must support light themes')
