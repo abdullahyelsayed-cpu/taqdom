@@ -1373,3 +1373,134 @@
   .portfolio-contact-submit{width:100%;justify-self:stretch}
 }
 @media(prefers-reduced-motion:reduce){.portfolio-contact-panel *{transition:none!important}}
+
+
+/* Undo/redo controls and an accessible drag-and-drop section organizer. */
+.history-actions{display:flex;align-items:center;gap:5px;padding-inline:7px;border-inline:1px solid #283652}
+.history-action{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:29px;padding:4px 8px;border:1px solid #344665;border-radius:7px;background:#101b31;color:#d5e2ff;font:inherit;font-size:10px;cursor:pointer;transition:background .16s,border-color .16s,color .16s}
+.history-action>span{font-size:18px;line-height:1;font-weight:750}
+.history-action:hover:not(:disabled){border-color:#58d7ff;background:#152943;color:#fff}
+.history-action:disabled{opacity:.36;cursor:not-allowed}
+.section-order-editor{padding-bottom:13px}
+.section-order-list{display:grid;gap:7px;margin-top:11px}
+.section-order-item{display:grid;grid-template-columns:27px 24px minmax(0,1fr) auto;align-items:center;gap:8px;min-width:0;padding:8px;border:1px solid #2a3b5e;border-radius:9px;background:linear-gradient(115deg,#0e1a30,#0b1428);transition:border-color .18s,background .18s,opacity .18s,transform .18s}
+.section-order-item:hover{border-color:#536f9e;background:linear-gradient(115deg,#132342,#0b162b)}
+.section-order-item.is-dragging{opacity:.45;border-color:#73dfff;border-style:dashed;transform:scale(.985)}
+.section-order-item[draggable="true"]{cursor:grab}
+.section-order-item[draggable="true"]:active{cursor:grabbing}
+.section-drag-handle{display:grid;place-items:center;width:26px;height:32px;border:1px solid #304769;border-radius:6px;background:#0b1427;color:#7189b5;font-size:18px;cursor:grab}
+.section-order-index{display:grid;place-items:center;width:23px;height:23px;border-radius:6px;background:#172743;color:#8edfff;font-size:9px;font-weight:850}
+.section-order-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.section-order-copy strong{color:#e3edff;font-size:10px;line-height:1.45;overflow-wrap:anywhere}
+.section-order-copy small{font-size:8px;color:#8397bf;line-height:1.4}
+.section-order-arrows{display:flex;align-items:center;gap:4px}
+.section-order-arrows button{display:grid;place-items:center;width:25px;height:25px;border:1px solid #314666;border-radius:6px;background:#101d34;color:#c0d4f8;font-size:13px;cursor:pointer}
+.section-order-arrows button:hover:not(:disabled){border-color:#62d9ff;color:#fff;background:#162a47}
+.section-order-arrows button:disabled{opacity:.3;cursor:not-allowed}
+.section-order-item:focus-within{outline:2px solid #5acfff;outline-offset:2px}
+@media(max-width:740px){
+ .history-actions{gap:3px;padding-inline:4px}
+ .history-action{padding:4px 6px}
+ .history-action small{font-size:9px}
+ .section-order-item{grid-template-columns:25px 22px minmax(0,1fr) auto;padding:7px;gap:6px}
+ .section-order-arrows{gap:3px}
+}
+
+/* Composition systems: each design now changes the page's section geometry and rhythm, not only its palette. */
+.portfolio-site .site-sections{display:grid;grid-template-columns:minmax(0,1fr);gap:0;align-items:start;min-width:0}
+.portfolio-site .site-section-slot{min-width:0;max-width:100%;grid-column:1/-1}
+.portfolio-site .site-about,.portfolio-site .site-skills,.portfolio-site .site-experience,.portfolio-site .site-work,.portfolio-site .site-social-links,.portfolio-site .site-contact{min-width:0;max-width:100%}
+.portfolio-site .site-about{padding:clamp(26px,4.3vw,58px) clamp(20px,5vw,65px);border-top:1px solid color-mix(in srgb,var(--accent) 26%,transparent);background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 5%,transparent),transparent 70%)}
+.portfolio-site .site-about .site-section-title{margin-bottom:12px}
+.portfolio-site .site-about-copy{max-width:900px;margin:15px 0 0;font-size:clamp(16px,2vw,22px);line-height:1.95;color:color-mix(in srgb,currentColor 75%,transparent);white-space:pre-line;overflow-wrap:anywhere}
+.portfolio-site .site-about-location{margin:18px 0 0;font-size:11px;color:var(--accent)}
+.portfolio-site .site-hero-summary{max-width:540px;margin:17px 0 0;font-size:clamp(13px,1.45vw,16px);line-height:1.9;color:color-mix(in srgb,currentColor 70%,transparent);white-space:pre-line}
+.portfolio-site .site-section-title{min-width:0}
+.portfolio-site .site-section-title h2{overflow-wrap:anywhere;text-wrap:balance}
+
+/* Nexus: wide briefing followed by paired capability/timeline cards. */
+.portfolio-site.layout-0 .site-sections.composition-0{grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.portfolio-site.layout-0 .site-sections.composition-0 .slot-about,.portfolio-site.layout-0 .site-sections.composition-0 .slot-projects{grid-column:1/-1}
+.portfolio-site.layout-0 .site-sections.composition-0 .slot-skills{grid-column:span 5}
+.portfolio-site.layout-0 .site-sections.composition-0 .slot-experience{grid-column:span 7}
+.portfolio-site.layout-0 .site-sections.composition-0 .slot-socials{grid-column:span 5}
+.portfolio-site.layout-0 .site-sections.composition-0 .slot-contact{grid-column:span 7}
+.portfolio-site.layout-0 .site-sections.composition-0 .site-about,.portfolio-site.layout-0 .site-sections.composition-0 .site-skills,.portfolio-site.layout-0 .site-sections.composition-0 .site-experience,.portfolio-site.layout-0 .site-sections.composition-0 .site-social-links{border:1px solid #244e78;border-radius:10px;background:linear-gradient(135deg,#0b2039bb,#071326db);box-shadow:inset 0 1px #ffffff0d,0 14px 30px #0002}
+.portfolio-site.layout-0 .site-sections.composition-0 .site-work{border-block:1px solid #2d6390;background:linear-gradient(135deg,#071b30,#061020)}
+/* Atelier: a restrained editorial grid with a narrow capability rail. */
+.portfolio-site.layout-1 .site-sections.composition-1{grid-template-columns:repeat(12,minmax(0,1fr));gap:0}
+.portfolio-site.layout-1 .site-sections.composition-1 .slot-about,.portfolio-site.layout-1 .site-sections.composition-1 .slot-projects,.portfolio-site.layout-1 .site-sections.composition-1 .slot-experience{grid-column:1/-1}
+.portfolio-site.layout-1 .site-sections.composition-1 .slot-skills{grid-column:span 5}
+.portfolio-site.layout-1 .site-sections.composition-1 .slot-socials{grid-column:span 7}
+.portfolio-site.layout-1 .site-sections.composition-1 .slot-contact{grid-column:1/-1}
+.portfolio-site.layout-1 .site-sections.composition-1 .site-about{padding-inline:8%;font-family:Georgia,serif}
+.portfolio-site.layout-1 .site-sections.composition-1 .site-skills,.portfolio-site.layout-1 .site-sections.composition-1 .site-social-links{margin:9px;padding:20px;border:1px solid #d7ddcc;background:#faf9f0;border-radius:4px;color:#314433}
+.portfolio-site.layout-1 .site-sections.composition-1 .site-experience{border-inline-start:3px solid #8ca17f;margin-inline-start:4%;padding-inline-start:clamp(18px,4vw,48px)}
+/* Pulse: brutalist panels, offset blocks and strong horizontal rules. */
+.portfolio-site.layout-2 .site-sections.composition-2{display:flex;flex-direction:column;gap:0}
+.portfolio-site.layout-2 .site-sections.composition-2 .site-about,.portfolio-site.layout-2 .site-sections.composition-2 .site-skills,.portfolio-site.layout-2 .site-sections.composition-2 .site-experience,.portfolio-site.layout-2 .site-sections.composition-2 .site-social-links{border:1px solid #f0449c55;border-radius:0;background:#220b29;margin:0 0 10px;box-shadow:8px 8px 0 #f0449c12}
+.portfolio-site.layout-2 .site-sections.composition-2 .site-about{border-inline-start:5px solid #ff4b9b}
+.portfolio-site.layout-2 .site-sections.composition-2 .site-work{border-block:3px solid #f0449c;padding-inline:clamp(14px,4vw,45px)}
+.portfolio-site.layout-2 .site-sections.composition-2 .site-social-links{grid-template-columns:1fr 1.5fr}
+.portfolio-site.layout-2 .site-sections.composition-2 .site-contact{border-radius:0;margin:10px 0;background:#ff3b8b;color:#1e071c}
+/* Meadow: rounded, nested cards and generous breathing room. */
+.portfolio-site.layout-3 .site-sections.composition-3{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.portfolio-site.layout-3 .site-sections.composition-3 .slot-about,.portfolio-site.layout-3 .site-sections.composition-3 .slot-projects,.portfolio-site.layout-3 .site-sections.composition-3 .slot-experience{grid-column:1/-1}
+.portfolio-site.layout-3 .site-sections.composition-3 .slot-skills,.portfolio-site.layout-3 .site-sections.composition-3 .slot-socials,.portfolio-site.layout-3 .site-sections.composition-3 .slot-contact{grid-column:span 1}
+.portfolio-site.layout-3 .site-sections.composition-3 .site-about,.portfolio-site.layout-3 .site-sections.composition-3 .site-skills,.portfolio-site.layout-3 .site-sections.composition-3 .site-experience,.portfolio-site.layout-3 .site-sections.composition-3 .site-social-links{border:1px solid #b7dece;border-radius:22px;background:linear-gradient(140deg,#f3fbf4,#dff2e9);box-shadow:0 14px 30px #286b4a0c;color:#1b473e}
+.portfolio-site.layout-3 .site-sections.composition-3 .site-contact{margin:0;background:#d8eee5;color:#1a473f;border-radius:22px}
+/* Flux: dense technical columns and inset data-like panels. */
+.portfolio-site.layout-4 .site-sections.composition-4{grid-template-columns:repeat(12,minmax(0,1fr));gap:10px}
+.portfolio-site.layout-4 .site-sections.composition-4 .slot-about,.portfolio-site.layout-4 .site-sections.composition-4 .slot-projects{grid-column:1/-1}
+.portfolio-site.layout-4 .site-sections.composition-4 .slot-skills{grid-column:span 4}
+.portfolio-site.layout-4 .site-sections.composition-4 .slot-experience{grid-column:span 8}
+.portfolio-site.layout-4 .site-sections.composition-4 .slot-socials{grid-column:span 4}
+.portfolio-site.layout-4 .site-sections.composition-4 .slot-contact{grid-column:span 8}
+.portfolio-site.layout-4 .site-sections.composition-4 .site-about,.portfolio-site.layout-4 .site-sections.composition-4 .site-skills,.portfolio-site.layout-4 .site-sections.composition-4 .site-experience,.portfolio-site.layout-4 .site-sections.composition-4 .site-social-links{border:1px solid #2a6fd0;border-radius:6px;background:linear-gradient(145deg,#091f3b,#06162c);box-shadow:inset 0 0 0 1px #2c76c01a}
+.portfolio-site.layout-4 .site-sections.composition-4 .site-work{background:linear-gradient(180deg,#06162d,#08213a);border-block:1px solid #2675e8}
+/* Mono: deliberately spare, typography-led and almost entirely border based. */
+.portfolio-site.layout-5 .site-sections.composition-5{display:flex;flex-direction:column;gap:0}
+.portfolio-site.layout-5 .site-sections.composition-5 .site-about,.portfolio-site.layout-5 .site-sections.composition-5 .site-skills,.portfolio-site.layout-5 .site-sections.composition-5 .site-experience,.portfolio-site.layout-5 .site-sections.composition-5 .site-social-links{border-top:1px solid #c5cbd0;border-radius:0;background:transparent;padding-inline:clamp(20px,7vw,86px);color:#171d23}
+.portfolio-site.layout-5 .site-sections.composition-5 .site-work{border-top:2px solid #1b2329}
+.portfolio-site.layout-5 .site-sections.composition-5 .site-contact{border-radius:0;margin:0;border-block:2px solid #151a20;background:#fff;color:#141a20;box-shadow:none}
+.portfolio-site.layout-5 .site-sections.composition-5 .site-skill-pill,.portfolio-site.layout-5 .site-sections.composition-5 .site-experience-entry,.portfolio-site.layout-5 .site-sections.composition-5 .site-social-link{border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none}
+/* Halo: centered rhythm with rounded focal cards and generous spacing. */
+.portfolio-site.layout-6 .site-sections.composition-6{display:flex;flex-direction:column;gap:15px}
+.portfolio-site.layout-6 .site-sections.composition-6 .site-about,.portfolio-site.layout-6 .site-sections.composition-6 .site-skills,.portfolio-site.layout-6 .site-sections.composition-6 .site-social-links{border:1px solid #8e6be04d;border-radius:22px;text-align:center;background:radial-gradient(ellipse at 50% 0%,#8b5cff20,transparent 68%),#10091eea}
+.portfolio-site.layout-6 .site-sections.composition-6 .site-section-title{justify-content:center;text-align:center}
+.portfolio-site.layout-6 .site-sections.composition-6 .site-skill-tags{justify-content:center}
+.portfolio-site.layout-6 .site-sections.composition-6 .site-social-links{grid-template-columns:1fr}
+.portfolio-site.layout-6 .site-sections.composition-6 .site-social-list{justify-content:center}
+.portfolio-site.layout-6 .site-sections.composition-6 .site-experience-entry{border-radius:18px;background:#130b26c9}
+.portfolio-site.layout-6 .site-sections.composition-6 .site-work{border-block:1px solid #7952bf}
+/* Bloom: card mosaic with soft pastel surfaces. */
+.portfolio-site.layout-7 .site-sections.composition-7{grid-template-columns:repeat(12,minmax(0,1fr));gap:11px}
+.portfolio-site.layout-7 .site-sections.composition-7 .slot-about,.portfolio-site.layout-7 .site-sections.composition-7 .slot-experience,.portfolio-site.layout-7 .site-sections.composition-7 .slot-projects{grid-column:1/-1}
+.portfolio-site.layout-7 .site-sections.composition-7 .slot-skills{grid-column:span 7}
+.portfolio-site.layout-7 .site-sections.composition-7 .slot-socials{grid-column:span 5}
+.portfolio-site.layout-7 .site-sections.composition-7 .slot-contact{grid-column:1/-1}
+.portfolio-site.layout-7 .site-sections.composition-7 .site-about,.portfolio-site.layout-7 .site-sections.composition-7 .site-skills,.portfolio-site.layout-7 .site-sections.composition-7 .site-experience,.portfolio-site.layout-7 .site-sections.composition-7 .site-social-links{border:1px solid #d7d2ff;border-radius:23px;background:linear-gradient(145deg,#fcfaff,#e9e9ff);box-shadow:0 12px 30px #918bdb13;color:#25234f}
+.portfolio-site.layout-7 .site-sections.composition-7 .site-work{background:linear-gradient(135deg,#f3f0ff,#fff2fa);border-radius:24px;border:1px solid #ded6ff}
+/* Ember: asymmetric editorial split with warm copper details. */
+.portfolio-site.layout-8 .site-sections.composition-8{grid-template-columns:repeat(12,minmax(0,1fr));gap:9px}
+.portfolio-site.layout-8 .site-sections.composition-8 .slot-about{grid-column:span 8}
+.portfolio-site.layout-8 .site-sections.composition-8 .slot-skills{grid-column:span 4}
+.portfolio-site.layout-8 .site-sections.composition-8 .slot-experience,.portfolio-site.layout-8 .site-sections.composition-8 .slot-projects{grid-column:1/-1}
+.portfolio-site.layout-8 .site-sections.composition-8 .slot-socials{grid-column:span 4}
+.portfolio-site.layout-8 .site-sections.composition-8 .slot-contact{grid-column:span 8}
+.portfolio-site.layout-8 .site-sections.composition-8 .site-about,.portfolio-site.layout-8 .site-sections.composition-8 .site-skills,.portfolio-site.layout-8 .site-sections.composition-8 .site-experience,.portfolio-site.layout-8 .site-sections.composition-8 .site-social-links{border:1px solid #ff8d3d58;border-radius:10px;background:linear-gradient(145deg,#1d110bd9,#110d0b);color:#fff0e4}
+.portfolio-site.layout-8 .site-sections.composition-8 .site-contact{margin:0;background:linear-gradient(110deg,#241206,#351807);border-color:#ff8b355e;color:#fff0e4}
+@media(max-width:740px){
+ .portfolio-site .site-sections.composition-0,.portfolio-site .site-sections.composition-1,.portfolio-site .site-sections.composition-3,.portfolio-site .site-sections.composition-4,.portfolio-site .site-sections.composition-7,.portfolio-site .site-sections.composition-8{grid-template-columns:minmax(0,1fr);gap:0}
+ .portfolio-site .site-sections .site-section-slot{grid-column:1/-1!important}
+ .portfolio-site.layout-3 .site-sections.composition-3,.portfolio-site.layout-0 .site-sections.composition-0,.portfolio-site.layout-4 .site-sections.composition-4,.portfolio-site.layout-7 .site-sections.composition-7{gap:9px}
+ .portfolio-site .site-nav{gap:9px}
+ .portfolio-site .site-nav-links{overflow-x:auto;flex-wrap:nowrap;justify-content:flex-start;max-width:65%;scrollbar-width:thin}
+ .portfolio-site .site-nav-links a{font-size:8px}
+ .portfolio-site .site-about{padding-inline:17px}
+ .portfolio-site .site-about-copy{font-size:15px}
+ .portfolio-site.layout-2 .site-sections.composition-2 .site-social-links{grid-template-columns:1fr}
+ .portfolio-site.layout-5 .site-sections.composition-5 .site-about,.portfolio-site.layout-5 .site-sections.composition-5 .site-skills,.portfolio-site.layout-5 .site-sections.composition-5 .site-experience,.portfolio-site.layout-5 .site-sections.composition-5 .site-social-links{padding-inline:18px}
+ .portfolio-site.layout-8 .site-sections.composition-8 .site-about,.portfolio-site.layout-8 .site-sections.composition-8 .site-skills,.portfolio-site.layout-8 .site-sections.composition-8 .site-experience,.portfolio-site.layout-8 .site-sections.composition-8 .site-social-links{border-radius:8px}
+}
+@media(prefers-reduced-motion:reduce){.history-action,.section-order-item,.section-order-arrows button{transition:none!important}}
