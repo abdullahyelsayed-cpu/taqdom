@@ -1316,25 +1316,69 @@ function PortfolioCanvas({data,template,language}:{data:Portfolio;template:Templ
   const enteredProjects=data.projects.filter(name=>typeof name==='string' && name.trim().length>0)
   const projects=enteredProjects.length?enteredProjects:(en?['A calmer way to bank','Learning without limits','A brand built to grow']:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو إبداعي'])
   const portraits=[imageUrls[0],imageUrls[2],imageUrls[5]]
-  const avatarSrc = data.avatarUrl || portraits[template.layout%3]
-  const displayName = data.name || (en ? 'Your Name' : 'اسمك الشخصي')
-  const displayRole = data.role || (en ? template.roleEn : template.role)
-  const displayBio = data.bio || (en ? 'Good work starts with curiosity. I turn thoughtful ideas into work that makes everyday life a little better.' : 'أصمم منتجات رقمية بسيطة وقريبة من الناس.')
-  const projectTypes = en
-    ? ['Product design · 2026', 'Brand identity · 2025', 'Creative direction · 2024']
-    : ['تصميم منتجات · 2026', 'هوية بصرية · 2025', 'إخراج إبداعي · 2024']
-  const skills = normaliseSkills(data.skills)
-  const experience = normaliseExperience(data.experience)
-  const socialLinks = normaliseSocialLinks(data.socialLinks)
-  return <article className={'portfolio-site layout-'+template.layout+' mood-'+(data.backgroundStyle || 'signature')} data-layout={template.layout} data-mood={data.backgroundStyle || 'signature'} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}>
-    <div className={'site-atmosphere atmosphere-'+template.layout+' effect-'+(data.backgroundStyle || 'signature')} aria-hidden="true">
+  const avatarSrc=data.avatarUrl || portraits[template.layout%3]
+  const displayName=data.name || (en?'Your Name':'اسمك الشخصي')
+  const displayRole=data.role || (en?template.roleEn:template.role)
+  const displayBio=data.bio || (en?'Good work starts with curiosity. I turn thoughtful ideas into work that makes everyday life a little better.':'أصمم منتجات رقمية بسيطة وقريبة من الناس.')
+  const projectTypes=en
+    ? ['Product design · 2026','Brand identity · 2025','Creative direction · 2024']
+    : ['تصميم منتجات · 2026','هوية بصرية · 2025','إخراج إبداعي · 2024']
+  const skills=normaliseSkills(data.skills)
+  const experience=normaliseExperience(data.experience)
+  const socialLinks=normaliseSocialLinks(data.socialLinks)
+  const sectionOrder=normaliseSectionOrder(data.sectionOrder)
+  const sectionIds: Record<PortfolioSectionKey,string>={about:'about',skills:'skills',experience:'experience',projects:'work',socials:'socials',contact:'contact'}
+  const sectionLabels: Record<PortfolioSectionKey,{en:string;ar:string}>={
+    about:{en:'About',ar:'نبذة'},
+    skills:{en:'Skills',ar:'المهارات'},
+    experience:{en:'Experience',ar:'الخبرات'},
+    projects:{en:'Work',ar:'أعمالي'},
+    socials:{en:'Social',ar:'روابطي'},
+    contact:{en:'Contact',ar:'تواصل'}
+  }
+  const sectionAvailable: Record<PortfolioSectionKey,boolean>={
+    about:Boolean(data.visible.about),
+    skills:Boolean(data.visible.skills&&skills.length),
+    experience:Boolean(data.visible.experience&&experience.length),
+    projects:Boolean(data.visible.projects&&projects.length),
+    socials:Boolean(data.visible.socials&&socialLinks.length),
+    contact:Boolean(data.visible.contact)
+  }
+  const sectionNodes: Record<PortfolioSectionKey,ReactNode>={
+    about:data.visible.about?<section className="site-about" id="about"><div className="site-section-title"><div><small>01 / {en?'A LITTLE ABOUT ME':'نبذة عني'}</small><h2>{en?'Thoughtful work starts with a point of view.':'كل عمل مميز يبدأ برؤية.'}</h2></div></div><p className="site-about-copy">{displayBio}</p>{data.location&&<p className="site-about-location">⌖ {data.location}</p>}</section>:null,
+    skills:data.visible.skills&&skills.length>0?<section className="site-skills" id="skills"><div className="site-section-title"><div><small>02 / {en?'CAPABILITIES':'المهارات'}</small><h2>{en?'What I bring to the table':'ما أقدمه من مهارات'}</h2></div><span>{skills.length} {en?'specialties':'مهارات'}</span></div><div className="site-skill-tags">{skills.map((skill,index)=><span className="site-skill-pill" key={skill+'-'+index}><i>{String(index+1).padStart(2,'0')}</i>{skill}</span>)}</div></section>:null,
+    experience:data.visible.experience&&experience.length>0?<section className="site-experience" id="experience"><div className="site-section-title"><div><small>03 / {en?'THE JOURNEY':'الخبرات'}</small><h2>{en?'Where I’ve made a difference':'محطات من رحلتي المهنية'}</h2></div></div><div className="site-experience-list">{experience.map((entry,index)=><article className="site-experience-entry" key={entry.role+'-'+entry.company+'-'+index}><span className="experience-index">{String(index+1).padStart(2,'0')}</span><div className="experience-main"><h3>{entry.role||(en?'Professional role':'خبرة مهنية')}</h3>{entry.company&&<p className="experience-company">{entry.company}</p>}{entry.description&&<p className="experience-description">{entry.description}</p>}</div>{entry.period&&<span className="experience-period">{entry.period}</span>}</article>)}</div></section>:null,
+    projects:data.visible.projects&&projects.length>0?<section className="site-work" id="work"><div className="site-section-title"><div><small>04 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{projects.length} {en?'projects':'مشاريع'}</span></div><div className="site-project-grid">{projects.map((name,index)=>{const detail=data.projectDetails?.[index]||emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,imageUrls[(index+template.layout+1)%imageUrls.length]);const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(index%3)} key={name+'-'+index}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}><img src={image} alt={detail.description||name} loading="lazy"/><span>{projectTypes[index%projectTypes.length]}</span><b>{['✳','◡','✿'][index%3]}</b></div><h3>{name||(en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[index%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>:null,
+    socials:data.visible.socials&&socialLinks.length>0?<section className="site-social-links" id="socials"><div><small>05 / {en?'FIND ME ELSEWHERE':'روابط التواصل'}</small><h2>{en?'Let’s connect':'تواصل معي عبر المنصات'}</h2></div><div className="site-social-list">{socialLinks.map((link,index)=>{const href=safeExternalUrl(link.url);return href?<a className="site-social-link" key={link.label+'-'+index} href={href} target="_blank" rel="noopener noreferrer"><span>{link.label}</span><b>↗</b></a>:null})}</div></section>:null,
+    contact:data.visible.contact?<section className="site-contact" id="contact"><div><small>06 / {en?'SAY HELLO':'لنتحدث'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div>{data.email&&<a href={'mailto:'+data.email}>{data.email} ↗</a>}</section>:null
+  }
+  return <article className={'portfolio-site layout-'+template.layout+' mood-'+(data.backgroundStyle||'signature')} data-layout={template.layout} data-mood={data.backgroundStyle||'signature'} data-section-order={sectionOrder.join(' ')} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}>
+    <div className={'site-atmosphere atmosphere-'+template.layout+' effect-'+(data.backgroundStyle||'signature')} aria-hidden="true">
       <span className="atmosphere-glow atmosphere-glow-a"/>
       <span className="atmosphere-glow atmosphere-glow-b"/>
       <span className="atmosphere-orbit"/>
       <span className="atmosphere-grid"/>
       <span className="atmosphere-glass"/>
     </div>
-    <div className="site-nav"><span className="site-monogram">{displayName.split(' ').map(s=>s[0]).join('')}</span><div className="site-nav-links">{data.visible.about&&<a href="#about">{en?'About':'عنّي'}</a>}{data.visible.skills&&skills.length>0&&<a href="#skills">{en?'Skills':'المهارات'}</a>}{data.visible.experience&&experience.length>0&&<a href="#experience">{en?'Experience':'الخبرات'}</a>}{data.visible.projects&&<a href="#work">{en?'Work':'أعمالي'}</a>}{data.visible.socials&&socialLinks.length>0&&<a href="#socials">{en?'Social':'روابطي'}</a>}{data.visible.contact&&<a href="#contact">{en?'Contact':'تواصل'}</a>}</div><span className="site-availability"><i/>{en?'Open to work':'متاح للعمل'}</span></div><section className="site-hero"><div className="site-copy"><small className="site-eyebrow">✳ {en?template.professionEn.toUpperCase():'أهلاً، أنا '+displayName}</small><h1>{displayName}<br/><em>{displayRole}</em></h1>{data.visible.about&&<p id="about">{displayBio}</p>}<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a></div><div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location || (en?'Remote':'عن بُعد')}　·　2026</div></div></section>{data.visible.skills&&skills.length>0&&<section className="site-skills" id="skills"><div className="site-section-title"><div><small>01 / {en?'CAPABILITIES':'المهارات'}</small><h2>{en?'What I bring to the table':'ما أقدمه من مهارات'}</h2></div><span>{skills.length} {en?'specialties':'مهارات'}</span></div><div className="site-skill-tags">{skills.map((skill,index)=><span className="site-skill-pill" key={skill+'-'+index}><i>{String(index+1).padStart(2,'0')}</i>{skill}</span>)}</div></section>}{data.visible.experience&&experience.length>0&&<section className="site-experience" id="experience"><div className="site-section-title"><div><small>02 / {en?'THE JOURNEY':'الخبرات'}</small><h2>{en?'Where I’ve made a difference':'محطات من رحلتي المهنية'}</h2></div></div><div className="site-experience-list">{experience.map((entry,index)=><article className="site-experience-entry" key={entry.role+'-'+entry.company+'-'+index}><span className="experience-index">{String(index+1).padStart(2,'0')}</span><div className="experience-main"><h3>{entry.role || (en?'Professional role':'خبرة مهنية')}</h3><p className="experience-company">{entry.company}</p>{entry.description&&<p className="experience-description">{entry.description}</p>}</div>{entry.period&&<span className="experience-period">{entry.period}</span>}</article>)}</div></section>}{data.visible.projects&&<section className="site-work" id="work"><div className="site-section-title"><div><small>01 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{en?'More coming soon':'المزيد قريباً'} ↗</span></div><div className="site-project-grid">{projects.map((name,i)=>{const detail=data.projectDetails?.[i] || emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,imageUrls[(i+template.layout+1)%imageUrls.length]);const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(i%3)} key={name+'-'+i}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}><img src={image} alt={detail.description || name} loading="lazy"/><span>{projectTypes[i%projectTypes.length]}</span><b>{['✳','◡','✿'][i%3]}</b></div><h3>{name || (en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[i%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>}{data.visible.socials&&socialLinks.length>0&&<section className="site-social-links" id="socials"><div><small>03 / {en?'FIND ME ELSEWHERE':'روابط التواصل'}</small><h2>{en?'Let’s connect':'تواصل معي عبر المنصات'}</h2></div><div className="site-social-list">{socialLinks.map((link,index)=>{const href=safeExternalUrl(link.url);return href?<a className="site-social-link" key={link.label+'-'+index} href={href} target="_blank" rel="noopener noreferrer"><span>{link.label}</span><b>↗</b></a>:null})}</div></section>}{data.visible.contact&&<section className="site-contact" id="contact"><div><small>02 / {en?'SAY HELLO':'كلمّني'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div><a href={'mailto:'+data.email}>{data.email} ↗</a></section>}<footer className="site-footer"><span>© {new Date().getFullYear()} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer></article>
+    <div className="site-nav">
+      <span className="site-monogram">{displayName.split(' ').map(character=>character[0]).join('')}</span>
+      <div className="site-nav-links">{sectionOrder.filter(key=>sectionAvailable[key]).map(key=><a href={'#'+sectionIds[key]} key={key}>{en?sectionLabels[key].en:sectionLabels[key].ar}</a>)}</div>
+      <span className="site-availability"><i/>{en?'Open to work':'متاح للعمل'}</span>
+    </div>
+    <section className="site-hero">
+      <div className="site-copy">
+        <small className="site-eyebrow">✳ {en?template.professionEn.toUpperCase():'أهلاً، أنا '+displayName}</small>
+        <h1>{displayName}<br/><em>{displayRole}</em></h1>
+        {data.bio.trim()&&<p className="site-hero-summary">{data.bio}</p>}
+        {data.visible.contact&&data.email&&<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a>}
+      </div>
+      <div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location||(en?'Remote':'عن بُعد')}</div></div>
+    </section>
+    <div className={'site-sections composition-'+template.layout} data-section-container="true">
+      {sectionOrder.map(key=><div className={'site-section-slot slot-'+key} key={key} data-section={key}>{sectionNodes[key]}</div>)}
+    </div>
+    <footer className="site-footer"><span>© {new Date().getFullYear()} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer>
+  </article>
 }
 
 function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart }: {
