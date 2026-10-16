@@ -74,6 +74,13 @@ assert.ok(studioCss.includes('.site-atmosphere:before'), 'ambient gradient mesh 
 assert.ok(studioCss.includes('backdrop-filter:blur(22px)'), 'glassmorphism surfaces should be available')
 assert.ok(studioCss.includes('@keyframes taqdom-atmosphere-breathe'), 'ambient light should have gentle motion')
 assert.ok(studioCss.includes('@media(prefers-reduced-motion:reduce)'), 'ambient motion must respect reduced-motion preference')
+
+assert.ok(app.includes("data.document.visible.contact && <section className={'portfolio-contact-panel layout-'"), 'public contact form must respect the section visibility switch')
+assert.ok(app.includes('contact-visually-hidden'), 'public contact fields should have accessible labels')
+assert.ok(studioCss.includes('.portfolio-contact-panel.layout-0') && studioCss.includes('.portfolio-contact-panel.layout-8'), 'public contact form must support both cool and warm dark themes')
+assert.ok(studioCss.includes('.portfolio-contact-panel.layout-1') && studioCss.includes('.portfolio-contact-panel.layout-7'), 'public contact form must support light themes')
+assert.ok(studioCss.includes('.portfolio-contact-panel.mood-glass'), 'contact form should honor the selected glass atmosphere')
+
 for (let index = 0; index < expected.length; index += 1) {
   assert.ok(studioCss.includes(`.portfolio-site.layout-${index}{--mood-glow-a:`), `${expected[index]} should own an atmosphere palette`)
   assert.ok(studioCss.includes(`.mini-site-${index}{--preview-glow:`), `${expected[index]} should own a gallery glow palette`)
