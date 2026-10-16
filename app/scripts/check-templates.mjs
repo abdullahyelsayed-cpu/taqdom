@@ -90,7 +90,8 @@ assert.ok(app.includes('contactContent={data.document.visible.contact ? ('), 'th
 assert.ok(workerSource.includes('const allowedSectionOrder = ["about", "skills", "experience", "projects", "socials", "contact"]'), 'API must allowlist section order keys')
 assert.ok(workerSource.includes('    sectionOrder,'), 'API must persist normalized section order')
 assert.ok(exportSource.includes('function normaliseExportSectionOrder(value: unknown)'), 'HTML export must validate section order')
-assert.ok(exportSource.includes('const orderedSectionsMarkup = sectionOrder.map(key => sectionMarkup[key]).join(\'\')'), 'HTML export must preserve page section order')
+assert.ok(exportSource.includes('const orderedSectionsMarkup = \'<div class="site-sections composition-\' + layout'), 'HTML export must preserve page section order and provide structural section slots')
+assert.ok(exportSource.includes('const compositionRules ='), 'HTML export must include template-specific section compositions')
 for (let index = 0; index < expected.length; index += 1) {
   assert.ok(studioCss.includes(`.portfolio-site.layout-${index} .site-sections.composition-${index}`), `${expected[index]} should have a distinct section composition system`)
 }
