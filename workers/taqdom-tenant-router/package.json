@@ -1,0 +1,8 @@
+{
+  "name": "taqdom-tenant-router",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check index.js && node scripts/test-router.mjs"
+  }
+}

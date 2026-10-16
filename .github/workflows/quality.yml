@@ -40,6 +40,9 @@ jobs:
       - name: Validate API Worker hardening
         working-directory: workers/taqdom-studio-api
         run: npm run check
+      - name: Validate wildcard tenant router
+        working-directory: workers/taqdom-tenant-router
+        run: npm run check
       - name: Lint
         run: npm run lint
 

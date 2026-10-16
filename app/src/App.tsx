@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import './App.css'
 import './landing.css'
+import './studio.css'
 import { CareerAiError, improveCareerText } from './lib/ai'
 import { downloadPortfolioHtml } from './lib/portfolio-export'
 
-type Template = { id: string; profession: string; role: string; layout: number; accent: string; pale: string }
+type Template = { id: string; profession: string; role: string; professionEn: string; roleEn: string; layout: number; accent: string; pale: string }
 type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; visible: Record<string, boolean>; avatarUrl?: string; slug?: string }
 type AppView = 'home' | 'editor' | 'preview' | 'auth' | 'dashboard' | 'public'
 type AuthMode = 'register' | 'login'
@@ -29,9 +30,20 @@ const sitePageLabels: Record<Exclude<SitePage, 'not-found'>, { en: string; ar: s
   contact: { en: 'Contact', ar: 'التواصل' }, privacy: { en: 'Privacy', ar: 'الخصوصية' },
   terms: { en: 'Terms', ar: 'الشروط' },
 }
-function parsePublicRoute(pathname: string, search: string): string | null {
+const reservedSubdomains = new Set(['www','api','app','admin','assets','static','cdn','mail','smtp','ftp','support','help','status','docs','blog','dev','staging','preview','dashboard','auth','login','register','pricing','about','templates','features','contact','privacy','terms','taqdom'])
+function isValidPortfolioSubdomain(value: string): boolean {
+  return value.length >= 3 && value.length <= 30 &&
+    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(value) &&
+    !reservedSubdomains.has(value)
+}
+function parsePublicRoute(pathname: string, search: string, hostname: string): string | null {
   const query = new URLSearchParams(search)
   if (query.get('p')) return query.get('p')
+  const host = hostname.toLowerCase().replace(/\.$/, '')
+  if (host.endsWith('.taqdom.me')) {
+    const subdomain = host.slice(0, -'.taqdom.me'.length)
+    if (!subdomain.includes('.') && isValidPortfolioSubdomain(subdomain)) return subdomain
+  }
   const m = pathname.match(/^\/(?:en\/|ar\/)?(?:p|u)\/([^/?#]+)/)
   return m ? decodeURIComponent(m[1]) : null
 }
@@ -91,7 +103,7 @@ function getContentPageCopy(page: SitePage, en: boolean): ContentPageCopy {
         { heading: 'Optional AI writing assistance', text: 'Ask the writing assistant to improve selected headline or biography text. Review suggestions before using them.' },
         { heading: 'Portable HTML export', text: 'Download a standalone HTML version of your current portfolio for a portable copy.' },
         { heading: 'Account and saved drafts', text: 'Create an account to use the current account workspace and save portfolio drafts to the service.' },
-        { heading: 'Publishing roadmap', text: 'Custom personal subdomains and a managed media library are not enabled in the current product yet.' },
+        { heading: 'Publishing roadmap', text: 'Published portfolios can use a personal address such as yourname.taqdom.me. A managed media library is still in development.' },
       ] },
       ar: { title: 'مميزات استوديو تقدّم للمواقع الشخصية', description: 'اكتشف المعاينة المباشرة وتحرير معرض الأعمال ودعم اللغتين وتصدير HTML والمسودات المحفوظة ومساعد الكتابة الاختياري.', eyebrow: 'مميزات المنتج', heading: 'طريقة أوضح لبناء حضورك الرقمي.', lead: 'يجمع الاستوديو الحالي بين التحرير البصري وأدوات عملية لمراجعة أعمالك ومشاركتها.', blocks: [
         { heading: 'معاينة بصرية مباشرة', text: 'عدّل محتوى معرض أعمالك وخيارات التصميم مع مشاهدة المعاينة الناتجة.' },
@@ -99,7 +111,7 @@ function getContentPageCopy(page: SitePage, en: boolean): ContentPageCopy {
         { heading: 'مساعدة اختيارية للكتابة بالذكاء الاصطناعي', text: 'اطلب من مساعد الكتابة تحسين نص العنوان أو النبذة التي تحددها، ثم راجع الاقتراحات قبل استخدامها.' },
         { heading: 'تصدير HTML قابل للنقل', text: 'نزّل نسخة HTML مستقلة من معرض أعمالك للاحتفاظ بنسخة قابلة للنقل.' },
         { heading: 'حساب ومسودات محفوظة', text: 'أنشئ حسابًا لاستخدام مساحة العمل الحالية وحفظ مسودات معرض أعمالك على الخدمة.' },
-        { heading: 'خطة تطوير النشر', text: 'النطاقات الشخصية الفرعية ومكتبة الوسائط المُدارة غير مفعّلة في المنتج الحالي حتى الآن.' },
+        { heading: 'خطة تطوير النشر', text: 'يمكن نشر معرض أعمالك على عنوان شخصي مثل yourname.taqdom.me. لا تزال مكتبة الوسائط المُدارة قيد التطوير.' },
       ] },
     },
     pricing: {
@@ -120,7 +132,7 @@ function getContentPageCopy(page: SitePage, en: boolean): ContentPageCopy {
         { heading: 'Do I need to know how to code?', text: 'No coding is required to edit the current portfolio fields and choose among available design starting points.' },
         { heading: 'Does it support Arabic?', text: 'Yes. The site supports English and Modern Standard Arabic, including right-to-left layouts.' },
         { heading: 'Are there 70 unique templates?', text: 'Not exactly. The current library combines 14 professional categories with five shared layout systems, creating 70 starting combinations.' },
-        { heading: 'Can I publish to my own subdomain?', text: 'Personal subdomain publishing is not enabled in the current product yet.' },
+        { heading: 'Can I publish to my own subdomain?', text: 'Yes. When you publish a portfolio, you can choose an available username and share it at username.taqdom.me.' },
         { heading: 'How does the AI writing helper work?', text: 'It is optional. When you request an improvement, the selected headline or biography text is sent to the server-side AI endpoint for a suggestion.' },
         { heading: 'Can I export my portfolio?', text: 'The current editor can export a standalone HTML copy of the portfolio.' },
       ] },
@@ -129,7 +141,7 @@ function getContentPageCopy(page: SitePage, en: boolean): ContentPageCopy {
         { heading: 'هل أحتاج إلى معرفة البرمجة؟', text: 'لا تحتاج إلى كتابة الشيفرة لتحرير الحقول الحالية لمعرض الأعمال والاختيار من بدايات التصميم المتاحة.' },
         { heading: 'هل يدعم الموقع اللغة العربية؟', text: 'نعم. يدعم الموقع الإنجليزية والعربية الفصحى الحديثة، بما في ذلك تخطيطات الكتابة من اليمين إلى اليسار.' },
         { heading: 'هل توجد 70 قالبًا مختلفًا بالكامل؟', text: 'ليس تمامًا. تجمع المكتبة الحالية بين 14 مجالًا مهنيًا وخمسة أنظمة تخطيط مشتركة، لتنتج 70 تركيبة بداية.' },
-        { heading: 'هل يمكنني النشر على نطاق فرعي خاص بي؟', text: 'لم يتم تفعيل نشر المواقع على النطاقات الشخصية الفرعية في المنتج الحالي بعد.' },
+        { heading: 'هل يمكنني النشر على نطاق فرعي خاص بي؟', text: 'نعم. عند نشر معرض أعمالك، يمكنك اختيار اسم مستخدم متاح ومشاركة موقعك على عنوان username.taqdom.me.' },
         { heading: 'كيف يعمل مساعد الكتابة بالذكاء الاصطناعي؟', text: 'المساعد اختياري. عند طلب التحسين، يُرسل نص العنوان أو النبذة المحددة إلى واجهة الذكاء الاصطناعي على الخادم لتقديم اقتراح.' },
         { heading: 'هل يمكن تصدير معرض الأعمال؟', text: 'يمكن للمحرر الحالي تصدير نسخة HTML مستقلة من معرض الأعمال.' },
       ] },
@@ -190,10 +202,18 @@ const jobs = [
   ['architecture', 'العمارة', 'مهندس معماري'], ['marketing', 'التسويق', 'مسوّق رقمي'], ['health', 'الصحة', 'متخصص صحي'], ['business', 'الأعمال', 'صاحب مشروع'],
   ['law', 'القانون', 'مستشار قانوني'], ['engineering', 'الهندسة', 'مهندس'], ['people', 'الموارد البشرية', 'متخصص موارد بشرية'], ['events', 'الفعاليات', 'منظم فعاليات'],
 ]
-const layouts = ['Editorial', 'Canvas', 'Orbit', 'Studio', 'Minimal']
+const layouts = ['Aurora', 'Nexus', 'Pulse', 'Forma', 'Mono']
+const layoutsAr = ['أورورا · تحريرية', 'نيكسس · تقنية', 'بالس · جريئة', 'فورما · طبيعية', 'مونو · هندسية']
+const jobEnglish: [string, string][] = [
+  ['Design & creative','Digital Product Designer'], ['Technology','Software Developer'], ['Photography','Photographer'],
+  ['Writing','Writer & Editor'], ['Consulting','Business Consultant'], ['Education','Educator'],
+  ['Architecture','Architect'], ['Marketing','Digital Marketer'], ['Healthcare','Healthcare Professional'],
+  ['Business','Founder'], ['Law','Legal Advisor'], ['Engineering','Engineer'],
+  ['People & culture','People & Culture Specialist'], ['Events','Event Producer'],
+]
 const demoPalettes: [string, string][] = [['#8b5cff','#67e5ff'], ['#67e5ff','#4f81ff'], ['#fc75d9','#9b75ff'], ['#9fffc0','#67e5ff'], ['#ffbb78','#fc75d9']]
 const colors = ['#8b5cff','#61dfff','#fa75d5','#b4a0ff','#5e83ff','#ff9e72','#7de5bb','#d7a5ff','#f1a8d8','#f7d78c']
-const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], layout: l, accent: colors[(j + l * 2) % colors.length], pale: ['#f8e8dd','#e9e7ff','#dff1ea','#fff0ce','#e4edf1'][(j + l) % 5] })))
+const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], professionEn: jobEnglish[j][0], roleEn: jobEnglish[j][1], layout: l, accent: colors[(j + l * 2) % colors.length], pale: ['#f8e8dd','#e9e7ff','#dff1ea','#fff0ce','#e4edf1'][(j + l) % 5] })))
 const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true}, avatarUrl:'', slug:'' }
 const imageUrls = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=76',
@@ -261,7 +281,7 @@ function normalisePortfolio(value: unknown, fallback: Portfolio): Portfolio {
 export default function App() {
   const query = new URLSearchParams(location.search)
   const siteRoute = resolveSiteRoute(location.pathname)
-  const publicRouteId = parsePublicRoute(location.pathname, location.search)
+  const publicRouteId = parsePublicRoute(location.pathname, location.search, location.hostname)
   const [portfolio, setPortfolio] = useState<Portfolio>(readSaved)
   const [publicIdentifier, setPublicIdentifier] = useState<string | null>(publicRouteId)
   const [view, setView] = useState<AppView>(publicRouteId ? 'public' : query.has('preview') ? 'preview' : query.has('auth') ? 'auth' : 'home')
@@ -279,6 +299,7 @@ export default function App() {
   const [accountLoading, setAccountLoading] = useState(true)
   const [accountPortfolios, setAccountPortfolios] = useState<SavedPortfolio[]>([])
   const [portfolioId, setPortfolioId] = useState<string|null>(null)
+  const [portfolioSlug, setPortfolioSlug] = useState('')
   const [accountError, setAccountError] = useState('')
   const [accountBusy, setAccountBusy] = useState(false)
   const [publishModalOpen, setPublishModalOpen] = useState(false)
@@ -300,7 +321,10 @@ export default function App() {
     history.replaceState({}, '', nextUrl.pathname + nextUrl.search + nextUrl.hash)
   }
   const chosen = templates.find(t => t.id === portfolio.templateId) || templates[0]
-  const filtered = useMemo(() => templates.filter(t => (category === 'الكل' || t.profession === category) && (!search || (t.profession + t.role + layouts[t.layout]).toLowerCase().includes(search.toLowerCase()))), [category, search])
+  const filtered = useMemo(() => templates.filter(t =>
+    (category === 'الكل' || t.profession === category) &&
+    (!search || (t.profession + t.role + t.professionEn + t.roleEn + layouts[t.layout] + layoutsAr[t.layout]).toLowerCase().includes(search.toLowerCase()))
+  ), [category, search])
 
   useEffect(() => {
     document.documentElement.lang = language
@@ -364,29 +388,48 @@ export default function App() {
   }
   const publishSite = async () => {
     if (!user) { openAuth('register'); return }
+    const requestedSlug = portfolioSlug.trim().toLowerCase()
+    if (!isValidPortfolioSubdomain(requestedSlug)) {
+      setAccountError(en
+        ? 'Choose a subdomain with 3–30 lowercase letters, numbers, or hyphens. It cannot start or end with a hyphen or use a reserved name.'
+        : 'اختر اسم نطاق فرعي من 3 إلى 30 حرفًا إنجليزيًا صغيرًا أو رقمًا أو شرطة. لا يمكن أن يبدأ أو ينتهي بشرطة أو يستخدم اسمًا محجوزًا.')
+      return
+    }
     setPublishing(true); setAccountError('')
     try {
+      let savedItem: SavedPortfolio
       if (!portfolioId) {
-        const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'), templateId:portfolio.templateId, status:'published', document:{ ...portfolio, status:'published' } }) })
-        setPortfolioId(result.portfolio.id)
-        setPortfolio(p => ({ ...p, slug: result.portfolio.slug }))
-        setAccountPortfolios(items => [result.portfolio, ...items.filter(it => it.id !== result.portfolio.id)])
+        const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', {
+          method:'POST',
+          body:JSON.stringify({ title: portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'), templateId:portfolio.templateId, slug:requestedSlug, status:'published', document:{ ...portfolio, status:'published' } })
+        })
+        savedItem = result.portfolio
+        setPortfolioId(savedItem.id)
+        setPortfolio(p => ({ ...p, slug: savedItem.slug }))
       } else {
-        await apiRequest('/api/portfolios/' + portfolioId, {
+        await apiRequest<{ok:boolean;status:'published'}>('/api/portfolios/' + portfolioId, {
           method: 'PUT',
           body: JSON.stringify({
             title: portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'),
             templateId: portfolio.templateId,
+            slug: requestedSlug,
             status: 'published',
             document: { ...portfolio, status: 'published' }
           })
         })
-        setAccountPortfolios(items => items.map(it => it.id === portfolioId ? { ...it, status: 'published', title: portfolio.name || it.title } : it))
+        savedItem = { id:portfolioId, title:portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'), slug:requestedSlug, templateId:portfolio.templateId, document:portfolio, status:'published', createdAt:'', updatedAt:new Date().toISOString() }
       }
+      setPortfolioSlug(savedItem.slug || requestedSlug)
       setSaved(true)
+      setAccountPortfolios(items => [savedItem, ...items.filter(it => it.id !== savedItem.id)])
       setPublishModalOpen(true)
-    } catch {
-      setAccountError(en ? 'Could not publish site. Please try again.' : 'تعذر نشر الموقع. يُرجى المحاولة مجددًا.')
+    } catch (error) {
+      const code = error instanceof Error ? error.message : ''
+      setAccountError(code === 'subdomain_taken'
+        ? (en ? 'That subdomain is already in use. Choose another one.' : 'اسم النطاق ده مستخدم بالفعل. اختار اسمًا تاني.')
+        : code === 'invalid_subdomain'
+          ? (en ? 'That subdomain is not allowed. Check the name and try again.' : 'اسم النطاق غير صالح. راجع الاسم وحاول مرة أخرى.')
+          : (en ? 'Could not publish site. Please try again.' : 'تعذر نشر الموقع. يُرجى المحاولة مجددًا.'))
     } finally {
       setPublishing(false)
     }
@@ -447,7 +490,7 @@ export default function App() {
   }
   const signOut = async () => {
     try { await apiRequest('/api/auth/logout', { method:'POST', body:'{}' }) } catch { /* local workspace still remains available */ }
-    setUser(null); setAccountPortfolios([]); setPortfolioId(null); goHome()
+    setUser(null); setAccountPortfolios([]); setPortfolioId(null); setPortfolioSlug(''); goHome()
   }
   const handleAuthSuccess = async (nextUser: User) => {
     setUser(nextUser); setAccountError(''); setView('dashboard'); history.replaceState({}, '', location.pathname)
@@ -461,7 +504,7 @@ export default function App() {
     const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], visible:{about:true,projects:true,contact:true}, templateId:'design-0', accent:'#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My first portfolio' : 'موقعي الشخصي', templateId:fresh.templateId, document:fresh }) })
-      setPortfolio(normalisePortfolio(result.portfolio.document, fresh)); setPortfolioId(result.portfolio.id); setAccountPortfolios(items => [result.portfolio, ...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
+      setPortfolio(normalisePortfolio(result.portfolio.document, fresh)); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items => [result.portfolio, ...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
     } catch (error) { setAccountError(error instanceof Error && error.message === 'portfolio_limit_reached' ? (en ? 'You reached the current project limit.' : 'وصلت للحد الحالي للمشاريع.') : (en ? 'We could not create your site. Please try again.' : 'تعذر إنشاء موقعك. يُرجى المحاولة مجددًا.')) }
     finally { setAccountBusy(false) }
   }
@@ -480,7 +523,7 @@ export default function App() {
   }
   const openPortfolio = (item: SavedPortfolio) => {
     const next = normalisePortfolio(item.document, initial)
-    setPortfolio(next); setPortfolioId(item.id); history.replaceState({}, '', location.pathname); setView('editor'); setAccountError(''); window.scrollTo(0,0)
+    setPortfolio(next); setPortfolioId(item.id); setPortfolioSlug(isValidPortfolioSubdomain(item.slug || '') ? item.slug! : 'site-'+item.id.slice(0,6)); history.replaceState({}, '', location.pathname); setView('editor'); setAccountError(''); window.scrollTo(0,0)
   }
   const chooseTemplate = (id: string) => {
     setPortfolio(p => ({...p, templateId:id}))
@@ -493,7 +536,7 @@ export default function App() {
     const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], visible:{about:true,projects:true,contact:true}, templateId, accent:templates.find(t=>t.id===templateId)?.accent || '#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My portfolio' : 'موقعي الشخصي', templateId, document:fresh }) })
-      setPortfolio(fresh); setPortfolioId(result.portfolio.id); setAccountPortfolios(items=>[result.portfolio,...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
+      setPortfolio(fresh); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items=>[result.portfolio,...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
     } catch { setAccountError(en ? 'We could not create the project.' : 'تعذر إنشاء المشروع.') }
     finally { setAccountBusy(false) }
   }
@@ -558,6 +601,10 @@ export default function App() {
         </div>
         <label className="field-label">{en?'Your name':'الاسم'}<input value={portfolio.name} onChange={e=>update('name',e.target.value)}/></label>
         <label className="field-label">{en?'What you do':'ما طبيعة عملك؟'}<input value={portfolio.role} maxLength={180} onChange={e=>update('role',e.target.value)}/></label>
+        <label className="field-label subdomain-field">{en?'Your public address':'عنوان موقعك العام'}
+          <div className="subdomain-input-wrap"><input value={portfolioSlug} maxLength={30} autoCapitalize="none" autoCorrect="off" spellCheck={false} onChange={e=>setPortfolioSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,''))} aria-label={en?'Your subdomain':'اسم النطاق الفرعي'}/><span>.taqdom.me</span></div>
+          <small className="subdomain-help">{en?'Use a unique English username. You can change it before publishing.':'اختار اسمًا إنجليزيًا مميزًا؛ تقدر تغيّره قبل النشر.'}</small>
+        </label>
         <button type="button" className="ai-action" disabled={aiBusy!==null} onClick={()=>void improveText('headline')}>{aiBusy==='headline'?'✳ '+(en?'Improving…':'جارٍ التحسين…'):'✦ '+(en?'Improve headline with AI':'حسّن المسمى بالذكاء الاصطناعي')}</button>
         <label className="field-label">{en?'About you':'نبذة عنك'}<textarea value={portfolio.bio} rows={4} maxLength={2400} onChange={e=>update('bio',e.target.value)}/><small className="field-counter">{portfolio.bio.length}/2400</small></label>
         <button type="button" className="ai-action" disabled={aiBusy!==null} onClick={()=>void improveText('bio')}>{aiBusy==='bio'?'✳ '+(en?'Improving…':'جارٍ التحسين…'):'✦ '+(en?'Improve bio with AI':'حسّن النبذة بالذكاء الاصطناعي')}</button>
@@ -569,10 +616,10 @@ export default function App() {
         <div className="control-section"><div className="control-heading"><b>{en?'Visible sections':'الأقسام الظاهرة'}</b></div>{[['about',en?'About me':'عني'],['projects',en?'Selected work':'أعمال مختارة'],['contact',en?'Contact':'تواصل معي']].map(([key,label])=><label className="toggle-row" key={key}><span>{label}</span><input type="checkbox" checked={Boolean(portfolio.visible[key])} onChange={e=>update('visible',{...portfolio.visible,[key]:e.target.checked})}/><i/></label>)}</div>
         <div className="control-section"><div className="control-heading"><b>{en?'Project names':'أسماء المشاريع'}</b></div>{portfolio.projects.map((project,index)=><label className="field-label project-field" key={index}>{en?'Project '+(index+1):'مشروع '+(index+1)}<input value={project} onChange={e=>update('projects',portfolio.projects.map((p,i)=>i===index?e.target.value:p))}/></label>)}<button className="add-project" onClick={()=>update('projects',[...portfolio.projects,''])}>＋ {en?'Add project':'إضافة مشروع'}</button></div>
         <div className="editor-group-label">{en?'03 — Templates':'03 — القوالب'}</div>
-        <div className="control-section"><div className="control-heading"><b>{en?'Choose a direction':'اختر نمط الموقع'}</b><span>{templates.length} {en?'starting points':'بداية'}</span></div><input className="search-input" value={search} onChange={e=>{setSearch(e.target.value);setShowAllTemplates(false)}} placeholder={en?'Search profession or style…':'ابحث عن مجال أو تصميم…'}/><div className="category-pills">{['الكل',...jobs.map(j=>j[1])].map(c=><button className={category===c?'active':''} key={c} onClick={()=>{setCategory(c);setShowAllTemplates(false)}}>{c}</button>)}</div><div className="template-list">{filtered.slice(0,showAllTemplates?filtered.length:10).map(t=><button className={t.id===portfolio.templateId?'chosen':''} key={t.id} onClick={()=>update('templateId',t.id)}><span className="template-mini" style={{'--accent':t.accent,'--pale':t.pale} as CSSProperties}><i/></span><span><b>{t.profession}</b><small>{layouts[t.layout]}</small></span>{t.id===portfolio.templateId&&<b className="checkmark">✓</b>}</button>)}</div>{filtered.length>10&&<button className="show-more" onClick={()=>setShowAllTemplates(v=>!v)}>{showAllTemplates?(en?'Show fewer':'عرض أقل'):(en?'Show all '+filtered.length:'اعرض كل الـ '+filtered.length)} {showAllTemplates?'↑':'↓'}</button>}</div>
+        <div className="control-section"><div className="control-heading"><b>{en?'Choose a direction':'اختر نمط الموقع'}</b><span>{templates.length} {en?'starting points':'بداية'}</span></div><input className="search-input" value={search} onChange={e=>{setSearch(e.target.value);setShowAllTemplates(false)}} placeholder={en?'Search profession or style…':'ابحث عن مجال أو تصميم…'}/><div className="category-pills">{[{value:'الكل',ar:'الكل',en:'All'},...jobs.map((j,index)=>({value:j[1],ar:j[1],en:jobEnglish[index][0]}))].map(c=><button className={category===c.value?'active':''} key={c.value} onClick={()=>{setCategory(c.value);setShowAllTemplates(false)}}>{en?c.en:c.ar}</button>)}</div><div className="template-list">{filtered.slice(0,showAllTemplates?filtered.length:10).map(t=><button className={t.id===portfolio.templateId?'chosen':''} key={t.id} onClick={()=>update('templateId',t.id)}><span className={'template-mini template-mini-'+t.layout} style={{'--accent':t.accent,'--pale':t.pale} as CSSProperties}><i/></span><span><b>{en?t.professionEn:t.profession}</b><small>{en?layouts[t.layout]:layoutsAr[t.layout]}</small></span>{t.id===portfolio.templateId&&<b className="checkmark">✓</b>}</button>)}</div>{filtered.length>10&&<button className="show-more" onClick={()=>setShowAllTemplates(v=>!v)}>{showAllTemplates?(en?'Show fewer':'عرض أقل'):(en?'Show all '+filtered.length:'اعرض كل الـ '+filtered.length)} {showAllTemplates?'↑':'↓'}</button>}</div>
       </div><div className="sidebar-bottom"><button className="button button-primary button-wide" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish site 🚀':'انشر موقعك 🚀')}</button><button className="button button-light button-wide" onClick={preview}>{en?'Preview my site':'عاين موقعي'} <span>↗</span></button><button className="button button-light button-wide" onClick={exportSite}>{en?'Export HTML':'نزّل نسخة HTML'} <span>↓</span></button><div className="local-note">{user?(saved?(en?'☁ Saved to your account':'☁ محفوظ على حسابك'):(en?'Saving to cloud…':'جارٍ الحفظ سحابيًا…')):(en?'Saved only on this device':'محفوظ على الجهاز فقط')}</div></div></aside>
       <section className="editor-workspace"><div className="editor-toolbar"><div className="toolbar-start"><button className="mobile-panel-button" onClick={()=>setMobilePanel(true)}>☷ {en?'Edit':'تعديل'}</button><div className="mode-switch"><button className={device==='desktop'?'active':''} onClick={()=>setDevice('desktop')}>▣ <span>{en?'Desktop':'الحاسوب'}</span></button><button className={device==='mobile'?'active':''} onClick={()=>setDevice('mobile')}>▯ <span>{en?'Mobile':'الهاتف'}</span></button></div></div><div className="toolbar-end"><span className="canvas-live-status"><i/> {en?'Live preview':'معاينة مباشرة'}</span>{portfolioId && <button type="button" className="button button-light toolbar-inbox" onClick={()=>void openInbox()}>📬 {en?'Inbox':'الرسائل'}</button>}<button className="button button-light toolbar-publish" onClick={preview}>{en?'Preview ↗':'معاينة ↗'}</button><button className="button button-primary toolbar-publish" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish 🚀':'انشر موقعك 🚀')}</button></div></div>
-        <div className="canvas-area"><div className={'canvas-browser '+(device==='mobile'?'mobile-frame':'')}><div className="canvas-browser-bar"><span className="browser-dots"><i/><i/><i/></span><span className="canvas-address">{(portfolio.name.toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/gi,'-').replace(/^-|-$/g,'')||'my-portfolio')}.taqdom.me</span><span className="canvas-zoom">{device==='desktop'?'100%':'390 px'}</span></div><PortfolioCanvas data={portfolio} template={chosen} language={language}/></div><p className="canvas-hint"><span>✦</span>{user?(en?'Your changes are saved to your account.':'تعديلاتك محفوظة على حسابك.'):(en?'This is a local demo. Create an account to save your project across devices.':'هذه معاينة محلية. أنشئ حسابًا لحفظ موقعك والوصول إليه من أي جهاز.')}</p></div>
+        <div className="canvas-area"><div className={'canvas-browser '+(device==='mobile'?'mobile-frame':'')}><div className="canvas-browser-bar"><span className="browser-dots"><i/><i/><i/></span><span className="canvas-address">{portfolioSlug || 'your-name'}.taqdom.me</span><span className="canvas-zoom">{device==='desktop'?'100%':'390 px'}</span></div><PortfolioCanvas data={portfolio} template={chosen} language={language}/></div><p className="canvas-hint"><span>✦</span>{user?(en?'Your changes are saved to your account.':'تعديلاتك محفوظة على حسابك.'):(en?'This is a local demo. Create an account to save your project across devices.':'هذه معاينة محلية. أنشئ حسابًا لحفظ موقعك والوصول إليه من أي جهاز.')}</p></div>
       </section>
     </main>
     {publishModalOpen && (
@@ -583,14 +630,14 @@ export default function App() {
           <h3>{en?'Your site is live!':'مبروك! موقعك منشور الآن على الإنترنت'}</h3>
           <p>{en?'Anyone with this link can now view your portfolio and get in touch with you.':'يمكن لأي شخص الآن فتح الرابط، تصفح معرض أعمالك، والتواصل معك مباشرة.'}</p>
           <div className="publish-link-box">
-            <input readOnly value={`${window.location.origin}/p/${portfolio.slug || portfolioId || ''}`} id="publish-link-input"/>
+            <input readOnly value={`https://${portfolioSlug}.taqdom.me`} id="publish-link-input"/>
             <button onClick={()=>{
               const el = document.getElementById('publish-link-input') as HTMLInputElement
               if (el) { el.select(); navigator.clipboard.writeText(el.value); alert(en?'Link copied!':'تم نسخ الرابط بنجاح!') }
             }}>{en?'Copy':'نسخ'}</button>
           </div>
           <div className="modal-actions">
-            <a href={`/p/${portfolio.slug || portfolioId || ''}`} target="_blank" rel="noopener noreferrer" className="button button-primary">{en?'Visit Public Site ↗':'زيارة موقعك الآن ↗'}</a>
+            <a href={`https://${portfolioSlug}.taqdom.me`} target="_blank" rel="noopener noreferrer" className="button button-primary">{en?'Visit Public Site ↗':'زيارة موقعك الآن ↗'}</a>
             <button className="button button-light" onClick={()=>setPublishModalOpen(false)}>{en?'Done':'إغلاق'}</button>
           </div>
         </div>
@@ -896,7 +943,7 @@ function LandingPage({language,user,onLanguage,onStart,onLogin,onTemplate}:{lang
           <div className="template-feature-copy"><span className="template-feature-kicker">{en?'THE TEMPLATE STUDIO':'استوديو القوالب'}</span><h3>{en?'Choose Your Perfect Template':'اختر القالب الذي يعكس هويتك'}</h3><p>{en?'Explore 70+ starting combinations across 14 professional categories. Find a direction, then make it yours with your content, colors, and sections.':'استكشف أكثر من 70 تركيبة بداية موزعة على 14 مجالًا مهنيًا. اختر اتجاهًا مناسبًا، ثم خصّص المحتوى والألوان والأقسام.'}</p><button type="button" className="template-feature-button" onClick={()=>onTemplate(featured[0].id)}>{en?'Browse Templates':'استكشف القوالب'} <span>↗</span></button></div>
           <div className="template-category-list"><span className="category-list-heading">{en?'EXPLORE BY FIELD':'استكشف حسب المجال'}</span>{(en?[['code','Technology & IT'],['design','Design & Creative'],['marketing','Marketing & Sales'],['business','Business & Finance'],['health','Healthcare & Medicine'],['education','Education & Teaching'],['law','Law & Legal']]:[['code','التقنية والبرمجة'],['design','التصميم والإبداع'],['marketing','التسويق والمبيعات'],['business','الأعمال والتمويل'],['health','الصحة والطب'],['education','التعليم والتدريب'],['law','القانون والاستشارات']]).map(([id,label],index)=><button key={id} type="button" onClick={()=>onTemplate(id+'-0')}><span>{['⌘','✳','↗','▣','✚','⌂','⚖'][index]}</span>{label}<i>↗</i></button>)}<span className="category-list-more">{en?'+ More categories':'＋ مجالات أخرى'}</span></div>
         </div>
-        <div className="lux-template-grid">{featured.map((t,i)=><button className={'lux-template-card card-layout-'+i} key={t.id} onClick={()=>onTemplate(t.id)}><div className="lux-template-visual"><img src={imageUrls[i]} alt={imageAlt[i]} loading="lazy"/><div className="template-visual-shade"/><div className="template-index">0{i+1} / TAQDOM</div><div className="template-overlay-ui"><span>{['STUDIO / PERSONAL','THE VISUAL JOURNAL','MADE TO BUILD','INDEPENDENT / 01','FORM MEETS FUNCTION','A BRAND OF ONE'][i]}</span><b>{['Shape the unseen.','Collect the moments.','Think. Make. Repeat.','Room for your ideas.','Built with intention.','Your next chapter.'][i]}</b><i>↗</i></div><div className="template-chip">{t.profession}</div></div><div className="lux-template-meta"><div><h3>{titles[i]}</h3><p>{en?['Editorial and expressive','Warm, visual and reflective','Clean, thoughtful and modern','Confident, understated and clear','Structured, precise and refined','Personal, bold and distinctive'][i]:['تحريري وجريء','بصري ودافئ','نظيف وعملي','واثق وهادئ','دقيق ومنظم','شخصي ولافت'][i]}</p></div><span className="template-open">↗</span></div></button>)}</div>
+        <div className="lux-template-grid">{featured.map((t,i)=><button className={'lux-template-card card-layout-'+i} key={t.id} onClick={()=>onTemplate(t.id)}><div className="lux-template-visual"><img src={imageUrls[i]} alt={imageAlt[i]} loading="lazy"/><div className="template-visual-shade"/><div className="template-index">0{i+1} / TAQDOM</div><div className="template-overlay-ui"><span>{['STUDIO / PERSONAL','THE VISUAL JOURNAL','MADE TO BUILD','INDEPENDENT / 01','FORM MEETS FUNCTION','A BRAND OF ONE'][i]}</span><b>{['Shape the unseen.','Collect the moments.','Think. Make. Repeat.','Room for your ideas.','Built with intention.','Your next chapter.'][i]}</b><i>↗</i></div><div className="template-chip">{en?t.professionEn:t.profession}</div></div><div className="lux-template-meta"><div><h3>{titles[i]}</h3><p>{en?['Editorial and expressive','Warm, visual and reflective','Clean, thoughtful and modern','Confident, understated and clear','Structured, precise and refined','Personal, bold and distinctive'][i]:['تحريري وجريء','بصري ودافئ','نظيف وعملي','واثق وهادئ','دقيق ومنظم','شخصي ولافت'][i]}</p></div><span className="template-open">↗</span></div></button>)}</div>
         <div className="gallery-bottom-note"><span className="gallery-note-symbol">✳</span><span>{en?'70 profession-and-layout combinations to begin with':'70 تركيبة من المجالات والتصميمات لتبدأ منها'}</span><span>{en?'More visual systems are being developed':'وتطوير مستمر لأنظمة التصميم'}</span></div>
       </section>
       <section className="studio-section" id="studio"><div className="studio-editorial"><div className="section-overline">{en?'YOUR STUDIO · 02':'استوديو التصميم · 02'}</div><h2>{en?<>Not just a template.<br/><em>A site you shape.</em></>:<>أكثر من قالب جاهز.<br/><em>موقع تصوغه بنفسك.</em></>}</h2><p>{en?'Edit your story, switch the visual direction, adjust the color, show or hide sections — and see your changes while you work.':'حرّر نبذتك، وغيّر النمط البصري، واختر الألوان، وأظهر الأقسام أو أخفها، وشاهد النتيجة مباشرة أثناء العمل.'}</p><button className="studio-link" onClick={onStart}>{en?'Step into the studio':'ادخل استوديو التصميم'} <span>↗</span></button><div className="studio-number">02<span> / 04</span></div></div>
@@ -1021,13 +1068,14 @@ function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onC
 
 function PortfolioCanvas({data,template,language}:{data:Portfolio;template:Template;language:'ar'|'en'}) {
   const en=language==='en'
-  const projects=en?['A calmer way to bank','Learning without limits','A brand built to grow']:data.projects
+  const enteredProjects=data.projects.filter(name=>typeof name==='string' && name.trim().length>0)
+  const projects=enteredProjects.length?enteredProjects:(en?['A calmer way to bank','Learning without limits','A brand built to grow']:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو إبداعي'])
   const portraits=[imageUrls[0],imageUrls[2],imageUrls[5]]
   const avatarSrc = data.avatarUrl || portraits[template.layout%3]
   const displayName = data.name || (en ? 'Your Name' : 'اسمك الشخصي')
   const displayRole = data.role || (en ? template.role : 'مجال عملك')
   const displayBio = data.bio || (en ? 'Good work starts with curiosity. I turn thoughtful ideas into work that makes everyday life a little better.' : 'أصمم منتجات رقمية بسيطة وقريبة من الناس.')
-  return <article className={'portfolio-site layout-'+template.layout} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}><div className="site-nav"><span className="site-monogram">{displayName.split(' ').map(s=>s[0]).join('')}</span><div><a href="#about">{en?'About':'عنّي'}</a><a href="#work">{en?'Work':'أعمالي'}</a><a href="#contact">{en?'Contact':'تواصل'}</a></div><span className="site-availability"><i/>{en?'Open to work':'متاح للعمل'}</span></div><section className="site-hero"><div className="site-copy"><small className="site-eyebrow">✳ {en?template.profession.toUpperCase():'أهلاً، أنا '+displayName}</small><h1>{displayName}<br/><em>{displayRole}</em></h1>{data.visible.about&&<p id="about">{displayBio}</p>}<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a></div><div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location || (en?'Remote':'عن بُعد')}　·　2026</div></div></section>{data.visible.projects&&<section className="site-work" id="work"><div className="site-section-title"><div><small>01 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{en?'More coming soon':'المزيد قريباً'} ↗</span></div><div className="site-project-grid">{projects.map((name,i)=><div className={'site-project project-'+i} key={name}><div className="site-project-art"><img src={imageUrls[(i+template.layout+1)%imageUrls.length]} alt="" loading="lazy"/><span>{['milo','nūn','else'][i%3]}</span><b>{['✳','◡','✿'][i%3]}</b></div><h3>{name}</h3><small>{['Product design · 2026','Branding · 2025','Creative direction · 2024'][i%3]}</small></div>)}</div></section>}{data.visible.contact&&<section className="site-contact" id="contact"><div><small>02 / {en?'SAY HELLO':'كلمّني'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div><a href={'mailto:'+data.email}>{data.email} ↗</a></section>}<footer className="site-footer"><span>© {new Date().getFullYear()} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer></article>
+  return <article className={'portfolio-site layout-'+template.layout} data-layout={template.layout} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}><div className="site-nav"><span className="site-monogram">{displayName.split(' ').map(s=>s[0]).join('')}</span><div><a href="#about">{en?'About':'عنّي'}</a><a href="#work">{en?'Work':'أعمالي'}</a><a href="#contact">{en?'Contact':'تواصل'}</a></div><span className="site-availability"><i/>{en?'Open to work':'متاح للعمل'}</span></div><section className="site-hero"><div className="site-copy"><small className="site-eyebrow">✳ {en?template.profession.toUpperCase():'أهلاً، أنا '+displayName}</small><h1>{displayName}<br/><em>{displayRole}</em></h1>{data.visible.about&&<p id="about">{displayBio}</p>}<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a></div><div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location || (en?'Remote':'عن بُعد')}　·　2026</div></div></section>{data.visible.projects&&<section className="site-work" id="work"><div className="site-section-title"><div><small>01 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{en?'More coming soon':'المزيد قريباً'} ↗</span></div><div className="site-project-grid">{projects.map((name,i)=><div className={'site-project project-'+i} key={name}><div className="site-project-art"><img src={imageUrls[(i+template.layout+1)%imageUrls.length]} alt="" loading="lazy"/><span>{['milo','nūn','else'][i%3]}</span><b>{['✳','◡','✿'][i%3]}</b></div><h3>{name}</h3><small>{['Product design · 2026','Branding · 2025','Creative direction · 2024'][i%3]}</small></div>)}</div></section>}{data.visible.contact&&<section className="site-contact" id="contact"><div><small>02 / {en?'SAY HELLO':'كلمّني'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div><a href={'mailto:'+data.email}>{data.email} ↗</a></section>}<footer className="site-footer"><span>© {new Date().getFullYear()} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer></article>
 }
 
 function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart }: {

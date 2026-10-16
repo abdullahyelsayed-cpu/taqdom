@@ -31,12 +31,40 @@ function createDb(options = {}) {
         async first() {
           if (sql.includes('JOIN users')) return options.userRow || null
           if (sql.includes('SELECT mime_type, data_base64 FROM media')) return options.mediaRow || null
+          if (sql.includes('SELECT id FROM portfolios WHERE lower(slug)=lower(?)')) {
+            const candidate = String(call.values[0] || '').toLowerCase()
+            const excluded = call.values[1]
+            return options.slugExists &&
+              options.slugExists.toLowerCase() === candidate &&
+              (options.slugExistsOwnerId === undefined || options.slugExistsOwnerId !== excluded)
+              ? { id: 'another-portfolio' }
+              : null
+          }
+          if (sql.includes('SELECT status,slug FROM portfolios WHERE id=? AND owner_id=?')) {
+            return options.currentPortfolioStatus
+              ? { status: options.currentPortfolioStatus, slug: Object.prototype.hasOwnProperty.call(options, 'currentPortfolioSlug') ? options.currentPortfolioSlug : 'existing-handle' }
+              : null
+          }
           if (sql.includes('FROM portfolios WHERE (id=? OR slug=? COLLATE NOCASE)')) return options.publicPortfolio || null
           if (sql.includes("SELECT id FROM portfolios WHERE id=? AND status='published'")) {
             return options.publishedTarget ? { id: portfolioId } : null
           }
           if (sql.includes('SELECT status FROM portfolios WHERE id=? AND owner_id=?')) {
             return options.currentPortfolioStatus ? { status: options.currentPortfolioStatus } : null
+          }
+          if (sql.includes('SELECT id,title,template_id,slug,document_json,status,created_at,updated_at FROM portfolios WHERE id=? AND owner_id=?')) {
+            const insert = calls.find(item => item.sql?.includes('INSERT INTO portfolios (id,owner_id,title,template_id,slug,status,document_json)'))
+            const values = insert?.values || []
+            return options.createdPortfolio || {
+              id: call.values[0],
+              title: values[2] || 'New portfolio',
+              template_id: values[3] || 'design-0',
+              slug: values[4] || 'site-test00',
+              status: values[5] || 'draft',
+              document_json: values[6] || '{}',
+              created_at: '2026-01-01 00:00:00',
+              updated_at: '2026-01-01 00:00:00'
+            }
           }
           if (sql.includes('SELECT id FROM portfolios WHERE id=? AND owner_id=?')) {
             return options.ownerPortfolio ? { id: portfolioId } : null
@@ -55,6 +83,7 @@ function createDb(options = {}) {
           if (sql.includes('INSERT INTO messages')) calls.push({kind: 'insert-message'})
           if (sql.includes('INSERT INTO media')) calls.push({kind: 'insert-media', values: call.values})
           if (sql.includes('UPDATE portfolios SET title')) calls.push({kind: 'update-portfolio', values: call.values})
+          if (sql.includes('INSERT INTO portfolios (id,owner_id,title,template_id,slug,status,document_json)')) calls.push({kind: 'insert-portfolio', values: call.values})
           return { meta: { changes: options.runChanges ?? 1 } }
         }
       }
@@ -242,6 +271,133 @@ await test('legacy SVG media cannot be served as a public asset', async () => {
   assert.equal(response.status, 415)
   assert.equal(response.headers.get('X-Content-Type-Options'), 'nosniff')
   assert.match(response.headers.get('Content-Security-Policy') || '', /sandbox/)
+})
+
+await test('reserved subdomains are rejected', async () => {
+  const db = createDb({ userRow })
+  const { response, body } = await invoke('/api/portfolios', {
+    method: 'POST',
+    cookie: sessionCookie,
+    body: {
+      slug: 'www',
+      title: 'My portfolio',
+      templateId: 'design-0',
+      document: { name: 'My portfolio', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 400)
+  assert.equal(body.error, 'invalid_subdomain')
+  assert.equal(db.calls.some(call => call.sql?.includes('INSERT INTO portfolios (id,owner_id,title,template_id,slug,status,document_json)')), false)
+})
+
+await test('custom subdomain is stored on portfolio creation', async () => {
+  const db = createDb({ userRow })
+  const { response, body } = await invoke('/api/portfolios', {
+    method: 'POST',
+    cookie: sessionCookie,
+    body: {
+      slug: 'abdullah-creative',
+      title: 'My portfolio',
+      templateId: 'design-0',
+      status: 'published',
+      document: { name: 'My portfolio', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 201)
+  assert.equal(body.portfolio.slug, 'abdullah-creative')
+  assert.equal(body.portfolio.status, 'published')
+  const insert = db.calls.find(call => call.kind === 'insert-portfolio')
+  assert.ok(insert)
+  assert.equal(insert.values[4], 'abdullah-creative')
+})
+
+await test('default subdomain uses a readable username-based handle', async () => {
+  const db = createDb({ userRow })
+  const { response, body } = await invoke('/api/portfolios', {
+    method: 'POST',
+    cookie: sessionCookie,
+    body: {
+      title: 'My portfolio',
+      templateId: 'design-0',
+      document: { name: 'My portfolio', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 201)
+  assert.match(body.portfolio.slug, /^test-[0-9a-f]{6}$/)
+})
+
+await test('subdomains cannot be claimed by a second portfolio', async () => {
+  const db = createDb({ userRow, slugExists: 'team-portfolio' })
+  const { response, body } = await invoke('/api/portfolios', {
+    method: 'POST',
+    cookie: sessionCookie,
+    body: {
+      slug: 'team-portfolio',
+      title: 'My portfolio',
+      templateId: 'design-0',
+      document: { name: 'My portfolio', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 409)
+  assert.equal(body.error, 'subdomain_taken')
+  assert.equal(db.calls.some(call => call.sql?.includes('INSERT INTO portfolios (id,owner_id,title,template_id,slug,status,document_json)')), false)
+})
+
+await test('owner can change a portfolio subdomain without changing publish status', async () => {
+  const db = createDb({ userRow, currentPortfolioStatus: 'published', currentPortfolioSlug: 'old-handle' })
+  const { response, body } = await invoke('/api/portfolios/' + portfolioId, {
+    method: 'PUT',
+    cookie: sessionCookie,
+    body: {
+      slug: 'new-handle',
+      title: 'Updated title',
+      templateId: 'design-0',
+      document: { name: 'Updated title', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 200)
+  assert.equal(body.status, 'published')
+  const update = db.calls.find(call => call.kind === 'update-portfolio')
+  assert.ok(update)
+  assert.equal(update.values[2], 'published')
+  assert.equal(update.values[3], 'new-handle')
+})
+
+await test('autosave still supports a legacy portfolio with no slug', async () => {
+  const db = createDb({ userRow, currentPortfolioStatus: 'published', currentPortfolioSlug: null })
+  const { response, body } = await invoke('/api/portfolios/' + portfolioId, {
+    method: 'PUT',
+    cookie: sessionCookie,
+    body: {
+      title: 'Legacy site',
+      templateId: 'design-0',
+      document: { name: 'Legacy site', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 200)
+  assert.equal(body.status, 'published')
+  const update = db.calls.find(call => call.kind === 'update-portfolio')
+  assert.ok(update)
+  assert.equal(update.values[2], 'published')
+  assert.equal(update.values[3], null)
+})
+
+await test('autosave still supports a legacy Arabic slug until the owner changes it', async () => {
+  const db = createDb({ userRow, currentPortfolioStatus: 'draft', currentPortfolioSlug: 'مشروعي-قديم' })
+  const { response, body } = await invoke('/api/portfolios/' + portfolioId, {
+    method: 'PUT',
+    cookie: sessionCookie,
+    body: {
+      title: 'Legacy site',
+      templateId: 'design-0',
+      document: { name: 'Legacy site', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 200)
+  assert.equal(body.status, 'draft')
+  const update = db.calls.find(call => call.kind === 'update-portfolio')
+  assert.ok(update)
+  assert.equal(update.values[3], 'مشروعي-قديم')
 })
 
 await test('autosave preserves published status if status is omitted', async () => {
