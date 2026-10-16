@@ -39,7 +39,7 @@ for (let index = 0; index < expected.length; index += 1) {
   assert.ok(studioCss.includes(`.portfolio-site.layout-${index}{--mood-glow-a:`), `${expected[index]} should own an atmosphere palette`)
   assert.ok(studioCss.includes(`.mini-site-${index}{--preview-glow:`), `${expected[index]} should own a gallery glow palette`)
 }
-assert.ok(!/var\\(--accent\\)\\w/.test(studioCss), 'accent color alpha must use valid CSS color-mix instead of invalid hex suffixes')
+assert.ok(!studioCss.includes('var(--accent)0b') && !studioCss.includes('var(--accent)2b') && !studioCss.includes('var(--accent)18'), 'accent color alpha must use valid CSS color-mix instead of invalid hex suffixes')
 console.log(`PASS: ${layouts.length} visual systems × ${professionCount} profession categories = ${layouts.length * professionCount} starting combinations`)
 console.log('PASS: public templates, gallery mockups, editor swatches, and localized counts are in sync')
 console.log('PASS: all themes include ambient glow, layered backgrounds, glass surfaces, and reduced-motion support')
