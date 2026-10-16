@@ -1504,3 +1504,27 @@
  .portfolio-site.layout-8 .site-sections.composition-8 .site-about,.portfolio-site.layout-8 .site-sections.composition-8 .site-skills,.portfolio-site.layout-8 .site-sections.composition-8 .site-experience,.portfolio-site.layout-8 .site-sections.composition-8 .site-social-links{border-radius:8px}
 }
 @media(prefers-reduced-motion:reduce){.history-action,.section-order-item,.section-order-arrows button{transition:none!important}}
+/* Production data states: avoid decorative placeholders being mistaken for user content. */
+.portfolio-site .site-nav-context{min-width:0;max-width:24%;overflow-wrap:anywhere;text-align:end;color:color-mix(in srgb,currentColor 58%,transparent);font-size:9px;font-weight:650;letter-spacing:.04em}
+.portfolio-site .portrait-placeholder{display:grid;place-items:center;width:100%;height:100%;background:
+  radial-gradient(circle at 28% 25%,color-mix(in srgb,var(--accent) 35%,transparent),transparent 36%),
+  linear-gradient(145deg,color-mix(in srgb,var(--pale) 72%,#000),color-mix(in srgb,var(--accent) 10%,var(--pale)));
+  color:var(--accent);font-size:clamp(34px,5vw,58px);font-weight:850;letter-spacing:-.08em}
+.portfolio-site .site-project-art-placeholder{display:grid;place-items:center;position:absolute;inset:0;background:
+  radial-gradient(circle at 28% 25%,color-mix(in srgb,var(--accent) 32%,transparent),transparent 35%),
+  linear-gradient(135deg,color-mix(in srgb,var(--accent) 8%,var(--pale)),color-mix(in srgb,var(--pale) 86%,#000));
+  color:var(--accent)}
+.portfolio-site .site-project-art-placeholder span{font-size:42px;line-height:1;opacity:.85}
+.portfolio-site .site-project-art-placeholder b{position:absolute;right:12px;bottom:10px;font-size:9px;letter-spacing:.18em;opacity:.7}
+.dashboard-account-danger{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:28px;padding:16px 18px;border:1px solid #e0607260;border-radius:13px;background:#42131b50}
+.dashboard-account-danger strong{display:block;color:#ffd8dc;font-size:12px}
+.dashboard-account-danger p{margin:5px 0 0;color:#c9a2aa;font-size:10px;line-height:1.7}
+.dashboard-account-danger button{flex:none;border:1px solid #c85567;background:transparent;color:#ffb7bf;border-radius:8px;padding:9px 12px;font:inherit;font-size:10px;font-weight:800;cursor:pointer}
+.dashboard-account-danger button:hover:not(:disabled){background:#9e304215;border-color:#ff7181;color:#fff}
+.dashboard-account-danger button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:740px){
+  .portfolio-site .site-nav-context{max-width:34%;font-size:8px}
+  .dashboard-account-danger{align-items:flex-start;flex-direction:column}
+  .dashboard-account-danger button{width:100%}
+}
+
