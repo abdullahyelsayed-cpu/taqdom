@@ -164,7 +164,7 @@ export function downloadPortfolioHtml(
     contact:{en:'Contact',ar:'تواصل',id:'contact'}
   }
   const navMarkup = sectionOrder.filter(key => sectionAvailability[key]).map(key => `<a href="#${sectionNames[key].id}">${en ? sectionNames[key].en : sectionNames[key].ar}</a>`).join('')
-  const orderedSectionsMarkup = sectionOrder.map(key => sectionMarkup[key]).join('')
+  const orderedSectionsMarkup = '<div class="site-sections composition-' + layout + '" data-section-order="' + sectionOrder.join(' ') + '">' + sectionOrder.map(key => '<div class="section-slot slot-' + key + '" data-section="' + key + '">' + sectionMarkup[key] + '</div>').join('') + '</div>'
   const themeRules = themePalettes.map((palette, index) => `
 body.theme-${index}{--page:${palette.page};--ink:${palette.ink};--muted:${palette.muted};--surface:${palette.surface};--line:${palette.line};--hero-bg:${palette.hero};--radius:${palette.radius};--glow-a:${palette.glowA};--glow-b:${palette.glowB};--glow-c:${palette.glowC};background:${palette.body};color:var(--ink)}
 body.theme-${index} .shell{background:linear-gradient(145deg, color-mix(in srgb,var(--page) 88%,white 3%),var(--page));border-color:var(--line);box-shadow:0 28px 100px #0002}
@@ -279,6 +279,61 @@ body.theme-8 .hero-actions .primary{background:linear-gradient(100deg,#ff771a,#f
 @media(max-width:680px){.hero{grid-template-columns:1fr!important;padding:32px 21px}.hero-media{min-height:0;margin-top:12px}.portrait-frame{width:min(100%,260px);height:270px}.projects{grid-template-columns:1fr}.project{min-height:175px}.section-heading{align-items:flex-start;flex-direction:column}.contact{margin:12px 8px}footer{margin-inline:20px}.experience-item{grid-template-columns:30px minmax(0,1fr)}.experience-period{grid-column:2;justify-self:start}.socials{grid-template-columns:1fr}.social-links{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 `
+  const compositionRules = `
+.site-sections{display:grid;grid-template-columns:minmax(0,1fr);gap:0;align-items:start;min-width:0}
+.section-slot{min-width:0;max-width:100%;grid-column:1/-1}
+.section-slot>.section{min-width:0;max-width:100%}
+/* Nexus: technical briefing with a paired capability/timeline row. */
+body.theme-0 .composition-0{grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+body.theme-0 .composition-0 .slot-skills{grid-column:span 5}
+body.theme-0 .composition-0 .slot-experience{grid-column:span 7}
+body.theme-0 .composition-0 .slot-socials{grid-column:span 5}
+body.theme-0 .composition-0 .slot-contact{grid-column:span 7}
+/* Atelier: serif editorial rail. */
+body.theme-1 .composition-1{grid-template-columns:repeat(12,minmax(0,1fr))}
+body.theme-1 .composition-1 .slot-skills{grid-column:span 5}
+body.theme-1 .composition-1 .slot-socials{grid-column:span 7}
+body.theme-1 .composition-1 .slot-experience{border-inline-start:3px solid #9fb18f;padding-inline-start:24px}
+/* Pulse: bold, hard-edged editorial bands. */
+body.theme-2 .composition-2{display:flex;flex-direction:column;gap:10px}
+body.theme-2 .composition-2 .section{border:1px solid #f0449c66;border-radius:0;background:#220b29}
+body.theme-2 .composition-2 .slot-about{border-inline-start:5px solid #ff3b92}
+body.theme-2 .composition-2 .slot-contact .section{background:#ff3b92;color:#260b23}
+/* Meadow: rounded two-column islands. */
+body.theme-3 .composition-3{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body.theme-3 .composition-3 .slot-skills,body.theme-3 .composition-3 .slot-socials,body.theme-3 .composition-3 .slot-contact{grid-column:span 1}
+body.theme-3 .composition-3 .section{border:1px solid #b9ddcd;border-radius:20px;background:#f0f8ef}
+/* Flux: dense technical split. */
+body.theme-4 .composition-4{grid-template-columns:repeat(12,minmax(0,1fr));gap:10px}
+body.theme-4 .composition-4 .slot-skills{grid-column:span 4}
+body.theme-4 .composition-4 .slot-experience{grid-column:span 8}
+body.theme-4 .composition-4 .slot-socials{grid-column:span 4}
+body.theme-4 .composition-4 .slot-contact{grid-column:span 8}
+body.theme-4 .composition-4 .section{border:1px solid #2772e4;background:#071932}
+/* Mono: single-column typography and clear rules. */
+body.theme-5 .composition-5{display:flex;flex-direction:column}
+body.theme-5 .composition-5 .section{border-radius:0;background:transparent;box-shadow:none}
+body.theme-5 .composition-5 .slot-contact .section{border-block:2px solid #141a20}
+/* Halo: centered vertical cadence. */
+body.theme-6 .composition-6{display:flex;flex-direction:column;gap:14px}
+body.theme-6 .composition-6 .slot-skills>.section,body.theme-6 .composition-6 .slot-about>.section,body.theme-6 .composition-6 .slot-socials>.section{text-align:center;border:1px solid #7650a966;border-radius:22px;background:#140d25}
+/* Bloom: pastel card mosaic. */
+body.theme-7 .composition-7{grid-template-columns:repeat(12,minmax(0,1fr));gap:11px}
+body.theme-7 .composition-7 .slot-skills{grid-column:span 7}
+body.theme-7 .composition-7 .slot-socials{grid-column:span 5}
+body.theme-7 .composition-7 .section{border:1px solid #d9d2ff;border-radius:22px;background:#faf8ff}
+/* Ember: asymmetric editorial split. */
+body.theme-8 .composition-8{grid-template-columns:repeat(12,minmax(0,1fr));gap:9px}
+body.theme-8 .composition-8 .slot-about{grid-column:span 8}
+body.theme-8 .composition-8 .slot-skills{grid-column:span 4}
+body.theme-8 .composition-8 .slot-socials{grid-column:span 4}
+body.theme-8 .composition-8 .slot-contact{grid-column:span 8}
+body.theme-8 .composition-8 .section{border:1px solid #ff8b355e;border-radius:10px;background:#1c110b}
+@media(max-width:680px){
+ body.theme-0 .composition-0,body.theme-1 .composition-1,body.theme-3 .composition-3,body.theme-4 .composition-4,body.theme-7 .composition-7,body.theme-8 .composition-8{grid-template-columns:minmax(0,1fr);gap:8px}
+ .site-sections .section-slot{grid-column:1/-1!important}
+}
+`
   const html = `<!doctype html>
 <html lang="${locale}" dir="${dir}">
 <head>
@@ -299,6 +354,7 @@ body.theme-8 .hero-actions .primary{background:linear-gradient(100deg,#ff771a,#f
 @keyframes ambient-drift{from{transform:translate3d(-1%,0,0) scale(1);opacity:.55}to{transform:translate3d(1%,1%,0) scale(1.06);opacity:.9}}
 ${themeRules}
 ${designRules}
+${compositionRules}
 </style>
 </head>
 <body class="theme-${layout} mood-${mood}">
