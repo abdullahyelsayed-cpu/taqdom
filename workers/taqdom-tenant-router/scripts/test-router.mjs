@@ -25,6 +25,9 @@ await test('extracts only one valid subdomain label', async () => {
   assert.equal(tenantFromHostname('two.words.taqdom.me'), null)
   assert.equal(tenantFromHostname('taqdom.me'), null)
   assert.equal(tenantFromHostname('bad_label.taqdom.me'), null)
+  assert.equal(tenantFromHostname('api.taqdom.me'), null)
+  assert.equal(tenantFromHostname('www.taqdom.me'), null)
+  assert.equal(tenantFromHostname('app.taqdom.me'), null)
 })
 await test('requires a same-host HTTPS browser origin', async () => {
   assert.equal(isValidBrowserOrigin('https://alice.taqdom.me', 'alice.taqdom.me'), true)
@@ -75,8 +78,10 @@ await test('rejects cross-origin browser writes before proxying', async () => {
 await test('rejects multi-level and malformed tenant hosts', async () => {
   const deep = await router.fetch(req('https://a.b.taqdom.me/'), {})
   const malformed = await router.fetch(req('https://bad_label.taqdom.me/'), {})
+  const reserved = await router.fetch(req('https://api.taqdom.me/'), {})
   assert.equal(deep.status, 404)
   assert.equal(malformed.status, 404)
+  assert.equal(reserved.status, 404)
 })
 await test('blocks authenticated API routes on tenant hosts', async () => {
   let called = false
