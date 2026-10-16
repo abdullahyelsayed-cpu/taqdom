@@ -397,3 +397,333 @@
   overflow-wrap:anywhere;
   text-shadow:0 0 14px #47dfff1a;
 }
+
+
+/* Nine signature template systems inspired by the Taqdom future-template board. */
+.template-mini-0{background:radial-gradient(circle at 80% 24%,#426dff8c,transparent 29%),linear-gradient(135deg,#07132b,#071b32)!important}
+.template-mini-0 i{background:linear-gradient(135deg,#b779ff,#26dcff)!important;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.template-mini-1{background:linear-gradient(135deg,#f8f2e5,#e0e3d0)!important}
+.template-mini-1 i{background:linear-gradient(135deg,#738b66,#c6bda0)!important;border-radius:2px!important;box-shadow:inset 0 0 0 7px #fff4}
+.template-mini-2{background:radial-gradient(circle at 76% 28%,#ff317a8a,transparent 34%),linear-gradient(135deg,#210d2c,#4f0c49)!important}
+.template-mini-2 i{background:linear-gradient(130deg,#ff3c98,#ff9a43)!important;transform:rotate(-8deg);border-radius:42% 4% 42% 4%!important}
+.template-mini-3{background:linear-gradient(140deg,#0c3b46,#5fb2a2)!important}
+.template-mini-3 i{background:linear-gradient(135deg,#a2f5d5,#1fa5af)!important;border-radius:40% 8% 50% 8%!important}
+.template-mini-4{background:radial-gradient(circle at 70% 30%,#2855fe8f,transparent 36%),linear-gradient(135deg,#06132e,#07365b)!important}
+.template-mini-4 i{background:linear-gradient(135deg,#3c6cff,#43eaff)!important;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.template-mini-5{background:linear-gradient(135deg,#101317,#5d626b)!important}
+.template-mini-5 i{background:linear-gradient(90deg,#f9fafb,#8f98a4)!important;border-radius:0!important}
+.template-mini-6{background:radial-gradient(circle at 60% 45%,#9e6aff70,transparent 30%),linear-gradient(135deg,#050611,#190d34)!important}
+.template-mini-6 i{background:transparent!important;border:3px solid #a678ff;border-radius:50%!important;box-shadow:0 0 12px #854bff}
+.template-mini-7{background:linear-gradient(135deg,#f9f5ff,#d5dfff)!important}
+.template-mini-7 i{background:linear-gradient(135deg,#7e83ff,#ffb6e5,#70dcff)!important;border-radius:48% 10% 48% 14%!important;transform:rotate(-8deg)}
+.template-mini-8{background:radial-gradient(circle at 70% 35%,#ff791d7c,transparent 35%),linear-gradient(135deg,#080c13,#2b170d)!important}
+.template-mini-8 i{background:linear-gradient(130deg,#ff6e11,#ffc05a)!important;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);box-shadow:0 0 13px #ff821d!important}
+
+.lux-template-visual{isolation:isolate}
+.lux-template-visual>img{z-index:0}
+.template-visual-shade{z-index:1}
+.template-index,.template-overlay-ui,.template-chip{z-index:2}
+.lux-template-visual:after{content:"";position:absolute;z-index:1;inset:0;pointer-events:none;opacity:.75}
+.card-layout-0 .lux-template-visual{background:#07162b;border-color:#2d9cff7a}
+.card-layout-0 .lux-template-visual>img{opacity:.6;mix-blend-mode:screen;filter:saturate(1.2) contrast(1.08)}
+.card-layout-0 .template-visual-shade{background:linear-gradient(120deg,#031022e8,#08264c9c 48%,#060b1c70)!important}
+.card-layout-0 .lux-template-visual:after{background-image:linear-gradient(#45cfff21 1px,transparent 1px),linear-gradient(90deg,#45cfff21 1px,transparent 1px);background-size:19px 19px}
+.card-layout-0 .template-overlay-ui>b{color:#f4faff}.card-layout-0 .template-overlay-ui>b em{color:#60e7ff}
+.card-layout-0 .template-chip{background:#071d34e8;color:#78eaff;border-color:#33c9ff70}
+.card-layout-1 .lux-template-visual{background:#f4f0e5;border-color:#b7c8a5}
+.card-layout-1 .lux-template-visual>img{opacity:.56;mix-blend-mode:multiply;filter:saturate(.5) sepia(.14)}
+.card-layout-1 .template-visual-shade{background:linear-gradient(110deg,#f8f5e9f2 0%,#f1eedfc9 58%,#d9e3d2a3)!important}
+.card-layout-1 .lux-template-visual:after{background:radial-gradient(circle at 82% 20%,#a5bb8f62,transparent 36%)}
+.card-layout-1 .template-index,.card-layout-1 .template-overlay-ui>span{color:#3f6347!important}
+.card-layout-1 .template-overlay-ui>b{color:#1a3025}
+.card-layout-1 .template-overlay-ui>i{color:#31543e;border-color:#4e7453}
+.card-layout-1 .template-chip{background:#dfe8d5e8;color:#24442d;border-color:#b1c4a8}
+.card-layout-2 .lux-template-visual{background:#290d31;border-color:#ef349c8a}
+.card-layout-2 .lux-template-visual>img{opacity:.63;mix-blend-mode:screen;filter:saturate(1.5) contrast(1.1)}
+.card-layout-2 .template-visual-shade{background:linear-gradient(125deg,#200624d9 0%,#60104477 47%,#fe3f6740 100%)!important}
+.card-layout-2 .lux-template-visual:after{background:radial-gradient(circle at 80% 24%,#ff4f9c62,transparent 35%),linear-gradient(135deg,transparent 48%,#ff8b2a30)}
+.card-layout-2 .template-overlay-ui>b{color:#fff1f7}
+.card-layout-2 .template-overlay-ui>i{border-color:#ff70b4;color:#ffacd1}
+.card-layout-2 .template-chip{background:#340f34d9;color:#ff8fc7;border-color:#ff529c80}
+.card-layout-3 .lux-template-visual{background:#0a373f;border-color:#40decaa3}
+.card-layout-3 .lux-template-visual>img{opacity:.64;mix-blend-mode:screen;filter:saturate(.88) contrast(1.03)}
+.card-layout-3 .template-visual-shade{background:linear-gradient(115deg,#061d25c9,#0b5a5a42 48%,#09313970)!important}
+.card-layout-3 .lux-template-visual:after{background:linear-gradient(180deg,transparent 45%,#83eadc18),radial-gradient(ellipse at 20% 100%,#63e3c64d,transparent 45%)}
+.card-layout-3 .template-chip{background:#082d35de;color:#7ef6e1;border-color:#5ae5d47a}
+.card-layout-4 .lux-template-visual{background:#071932;border-color:#3287ff91}
+.card-layout-4 .lux-template-visual>img{opacity:.56;mix-blend-mode:screen;filter:saturate(1.08) contrast(1.15)}
+.card-layout-4 .template-visual-shade{background:radial-gradient(circle at 74% 34%,#4d82ff7d,transparent 35%),linear-gradient(115deg,#041026ed,#052e4f85 58%,#020916b3)!important}
+.card-layout-4 .lux-template-visual:after{background:linear-gradient(135deg,transparent 44%,#36dfff16),radial-gradient(circle at 73% 45%,#62deff25,transparent 27%)}
+.card-layout-4 .template-chip{background:#081f3de8;color:#7bdfff;border-color:#398fff90}
+.card-layout-5 .lux-template-visual{background:#191c22;border-color:#79828f8f}
+.card-layout-5 .lux-template-visual>img{opacity:.52;filter:grayscale(1) contrast(1.18)}
+.card-layout-5 .template-visual-shade{background:linear-gradient(120deg,#11151be8,#20252a91 60%,#0d0f13d9)!important}
+.card-layout-5 .lux-template-visual:after{background-image:linear-gradient(#ffffff14 1px,transparent 1px);background-size:100% 44px}
+.card-layout-5 .template-chip{background:#12161bdd;color:#f2f4f7;border-color:#a4acb777}
+.card-layout-6 .lux-template-visual{background:#080611;border-color:#9a6bff8f}
+.card-layout-6 .lux-template-visual>img{opacity:.44;mix-blend-mode:screen;filter:saturate(.65) contrast(1.2)}
+.card-layout-6 .template-visual-shade{background:radial-gradient(circle at 72% 30%,#7753ce59,transparent 35%),linear-gradient(110deg,#03040bef,#0c071be0 58%,#160b2fa6)!important}
+.card-layout-6 .lux-template-visual:after{background:radial-gradient(ellipse at 73% 38%,transparent 17%,#a36aff70 18%,transparent 19%,transparent 29%,#7655c644 30%,transparent 31%)}
+.card-layout-6 .template-chip{background:#170d2ad9;color:#c3a2ff;border-color:#9460ff77}
+.card-layout-7 .lux-template-visual{background:#f2f0ff;border-color:#a79cff}
+.card-layout-7 .lux-template-visual>img{opacity:.31;mix-blend-mode:multiply;filter:saturate(.5)}
+.card-layout-7 .template-visual-shade{background:linear-gradient(120deg,#f9f7ffed,#e8e7ffb8 53%,#ffe5f4ba)!important}
+.card-layout-7 .lux-template-visual:after{background:radial-gradient(ellipse at 70% 30%,#9b9bff62,transparent 30%),radial-gradient(ellipse at 88% 68%,#fa91d854,transparent 32%),linear-gradient(130deg,transparent 35%,#8c8fff32)}
+.card-layout-7 .template-index,.card-layout-7 .template-overlay-ui>span{color:#5f55a9!important}
+.card-layout-7 .template-overlay-ui>b{color:#151a3b}
+.card-layout-7 .template-overlay-ui>i{color:#6351cb;border-color:#8078ce}
+.card-layout-7 .template-chip{background:#ffffffd9;color:#403b88;border-color:#c1b8ff}
+.card-layout-8 .lux-template-visual{background:#120c0a;border-color:#ff902c8a}
+.card-layout-8 .lux-template-visual>img{opacity:.53;mix-blend-mode:screen;filter:saturate(1.25) contrast(1.18)}
+.card-layout-8 .template-visual-shade{background:radial-gradient(circle at 75% 38%,#ff891c63,transparent 31%),linear-gradient(110deg,#08090ce8,#261107a3 56%,#070707e8)!important}
+.card-layout-8 .lux-template-visual:after{background:radial-gradient(ellipse at 72% 38%,transparent 19%,#ff9a3477 20%,transparent 21%,transparent 30%,#ff6d1c49 31%,transparent 32%)}
+.card-layout-8 .template-chip{background:#251206df;color:#ffb45f;border-color:#ff9a3d7c}
+.card-layout-0 .lux-template-meta h3{color:#80e5ff}.card-layout-1 .lux-template-meta h3{color:#c6d5b7}.card-layout-2 .lux-template-meta h3{color:#ff8ac6}
+.card-layout-3 .lux-template-meta h3{color:#79f0db}.card-layout-4 .lux-template-meta h3{color:#69cfff}.card-layout-5 .lux-template-meta h3{color:#f0f1f3}
+.card-layout-6 .lux-template-meta h3{color:#c3a0ff}.card-layout-7 .lux-template-meta h3{color:#d6c6ff}.card-layout-8 .lux-template-meta h3{color:#ffac52}
+
+/* Nexus — electric blue technology and a structured grid. */
+.portfolio-site.layout-0{background:#061020!important;color:#f0f7ff!important;border:1px solid #255988!important;border-radius:9px!important;box-shadow:0 24px 70px #0008,0 0 32px #259eff1c!important;font-family:'DM Sans',sans-serif!important}
+.portfolio-site.layout-0 .site-nav{background:#07152a!important;border-bottom:1px solid #244d75!important}
+.portfolio-site.layout-0 .site-nav a,.portfolio-site.layout-0 .site-availability{color:#a7c2de!important}
+.portfolio-site.layout-0 .site-monogram{border:1px solid #4c95ff!important;border-radius:7px!important;background:#0c2749!important;color:#69e6ff!important;box-shadow:0 0 22px #2779ff38}
+.portfolio-site.layout-0 .site-hero{background:#06172e!important;overflow:hidden;padding:8% 5%!important}
+.portfolio-site.layout-0 .site-hero:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#4aa7f719 1px,transparent 1px),linear-gradient(90deg,#4aa7f719 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
+.portfolio-site.layout-0 .site-hero:after{content:"";position:absolute;width:210px;height:210px;right:13%;top:14%;border:1px solid #53cfff8a;transform:rotate(45deg);box-shadow:0 0 0 20px #2c78fa0c,0 0 38px #4b71ff20;pointer-events:none}
+.portfolio-site.layout-0 .site-copy,.portfolio-site.layout-0 .site-portrait{position:relative;z-index:2}
+.portfolio-site.layout-0 .site-copy h1{font-size:clamp(35px,5vw,65px)!important;font-weight:800!important;letter-spacing:-.065em!important;color:#f5faff!important}
+.portfolio-site.layout-0 .site-copy h1 em{color:transparent!important;background:linear-gradient(100deg,#a16fff,#5ab9ff 48%,#57efff)!important;background-clip:text!important;-webkit-background-clip:text!important}
+.portfolio-site.layout-0 .site-copy>p{color:#a9bfdc!important}
+.portfolio-site.layout-0 .site-eyebrow{color:#66e3ff!important;letter-spacing:.14em}
+.portfolio-site.layout-0 .site-cta{background:linear-gradient(105deg,#9a52ff,#317eff 60%,#1ac6e9)!important;color:#fff!important;border:1px solid #8fbeff!important;border-radius:7px!important;box-shadow:0 0 26px #426eff3c}
+.portfolio-site.layout-0 .portrait-ring{border-radius:16px!important;border:1px solid #49d9ff!important;background:#0b2545!important;box-shadow:0 0 0 8px #43bfff10,0 0 40px #347dff50!important;transform:rotate(2deg)}
+.portfolio-site.layout-0 .portrait-photo{filter:saturate(.85) contrast(1.15)!important}
+.portfolio-site.layout-0 .portrait-decoration{background:#06152bd9!important;color:#5deaff!important;border:1px solid #3faef5;border-radius:5px;padding:5px}
+.portfolio-site.layout-0 .site-work{background:#071020!important;border-top:1px solid #203e66!important}
+.portfolio-site.layout-0 .site-section-title h2,.portfolio-site.layout-0 .site-project h3,.portfolio-site.layout-0 .site-contact h2{color:#f1f7ff!important}
+.portfolio-site.layout-0 .site-section-title small,.portfolio-site.layout-0 .site-project>small,.portfolio-site.layout-0 .site-contact small{color:#72b5ea!important}
+.portfolio-site.layout-0 .site-project{background:#0a1930!important;border:1px solid #234d7b!important;border-radius:8px!important;padding-bottom:12px}
+.portfolio-site.layout-0 .site-project-art{margin:7px;border-radius:5px;background:#0b2540!important}
+.portfolio-site.layout-0 .site-project-art:after{background:linear-gradient(0deg,#03101de8,transparent 65%)!important}
+.portfolio-site.layout-0 .site-project h3,.portfolio-site.layout-0 .site-project small{margin-inline:12px}
+.portfolio-site.layout-0 .site-project-art b{color:#58eaff!important;text-shadow:0 0 18px #4deaff}
+.portfolio-site.layout-0 .site-contact{background:#081a31!important;border-color:#24476b!important;color:#eff8ff!important}
+.portfolio-site.layout-0 .site-contact a{color:#63e5ff!important}
+.portfolio-site.layout-0 .site-footer{background:#040914;color:#9badc8!important;border-color:#203c60!important}
+
+/* Forma — warm editorial design, generous whitespace, olive details. */
+.portfolio-site.layout-1{background:#f8f5ec!important;color:#253429!important;border:1px solid #d8dfcd!important;border-radius:8px!important;box-shadow:0 22px 65px #06130918!important;font-family:Georgia,'Times New Roman',serif!important}
+.portfolio-site.layout-1 .site-nav{background:#f8f5ec!important;border-bottom:1px solid #dddccf!important}
+.portfolio-site.layout-1 .site-nav a,.portfolio-site.layout-1 .site-availability{color:#657566!important}
+.portfolio-site.layout-1 .site-monogram{border:1px solid #829576!important;color:#45654a!important;border-radius:50%!important}
+.portfolio-site.layout-1 .site-hero{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)!important;align-items:end;background:linear-gradient(135deg,#f8f4e9,#e7e8d9)!important;padding:8% 5%!important}
+.portfolio-site.layout-1 .site-copy h1{font-family:Georgia,'Times New Roman',serif!important;font-size:clamp(36px,4.7vw,65px)!important;letter-spacing:-.05em!important;font-weight:500!important;color:#263b2e!important}
+.portfolio-site.layout-1 .site-copy h1 em{font-style:italic!important;color:#718763!important}
+.portfolio-site.layout-1 .site-copy>p{color:#6d7569!important}
+.portfolio-site.layout-1 .site-eyebrow{color:#627657!important}
+.portfolio-site.layout-1 .site-cta{background:#3e6348!important;border:1px solid #3e6348!important;color:#fff!important;border-radius:3px!important}
+.portfolio-site.layout-1 .portrait-ring{border-radius:4px!important;background:#d9dfcf!important;border:1px solid #bdc6af!important;box-shadow:8px 8px 0 #bbcaa9!important}
+.portfolio-site.layout-1 .portrait-photo{filter:saturate(.68) sepia(.14)!important}
+.portfolio-site.layout-1 .site-work{background:#fbfaf5!important;border-top:1px solid #e1e1d7!important}
+.portfolio-site.layout-1 .site-section-title h2,.portfolio-site.layout-1 .site-project h3,.portfolio-site.layout-1 .site-contact h2{font-family:Georgia,serif!important;color:#2d4231!important}
+.portfolio-site.layout-1 .site-section-title small,.portfolio-site.layout-1 .site-project>small,.portfolio-site.layout-1 .site-contact small{color:#778b70!important}
+.portfolio-site.layout-1 .site-project{background:#fffefa!important;border:1px solid #e1e4d8!important;border-radius:4px!important;padding:8px 8px 13px}
+.portfolio-site.layout-1 .site-project-art{border-radius:2px;background:#e9eadf!important}
+.portfolio-site.layout-1 .site-project-art img{filter:saturate(.62)!important}
+.portfolio-site.layout-1 .site-contact{background:#edf0e5!important;border-color:#d8dfce!important}
+.portfolio-site.layout-1 .site-contact a{color:#43664a!important}
+.portfolio-site.layout-1 .site-footer{color:#6d7d6c!important;border-color:#d8dfcf!important}
+
+/* Pulse — high-energy creative direction, rich pinks and electric orange. */
+.portfolio-site.layout-2{background:#220b27!important;color:#fff2fa!important;border:1px solid #8c2a77!important;border-radius:8px!important;font-family:'DM Sans',sans-serif!important;box-shadow:0 26px 70px #0008,0 0 40px #fe3f9b12!important}
+.portfolio-site.layout-2 .site-nav{background:#260d2d!important;border-bottom:1px solid #6b255c!important}
+.portfolio-site.layout-2 .site-nav a,.portfolio-site.layout-2 .site-availability{color:#f6c7e5!important}
+.portfolio-site.layout-2 .site-monogram{background:linear-gradient(135deg,#ff3d9a,#ff8b37)!important;color:white!important;border:0;border-radius:3px!important}
+.portfolio-site.layout-2 .site-hero{grid-template-columns:minmax(0,1fr) minmax(0,.82fr)!important;background:radial-gradient(circle at 84% 24%,#ff3e9138,transparent 33%),linear-gradient(125deg,#2b0c35,#40102f 58%,#170d20)!important;padding:8% 5%!important}
+.portfolio-site.layout-2 .site-copy h1{font-weight:850!important;letter-spacing:-.07em!important;text-transform:uppercase;color:#fff5fb!important;font-size:clamp(37px,5vw,68px)!important}
+.portfolio-site.layout-2 .site-copy h1 em{color:#ff5aa6!important;text-shadow:0 0 26px #ff489c50!important}
+.portfolio-site.layout-2 .site-eyebrow{color:#ffb45d!important}
+.portfolio-site.layout-2 .site-copy>p{color:#edcbe1!important}
+.portfolio-site.layout-2 .site-cta{background:linear-gradient(100deg,#ff2688,#ff694a)!important;border:1px solid #ff9bbf!important;border-radius:5px!important;color:#fff!important}
+.portfolio-site.layout-2 .portrait-ring{border-radius:45% 6% 42% 8%!important;background:#4a1245!important;border:2px solid #ff68b1!important;box-shadow:9px 10px 0 #ff8c4a!important;transform:rotate(-3deg)}
+.portfolio-site.layout-2 .portrait-photo{filter:saturate(1.12) contrast(1.08)!important}
+.portfolio-site.layout-2 .site-work{background:#fff0f6!important;color:#391534!important;border-top:3px solid #ff68b2!important}
+.portfolio-site.layout-2 .site-section-title h2,.portfolio-site.layout-2 .site-project h3,.portfolio-site.layout-2 .site-contact h2{color:#34112f!important;font-weight:800!important}
+.portfolio-site.layout-2 .site-section-title small,.portfolio-site.layout-2 .site-project>small,.portfolio-site.layout-2 .site-contact small{color:#a3477e!important}
+.portfolio-site.layout-2 .site-project{background:#fffafe!important;border:1px solid #f3c6df!important;border-radius:4px!important;padding:6px 6px 12px}
+.portfolio-site.layout-2 .site-project-art{background:#3a133c!important;border-radius:2px!important}
+.portfolio-site.layout-2 .site-project-art:after{background:linear-gradient(0deg,#230b2ad9,transparent 65%)!important}
+.portfolio-site.layout-2 .site-contact{background:#ffdfeb!important;border-color:#381234!important}
+.portfolio-site.layout-2 .site-contact a{color:#9e2879!important;font-weight:800}
+.portfolio-site.layout-2 .site-footer{background:#200b27!important;color:#f4bfdc!important;border-color:#71315e!important}
+
+/* Lumen — nature-led storytelling, open space, mint and deep-water teal. */
+.portfolio-site.layout-3{background:#e9f5ef!important;color:#173d3c!important;border:1px solid #9bcdbd!important;border-radius:16px!important;font-family:'DM Sans',sans-serif!important}
+.portfolio-site.layout-3 .site-nav{background:#eaf5ef!important;border-bottom:1px solid #c6e0d1!important}
+.portfolio-site.layout-3 .site-nav a,.portfolio-site.layout-3 .site-availability{color:#477d75!important}
+.portfolio-site.layout-3 .site-monogram{display:grid;place-items:center;width:39px;height:39px;border-radius:45% 45% 6px 45%!important;background:#d0ecdc!important;color:#286d5c!important}
+.portfolio-site.layout-3 .site-hero{background:linear-gradient(140deg,#eaf8f0,#d5eee5 56%,#b4ddd2)!important;padding:8% 5%!important;border-radius:20px!important;margin:12px!important;overflow:hidden}
+.portfolio-site.layout-3 .site-hero:after{content:"";position:absolute;width:240px;height:240px;right:-50px;top:-80px;border:1px solid #65bfa179;border-radius:50%;box-shadow:0 0 0 18px #69bba21a,0 0 0 43px #69bba213}
+.portfolio-site.layout-3 .site-copy,.portfolio-site.layout-3 .site-portrait{position:relative;z-index:2}
+.portfolio-site.layout-3 .site-copy h1{font-family:Georgia,serif!important;font-size:clamp(36px,4.8vw,65px)!important;font-weight:500!important;color:#16453a!important;letter-spacing:-.05em}
+.portfolio-site.layout-3 .site-copy h1 em{font-style:italic!important;color:#288b6e!important}
+.portfolio-site.layout-3 .site-copy>p{color:#4f766c!important}
+.portfolio-site.layout-3 .site-eyebrow{color:#347b67!important}
+.portfolio-site.layout-3 .site-cta{background:#2f8165!important;border-color:#2f8165!important;color:#fff!important;border-radius:999px!important}
+.portfolio-site.layout-3 .portrait-ring{border-radius:46% 46% 46% 8%!important;background:#b7e2ce!important;border:1px solid #69aa8c!important;box-shadow:0 20px 40px #286d5030!important}
+.portfolio-site.layout-3 .portrait-photo{filter:saturate(.78)!important}
+.portfolio-site.layout-3 .site-work{background:#f7fbf5!important;border-top:1px solid #c8e0d0!important}
+.portfolio-site.layout-3 .site-section-title h2,.portfolio-site.layout-3 .site-project h3,.portfolio-site.layout-3 .site-contact h2{color:#1a4d3e!important}
+.portfolio-site.layout-3 .site-section-title small,.portfolio-site.layout-3 .site-project>small,.portfolio-site.layout-3 .site-contact small{color:#658d7a!important}
+.portfolio-site.layout-3 .site-project{background:#fff!important;border:1px solid #d8e8dc!important;border-radius:13px!important;padding:7px 7px 13px}
+.portfolio-site.layout-3 .site-project-art{border-radius:10px 10px 3px 10px!important;background:#d6ede0!important}
+.portfolio-site.layout-3 .site-contact{background:#e0f0e4!important;border-color:#c2dcc8!important}
+.portfolio-site.layout-3 .site-contact a{color:#277a5a!important}
+.portfolio-site.layout-3 .site-footer{border-color:#c8dfce!important;color:#608271!important}
+
+/* Vertex — precision technology, deep blue, luminous geometry and modular cards. */
+.portfolio-site.layout-4{background:#06162d!important;color:#eef7ff!important;border:1px solid #256ee9!important;border-radius:7px!important;box-shadow:0 22px 70px #00102b88,0 0 44px #1c75ff20!important;font-family:'DM Sans',sans-serif!important}
+.portfolio-site.layout-4 .site-nav{background:#071a34!important;border-bottom:1px solid #224f87!important}
+.portfolio-site.layout-4 .site-nav a,.portfolio-site.layout-4 .site-availability{color:#a7d1f2!important}
+.portfolio-site.layout-4 .site-monogram{border:1px solid #36ccff!important;border-radius:6px!important;color:#69eaff!important;background:#082b55}
+.portfolio-site.layout-4 .site-hero{background:radial-gradient(circle at 73% 32%,#385dff4f,transparent 29%),linear-gradient(140deg,#07162f,#082343 64%,#061129)!important;padding:8% 5%!important;overflow:hidden}
+.portfolio-site.layout-4 .site-hero:after{content:"";position:absolute;width:150px;height:150px;right:18%;top:24%;border:1px solid #3eeaff;transform:rotate(45deg) skew(-6deg,-6deg);box-shadow:inset 0 0 34px #318aff3a,0 0 35px #33caff4e}
+.portfolio-site.layout-4 .site-copy,.portfolio-site.layout-4 .site-portrait{position:relative;z-index:2}
+.portfolio-site.layout-4 .site-copy h1{font-size:clamp(35px,4.8vw,64px)!important;font-weight:760!important;letter-spacing:-.06em!important;color:#f3f9ff!important}
+.portfolio-site.layout-4 .site-copy h1 em{color:transparent!important;background:linear-gradient(95deg,#4b85ff,#43eeff)!important;background-clip:text!important;-webkit-background-clip:text!important}
+.portfolio-site.layout-4 .site-copy>p{color:#afc9e6!important}
+.portfolio-site.layout-4 .site-eyebrow{color:#5deaff!important}
+.portfolio-site.layout-4 .site-cta{background:linear-gradient(110deg,#3e75ff,#27d0f5)!important;border:1px solid #65dcff!important;border-radius:6px!important;color:#04152b!important;font-weight:800}
+.portfolio-site.layout-4 .portrait-ring{border:1px solid #56dfff!important;border-radius:13px!important;background:#072448!important;box-shadow:0 0 0 9px #4f85ff14,0 0 46px #318bff3a!important}
+.portfolio-site.layout-4 .portrait-photo{filter:saturate(.85) contrast(1.12)!important}
+.portfolio-site.layout-4 .site-work{background:#07152b!important;border-top:1px solid #1d4e82!important}
+.portfolio-site.layout-4 .site-section-title h2,.portfolio-site.layout-4 .site-project h3,.portfolio-site.layout-4 .site-contact h2{color:#f3f8ff!important}
+.portfolio-site.layout-4 .site-section-title small,.portfolio-site.layout-4 .site-project>small,.portfolio-site.layout-4 .site-contact small{color:#7ebcff!important}
+.portfolio-site.layout-4 .site-project{background:linear-gradient(150deg,#0b2140,#08152a)!important;border:1px solid #1e5f9b!important;border-radius:7px!important;padding:7px 7px 12px}
+.portfolio-site.layout-4 .site-project-art{background:#0c2a50!important;border-radius:4px!important}
+.portfolio-site.layout-4 .site-project-art:after{background:linear-gradient(0deg,#041126ef,transparent 70%)!important}
+.portfolio-site.layout-4 .site-project-art b{color:#5deaff!important}
+.portfolio-site.layout-4 .site-contact{background:#081d37!important;border-color:#22518a!important}
+.portfolio-site.layout-4 .site-contact a{color:#5bdfff!important}
+.portfolio-site.layout-4 .site-footer{border-color:#204a7c!important;color:#8baed0!important}
+
+/* Mono — architectural minimalism in black, white and deliberate lines. */
+.portfolio-site.layout-5{background:#f4f5f6!important;color:#14191f!important;border:1px solid #c9cdd2!important;border-radius:0!important;font-family:Arial,Helvetica,sans-serif!important}
+.portfolio-site.layout-5 .site-nav{background:#f4f5f6!important;border-bottom:2px solid #20262c!important}
+.portfolio-site.layout-5 .site-nav a,.portfolio-site.layout-5 .site-availability{color:#313a43!important}
+.portfolio-site.layout-5 .site-monogram{border:1px solid #3f4851!important;border-radius:0!important;color:#111820!important}
+.portfolio-site.layout-5 .site-hero{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr)!important;background:#f4f5f6!important;border-bottom:2px solid #1d252d;padding:7% 5%!important}
+.portfolio-site.layout-5 .site-copy h1{font-size:clamp(38px,5.3vw,70px)!important;font-family:Arial,Helvetica,sans-serif!important;font-weight:900!important;letter-spacing:-.08em!important;color:#111820!important}
+.portfolio-site.layout-5 .site-copy h1 em{color:#3a4fc4!important}
+.portfolio-site.layout-5 .site-copy>p{color:#48525c!important}
+.portfolio-site.layout-5 .site-eyebrow{color:#252e38!important}
+.portfolio-site.layout-5 .site-cta{background:#131a21!important;border:1px solid #131a21!important;border-radius:0!important;color:#fff!important}
+.portfolio-site.layout-5 .portrait-ring{width:100%!important;height:clamp(185px,26vw,315px)!important;border-radius:0!important;background:#e2e5e8!important;border:1px solid #aeb5bd!important;box-shadow:12px 12px 0 var(--accent)!important}
+.portfolio-site.layout-5 .portrait-photo{filter:grayscale(1) contrast(1.08)!important}
+.portfolio-site.layout-5 .site-work{background:#f4f5f6!important;border-top:0!important}
+.portfolio-site.layout-5 .site-section-title h2,.portfolio-site.layout-5 .site-project h3,.portfolio-site.layout-5 .site-contact h2{color:#131a20!important}
+.portfolio-site.layout-5 .site-section-title small,.portfolio-site.layout-5 .site-project>small,.portfolio-site.layout-5 .site-contact small{color:#5b656f!important}
+.portfolio-site.layout-5 .site-project{background:#eceff1!important;border:1px solid #c7cdd2!important;border-radius:0!important;padding:6px 6px 12px}
+.portfolio-site.layout-5 .site-project-art{background:#e1e4e7!important;border:1px solid #acb4bc!important;border-radius:0!important}
+.portfolio-site.layout-5 .site-project-art img{filter:grayscale(1)!important}
+.portfolio-site.layout-5 .site-contact{background:#e7eaed!important;border-top:2px solid #171e25!important}
+.portfolio-site.layout-5 .site-contact a{color:#253bb7!important;text-decoration:underline!important;text-underline-offset:4px}
+.portfolio-site.layout-5 .site-footer{border-top:2px solid #171e25!important;color:#545e68!important}
+
+/* Eclipse — a quiet cosmic canvas and violet orbital details. */
+.portfolio-site.layout-6{background:#070612!important;color:#f3efff!important;border:1px solid #6545b9!important;border-radius:8px!important;box-shadow:0 22px 80px #0009,0 0 46px #7044da18!important;font-family:'DM Sans',sans-serif!important}
+.portfolio-site.layout-6 .site-nav{background:#080615!important;border-bottom:1px solid #2d2054!important}
+.portfolio-site.layout-6 .site-nav a,.portfolio-site.layout-6 .site-availability{color:#bcb0e5!important}
+.portfolio-site.layout-6 .site-monogram{border:1px solid #8b66ef!important;border-radius:50%!important;color:#d0b8ff!important;background:#120d2a}
+.portfolio-site.layout-6 .site-hero{background:radial-gradient(circle at 78% 42%,#7042cd2b,transparent 29%),linear-gradient(130deg,#070611,#100920 62%,#170b2d)!important;padding:9% 5%!important;overflow:hidden}
+.portfolio-site.layout-6 .site-hero:after{content:"";position:absolute;width:clamp(150px,22vw,270px);height:clamp(150px,22vw,270px);right:14%;top:18%;border-radius:50%;border:1px solid #9a70fa;box-shadow:0 0 0 16px #996cff0b,0 0 0 37px #996cff0a,0 0 38px #8354ee30}
+.portfolio-site.layout-6 .site-copy,.portfolio-site.layout-6 .site-portrait{position:relative;z-index:2}
+.portfolio-site.layout-6 .site-copy h1{font-size:clamp(38px,5vw,67px)!important;font-weight:730!important;letter-spacing:-.07em!important;color:#f9f6ff!important}
+.portfolio-site.layout-6 .site-copy h1 em{color:#bd91ff!important;text-shadow:0 0 30px #8e51ff40}
+.portfolio-site.layout-6 .site-copy>p{color:#b8accf!important}
+.portfolio-site.layout-6 .site-eyebrow{color:#b994ff!important}
+.portfolio-site.layout-6 .site-cta{background:linear-gradient(110deg,#7443cb,#442b94)!important;border:1px solid #9a7ce9!important;color:#fff!important;border-radius:999px!important}
+.portfolio-site.layout-6 .portrait-ring{border-radius:50%!important;border:1px solid #a37aff!important;background:#140e2b!important;box-shadow:0 0 0 9px #8551eb13,0 0 40px #8952ed35!important}
+.portfolio-site.layout-6 .portrait-photo{filter:saturate(.73) contrast(1.1)!important}
+.portfolio-site.layout-6 .site-work{background:#080714!important;border-top:1px solid #312452!important}
+.portfolio-site.layout-6 .site-section-title h2,.portfolio-site.layout-6 .site-project h3,.portfolio-site.layout-6 .site-contact h2{color:#f4efff!important}
+.portfolio-site.layout-6 .site-section-title small,.portfolio-site.layout-6 .site-project>small,.portfolio-site.layout-6 .site-contact small{color:#a48bcf!important}
+.portfolio-site.layout-6 .site-project{background:#100c20!important;border:1px solid #39275b!important;border-radius:9px!important;padding:6px 6px 12px}
+.portfolio-site.layout-6 .site-project-art{border-radius:5px!important;background:#1b1134!important}
+.portfolio-site.layout-6 .site-project-art:after{background:linear-gradient(0deg,#070511f2,transparent 65%)!important}
+.portfolio-site.layout-6 .site-project-art b{color:#c09cff!important;text-shadow:0 0 16px #a066ff}
+.portfolio-site.layout-6 .site-contact{background:#0d091c!important;border-color:#352253!important}
+.portfolio-site.layout-6 .site-contact a{color:#c2a3ff!important}
+.portfolio-site.layout-6 .site-footer{border-color:#30234b!important;color:#9989b7!important}
+
+/* Zenith — soft futuristic surfaces with clean lavender, blue and blush gradients. */
+.portfolio-site.layout-7{background:#f7f5ff!important;color:#171b3c!important;border:1px solid #d4ccff!important;border-radius:13px!important;box-shadow:0 24px 70px #15123c16!important;font-family:'DM Sans',sans-serif!important}
+.portfolio-site.layout-7 .site-nav{background:#fbfaff!important;border-bottom:1px solid #e5dfff!important}
+.portfolio-site.layout-7 .site-nav a,.portfolio-site.layout-7 .site-availability{color:#706caa!important}
+.portfolio-site.layout-7 .site-monogram{border:1px solid #8f89f5!important;border-radius:50% 50% 7px 50%!important;color:#6153d6!important;background:#eeecff}
+.portfolio-site.layout-7 .site-hero{background:radial-gradient(ellipse at 80% 15%,#ecb6ff70,transparent 31%),radial-gradient(ellipse at 70% 75%,#98e7ff68,transparent 32%),linear-gradient(125deg,#fbfaff,#eeedff 50%,#fff0f8)!important;padding:8% 5%!important}
+.portfolio-site.layout-7 .site-copy h1{font-size:clamp(38px,5vw,66px)!important;font-weight:770!important;letter-spacing:-.07em!important;color:#1a1c43!important}
+.portfolio-site.layout-7 .site-copy h1 em{color:transparent!important;background:linear-gradient(100deg,#7778f2,#b277ef 45%,#f28cce)!important;background-clip:text!important;-webkit-background-clip:text!important}
+.portfolio-site.layout-7 .site-copy>p{color:#696b8c!important}
+.portfolio-site.layout-7 .site-eyebrow{color:#7972c5!important}
+.portfolio-site.layout-7 .site-cta{background:linear-gradient(100deg,#9276f7,#b47df1 48%,#e69bd6)!important;border:1px solid #c5b4ff!important;color:#fff!important;border-radius:999px!important;box-shadow:0 8px 24px #a186ee31}
+.portfolio-site.layout-7 .portrait-ring{border-radius:28px!important;background:linear-gradient(135deg,#c5c7ff,#f6c6eb,#b8f0ff)!important;border:1px solid #d0c2ff!important;box-shadow:0 0 0 9px #a49aff12!important;transform:rotate(3deg)}
+.portfolio-site.layout-7 .portrait-photo{mix-blend-mode:multiply;filter:saturate(.68)!important}
+.portfolio-site.layout-7 .site-work{background:#fbfaff!important;border-top:1px solid #e5dfff!important}
+.portfolio-site.layout-7 .site-section-title h2,.portfolio-site.layout-7 .site-project h3,.portfolio-site.layout-7 .site-contact h2{color:#22234f!important}
+.portfolio-site.layout-7 .site-section-title small,.portfolio-site.layout-7 .site-project>small,.portfolio-site.layout-7 .site-contact small{color:#8e88be!important}
+.portfolio-site.layout-7 .site-project{background:#f4f2ff!important;border:1px solid #dfd9ff!important;border-radius:12px!important;padding:6px 6px 12px}
+.portfolio-site.layout-7 .site-project-art{background:linear-gradient(135deg,#d9d9ff,#ffe4f5,#d0f5ff)!important;border-radius:8px!important}
+.portfolio-site.layout-7 .site-project-art img{mix-blend-mode:multiply;filter:saturate(.65)!important}
+.portfolio-site.layout-7 .site-contact{background:#efedff!important;border-color:#ddd5ff!important}
+.portfolio-site.layout-7 .site-contact a{color:#6e5dde!important}
+.portfolio-site.layout-7 .site-footer{border-color:#ded8ff!important;color:#8582ad!important}
+
+/* Vortex — cinematic black and burnt orange, with glowing rings. */
+.portfolio-site.layout-8{background:#0b0c0f!important;color:#fff5eb!important;border:1px solid #b85b1b!important;border-radius:8px!important;box-shadow:0 22px 75px #0009,0 0 42px #ff79151c!important;font-family:'DM Sans',sans-serif!important}
+.portfolio-site.layout-8 .site-nav{background:#0d0c0b!important;border-bottom:1px solid #593116!important}
+.portfolio-site.layout-8 .site-nav a,.portfolio-site.layout-8 .site-availability{color:#e1bca0!important}
+.portfolio-site.layout-8 .site-monogram{background:#251408!important;border:1px solid #ef8d2f!important;color:#ffae55!important;border-radius:50%!important}
+.portfolio-site.layout-8 .site-hero{background:radial-gradient(circle at 78% 43%,#fa781a38,transparent 27%),linear-gradient(130deg,#0a0b0e,#19100b 58%,#090a0d)!important;padding:8% 5%!important;overflow:hidden}
+.portfolio-site.layout-8 .site-hero:after{content:"";position:absolute;width:clamp(145px,21vw,265px);height:clamp(145px,21vw,265px);right:17%;top:17%;border-radius:50%;border:2px solid #ff8b34;box-shadow:0 0 0 12px #ff801416,0 0 0 28px #ff8b340c,0 0 40px #ff841d47}
+.portfolio-site.layout-8 .site-copy,.portfolio-site.layout-8 .site-portrait{position:relative;z-index:2}
+.portfolio-site.layout-8 .site-copy h1{font-size:clamp(38px,5vw,67px)!important;letter-spacing:-.065em!important;font-weight:820!important;color:#fff8ef!important}
+.portfolio-site.layout-8 .site-copy h1 em{color:#ff9b3a!important;text-shadow:0 0 28px #ff741a42}
+.portfolio-site.layout-8 .site-copy>p{color:#d8c5b7!important}
+.portfolio-site.layout-8 .site-eyebrow{color:#ffb361!important}
+.portfolio-site.layout-8 .site-cta{background:linear-gradient(100deg,#ff7418,#ffb33e)!important;border:1px solid #ffd28b!important;color:#211006!important;font-weight:850;border-radius:5px!important}
+.portfolio-site.layout-8 .portrait-ring{border:1px solid #ff982f!important;border-radius:8px!important;background:#251207!important;box-shadow:0 0 0 8px #ff85120f,0 0 42px #ff741e39!important;transform:rotate(2deg)}
+.portfolio-site.layout-8 .portrait-photo{filter:saturate(.85) contrast(1.2)!important}
+.portfolio-site.layout-8 .site-work{background:#0c0b0a!important;border-top:1px solid #552d15!important}
+.portfolio-site.layout-8 .site-section-title h2,.portfolio-site.layout-8 .site-project h3,.portfolio-site.layout-8 .site-contact h2{color:#fff4e7!important}
+.portfolio-site.layout-8 .site-section-title small,.portfolio-site.layout-8 .site-project>small,.portfolio-site.layout-8 .site-contact small{color:#ce9a68!important}
+.portfolio-site.layout-8 .site-project{background:#15100c!important;border:1px solid #573017!important;border-radius:5px!important;padding:6px 6px 12px}
+.portfolio-site.layout-8 .site-project-art{background:#261507!important;border-radius:2px!important}
+.portfolio-site.layout-8 .site-project-art:after{background:linear-gradient(0deg,#0b0908ed,transparent 68%)!important}
+.portfolio-site.layout-8 .site-project-art b{color:#ff9b3a!important;text-shadow:0 0 15px #ff801b}
+.portfolio-site.layout-8 .site-contact{background:#17100b!important;border-color:#5d341a!important}
+.portfolio-site.layout-8 .site-contact a{color:#ffae54!important}
+.portfolio-site.layout-8 .site-footer{border-color:#533018!important;color:#c49b77!important}
+
+@media(max-width:740px){
+  .portfolio-site .site-nav{padding-inline:4%!important}
+  .portfolio-site .site-nav>div{gap:9px!important}
+  .portfolio-site .site-nav a{font-size:9px!important}
+  .portfolio-site .site-hero{grid-template-columns:minmax(0,1.1fr) minmax(88px,.65fr)!important;gap:14px!important;padding:9% 5%!important}
+  .portfolio-site .site-copy h1{font-size:clamp(26px,6vw,42px)!important}
+  .portfolio-site .site-copy>p{font-size:11px!important;line-height:1.8!important}
+  .portfolio-site .portrait-ring{width:100%!important;height:clamp(125px,32vw,210px)!important}
+  .portfolio-site .site-project-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .portfolio-site .site-project-art{min-height:95px!important}
+  .portfolio-site .site-section-title h2{font-size:23px!important}
+  .portfolio-site.layout-3 .site-hero{margin:7px!important;border-radius:13px!important}
+}
+@media(max-width:440px){
+  .portfolio-site .site-nav>div{gap:6px!important}
+  .portfolio-site .site-nav a{font-size:8px!important}
+  .portfolio-site .site-hero{grid-template-columns:1fr!important}
+  .portfolio-site .site-portrait{display:none!important}
+  .portfolio-site .site-copy h1{font-size:clamp(28px,8vw,37px)!important}
+  .portfolio-site .site-project-grid{grid-template-columns:1fr!important}
+  .portfolio-site.layout-0 .site-hero:after,.portfolio-site.layout-4 .site-hero:after,.portfolio-site.layout-6 .site-hero:after,.portfolio-site.layout-8 .site-hero:after{right:4%;top:5%;width:100px;height:100px;opacity:.45}
+}
