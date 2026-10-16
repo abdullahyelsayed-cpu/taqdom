@@ -83,14 +83,9 @@ async function reserveQuota(env, request, kind) {
 __name(reserveQuota, "reserveQuota");
 async function improve(request, env, corsHeaders) {
   if (!env.AI || !env.TAQDOM_DB) return reply({ error: "service_not_configured" }, 503, corsHeaders);
-  const length = Number(request.headers.get("content-length") || 0);
-  if (length > 12e3) return reply({ error: "request_too_large" }, 413, corsHeaders);
-  let body;
-  try {
-    body = await request.json();
-  } catch (_) {
-    return reply({ error: "invalid_json" }, 400, corsHeaders);
-  }
+  const parsed = await readJson(request, 12e3);
+  if (parsed.error) return reply({ error: parsed.error }, parsed.status, corsHeaders);
+  const body = parsed.body || {};
   const rawText = body && typeof body.text === "string" ? body.text : "";
   if (rawText.length > MAX_INPUT_CHARS) return reply({ error: "text_too_long", maxCharacters: MAX_INPUT_CHARS }, 400, corsHeaders);
   const text = clean(rawText, MAX_INPUT_CHARS);

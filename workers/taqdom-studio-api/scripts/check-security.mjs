@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 const source = await readFile(new URL('../index.js', import.meta.url), 'utf8')
 const checks = [
   ['public portfolios require published status', source.includes("AND status='published'")],
+  ['AI route uses the same bounded JSON parser', source.includes('const parsed = await readJson(request, 12e3)')],
   ['autosave preserves an unchanged portfolio status', source.includes('existingPortfolio.status')],
   ['uploads validate raster image signatures', source.includes('function validRasterImage') && source.includes('!validRasterImage(b64, mimeType)')],
   ['public media adds nosniff protection', source.includes('"X-Content-Type-Options": "nosniff"')],
