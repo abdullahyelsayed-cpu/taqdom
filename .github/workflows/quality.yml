@@ -37,6 +37,8 @@ jobs:
         run: npm run build
       - name: Validate localized pages, sitemap, and SEO metadata
         run: npm run check:seo
+      - name: Validate nine template systems and gallery previews
+        run: npm run check:templates
       - name: Validate API Worker hardening
         working-directory: workers/taqdom-studio-api
         run: npm run check
