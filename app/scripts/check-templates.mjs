@@ -14,7 +14,7 @@ const jobsStart = app.indexOf('const jobs = [')
 const layoutsStart = app.indexOf('const layouts = [', jobsStart)
 assert.ok(jobsStart >= 0 && layoutsStart > jobsStart, 'profession categories should be present')
 const jobBlock = app.slice(jobsStart, layoutsStart)
-const professionCount = [...jobBlock.matchAll(/^\s*\['[a-z]+'/gm)].length
+const professionCount = [...jobBlock.matchAll(/\\['[a-z]+'/g)].length
 assert.equal(professionCount, 14, 'the library should keep all 14 profession categories')
 
 assert.ok(app.includes('const featured = templates.slice(0, 9)'), 'the landing gallery should show all nine systems')
