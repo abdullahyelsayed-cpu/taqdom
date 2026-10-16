@@ -42,7 +42,7 @@ assert.ok(apiSource.includes('const allowedBackgroundStyles = ["signature", "aur
 assert.ok(apiSource.includes('    backgroundStyle,'), 'API must save the selected background preset')
 assert.ok(exportSource.includes('const themePalettes = ['), 'HTML export must define theme-specific palettes')
 assert.equal((exportSource.match(/page: '#/g) || []).length, 9, 'HTML export must keep all nine template palette definitions')
-assert.ok(exportSource.includes('class="theme-\${layout} mood-\${mood}"'), 'HTML export must preserve selected template and atmosphere')
+assert.ok(exportSource.includes('class="theme-${layout} mood-${mood}"'), 'HTML export must preserve selected template and atmosphere')
 assert.ok(exportSource.includes('class="ambient"'), 'HTML export must preserve atmospheric backgrounds')
 assert.ok(studioCss.includes('.site-atmosphere:before'), 'ambient gradient mesh should be available')
 assert.ok(studioCss.includes('backdrop-filter:blur(22px)'), 'glassmorphism surfaces should be available')
