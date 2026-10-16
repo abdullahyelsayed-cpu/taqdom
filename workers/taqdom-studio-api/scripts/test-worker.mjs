@@ -300,7 +300,7 @@ await test('custom subdomain is stored on portfolio creation', async () => {
       title: 'My portfolio',
       templateId: 'design-0',
       status: 'published',
-      document: { name: 'My portfolio', projects: [] }
+      document: { name: 'My portfolio', projects: [], backgroundStyle: 'glass' }
     }
   }, makeEnv(db))
   assert.equal(response.status, 201)
@@ -309,6 +309,7 @@ await test('custom subdomain is stored on portfolio creation', async () => {
   const insert = db.calls.find(call => call.kind === 'insert-portfolio')
   assert.ok(insert)
   assert.equal(insert.values[4], 'abdullah-creative')
+  assert.equal(JSON.parse(insert.values[6]).backgroundStyle, 'glass')
 })
 
 await test('default subdomain uses a readable username-based handle', async () => {
