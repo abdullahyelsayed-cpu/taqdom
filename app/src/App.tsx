@@ -418,7 +418,7 @@ export default function App() {
   const [accountPortfolios, setAccountPortfolios] = useState<SavedPortfolio[]>([])
   const [portfolioId, setPortfolioId] = useState<string|null>(null)
   const [portfolioSlug, setPortfolioSlug] = useState('')
-  const [portfolioRevision, setPortfolioRevision] = useState(1)
+  const [, setPortfolioRevision] = useState(1)
   const [accountError, setAccountError] = useState('')
   const [accountBusy, setAccountBusy] = useState(false)
   const [publishModalOpen, setPublishModalOpen] = useState(false)
@@ -1670,7 +1670,6 @@ function PortfolioCanvas({data,template,language,contactContent,showSampleConten
   const en=language==='en'
   const enteredProjects=data.projects.filter(name=>typeof name==='string' && name.trim().length>0)
   const projects=enteredProjects.length?enteredProjects:(showSampleContent?(en?['A calmer way to bank','Learning without limits','A brand built to grow']:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو إبداعي']):[])
-  const portraits=[imageUrls[0],imageUrls[2],imageUrls[5]]
   const avatarSrc=safeProjectImage(data.avatarUrl,'')
   const displayName=data.name || (en?'Your Name':'اسمك الشخصي')
   const displayRole=data.role || (showSampleContent ? (en?template.roleEn:template.role) : '')
