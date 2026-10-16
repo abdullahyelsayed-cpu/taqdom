@@ -727,3 +727,169 @@
   .portfolio-site .site-project-grid{grid-template-columns:1fr!important}
   .portfolio-site.layout-0 .site-hero:after,.portfolio-site.layout-4 .site-hero:after,.portfolio-site.layout-6 .site-hero:after,.portfolio-site.layout-8 .site-hero:after{right:4%;top:5%;width:100px;height:100px;opacity:.45}
 }
+
+
+/* Compact website previews in the 3×3 template library. */
+.template-board-preview{
+  display:flex!important;flex-direction:column;gap:0;padding:0!important;
+  color:#f2f6ff;isolation:isolate;overflow:hidden;
+}
+.template-board-preview:after{display:none!important;content:none!important}
+.template-board-head{
+  position:relative;z-index:3;display:flex;align-items:center;gap:clamp(5px,.7vw,11px);
+  min-height:31px;padding:0 10px;border-bottom:1px solid #ffffff20;
+  font-family:'DM Sans',sans-serif;font-size:6px;line-height:1;
+}
+.template-board-logo{display:inline-flex;align-items:center;gap:4px;font-size:8px;white-space:nowrap;font-weight:800;letter-spacing:-.02em}
+.template-board-logo i{display:inline-grid;place-items:center;width:17px;height:17px;font-style:normal;font-size:11px}
+.template-board-head nav{display:flex;justify-content:flex-end;align-items:center;gap:clamp(4px,.85vw,11px);flex:1;white-space:nowrap}
+.template-board-head nav span{font-size:5px;opacity:.76}
+.template-board-head>small{font-size:5px;padding:3px 4px;border:1px solid currentColor;border-radius:3px;opacity:.75}
+.template-board-hero{
+  position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+  gap:8px;align-items:center;flex:1;min-height:0;padding:clamp(10px,1.35vw,18px) clamp(9px,1.2vw,16px) 8px;
+}
+.template-board-copy{min-width:0;position:relative;z-index:2}
+.template-board-copy>small{display:block;margin-bottom:7px;font-size:5px;letter-spacing:.12em;line-height:1.4;opacity:.8}
+.template-board-copy h4{margin:0;font-family:'DM Sans',sans-serif;font-size:clamp(13px,1.32vw,19px);font-weight:780;line-height:1.02;letter-spacing:-.055em;color:inherit}
+.template-board-copy p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin:8px 0 10px;font-size:6px;line-height:1.6;opacity:.76}
+.template-board-copy>span{display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border:1px solid currentColor;border-radius:5px;font-size:5px;font-weight:750;white-space:nowrap}
+.template-board-art{position:relative;isolation:isolate;overflow:hidden;min-height:clamp(95px,12vw,160px);height:100%;border:1px solid #ffffff22;background:#121829;border-radius:5px}
+.template-board-art:before{content:"";position:absolute;z-index:1;inset:0;background:linear-gradient(140deg,#11182b18,#0a102a38)}
+.template-board-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.75;filter:saturate(.8) contrast(1.08)}
+.template-art-orb{position:absolute;z-index:2;right:10%;top:15%;width:43%;aspect-ratio:1;border:1px solid #ffffff78;transform:rotate(45deg);box-shadow:0 0 25px currentColor;opacity:.65}
+.template-board-art>b{position:absolute;z-index:3;right:8px;bottom:7px;font-size:18px;color:currentColor;text-shadow:0 0 14px currentColor}
+.template-board-stats{position:relative;z-index:3;display:flex;align-items:center;min-height:46px;padding:6px 11px;border-top:1px solid #ffffff20;gap:9px;font-family:'DM Sans',sans-serif}
+.template-board-stats>span{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px;padding-inline-end:7px;border-inline-end:1px solid #ffffff20}
+.template-board-stats b{font-size:10px;line-height:1;color:inherit}
+.template-board-stats small{font-size:5px;line-height:1.35;opacity:.72}
+.template-board-stats .template-board-status{flex:0 0 auto;display:flex;flex-direction:row;align-items:center;gap:4px;padding:0;border:0;font-size:5px;white-space:nowrap}
+.template-board-status i{display:inline-block;width:4px;height:4px;border-radius:50%;background:#63f2be;box-shadow:0 0 7px #63f2be}
+.template-board-preview .lux-template-meta{position:relative}
+.template-board-preview .template-board-art img{transition:transform .6s}
+.lux-template-card:hover .template-board-art img{transform:scale(1.06)}
+.template-board-preview .template-chip{position:absolute;z-index:4;top:5px;right:5px;padding:4px 6px;font-size:5px;opacity:.92}
+
+/* 01 Nexus — neon blue, AI geometry and a digital-grid interface. */
+.mini-site-0{background:radial-gradient(circle at 78% 36%,#1658b679,transparent 34%),linear-gradient(135deg,#071328,#071c35 62%,#050a17)!important;color:#eff8ff!important}
+.mini-site-0 .template-board-logo i{color:#72eaff;border:1px solid #4e91ff;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.mini-site-0 .template-board-hero{background-image:linear-gradient(#39cfff12 1px,transparent 1px),linear-gradient(90deg,#39cfff12 1px,transparent 1px);background-size:17px 17px}
+.mini-site-0 .template-board-copy h4{color:#f4faff}.mini-site-0 .template-board-copy h4 em{color:#74deff}
+.mini-site-0 .template-board-copy>span{border:0;background:linear-gradient(100deg,#a64eff,#3287ff,#18c5e8);color:#fff}
+.mini-site-0 .template-board-art{border-color:#35c9ff78;background:#071a36;box-shadow:0 0 21px #3276ff21}
+.mini-site-0 .template-board-art:before{background:linear-gradient(145deg,#0e358855,#020c1c77)}
+.mini-site-0 .template-board-art img{mix-blend-mode:screen;opacity:.63}
+.mini-site-0 .template-art-orb{color:#5edfff;border-color:#5edfff;box-shadow:0 0 0 6px #2469ff16,0 0 22px #20caff6e}
+.mini-site-0 .template-board-stats{color:#d9f5ff}.mini-site-0 .template-board-stats b{color:#6eeaff}
+
+/* 02 Forma — warm editorial design and natural olive tones. */
+.mini-site-1{background:linear-gradient(130deg,#f8f5eb,#e8e9db)!important;color:#263a2d!important}
+.mini-site-1 .template-board-head{border-color:#d7dccf}.mini-site-1 .template-board-logo i{color:#587552}
+.mini-site-1 .template-board-copy h4{font-family:Georgia,serif;font-weight:500;letter-spacing:-.04em;color:#263a2d}
+.mini-site-1 .template-board-copy>small{color:#667a5e}.mini-site-1 .template-board-copy p{color:#637163}
+.mini-site-1 .template-board-copy>span{background:#47664c;border-color:#47664c;color:#fff;border-radius:3px}
+.mini-site-1 .template-board-art{border-color:#d0d4c5;background:#d9dfcf;border-radius:3px}
+.mini-site-1 .template-board-art:before{background:linear-gradient(110deg,#f1ebd933,#526d3b13)}
+.mini-site-1 .template-board-art img{mix-blend-mode:multiply;opacity:.78;filter:saturate(.65)}
+.mini-site-1 .template-art-orb{border-color:#819475;color:#7f9273;border-radius:46% 4% 40% 7%;transform:rotate(-7deg)}
+.mini-site-1 .template-board-stats{border-color:#d6dacc}.mini-site-1 .template-board-stats>span{border-color:#d6dacc}
+.mini-site-1 .template-board-status i{background:#5e985e;box-shadow:none}
+
+/* 03 Pulse — bold magenta, hot coral, and expressive editorial blocks. */
+.mini-site-2{background:radial-gradient(circle at 80% 25%,#fe34834d,transparent 37%),linear-gradient(130deg,#260c30,#441034 60%,#180c22)!important;color:#fff1f8!important}
+.mini-site-2 .template-board-head{border-color:#6f255b}.mini-site-2 .template-board-logo i{color:#ff70bc}
+.mini-site-2 .template-board-copy h4{font-weight:900;text-transform:none;color:#fff5fb}
+.mini-site-2 .template-board-copy>small{color:#ffb9db}.mini-site-2 .template-board-copy>span{background:linear-gradient(100deg,#ff2d89,#ff7147);border-color:#ff73a5}
+.mini-site-2 .template-board-art{border-color:#ff559b;background:#59103d;border-radius:3px}
+.mini-site-2 .template-board-art:before{background:linear-gradient(130deg,#f8298e29,#ff6d1735)}
+.mini-site-2 .template-board-art img{opacity:.82;mix-blend-mode:screen;filter:saturate(1.3)}
+.mini-site-2 .template-art-orb{color:#ff6aa9;border-color:#ff6aa9;transform:rotate(-23deg);border-radius:40% 5% 40% 5%}
+.mini-site-2 .template-board-stats{border-color:#6c2559}.mini-site-2 .template-board-stats>span{border-color:#6c2559}
+.mini-site-2 .template-board-stats b{color:#ff8cbf}
+
+/* 04 Lumen — a serene visual journal, mint and ocean hues. */
+.mini-site-3{background:linear-gradient(140deg,#eaf6ef,#bfe7de 72%,#98d8cf)!important;color:#17423c!important}
+.mini-site-3 .template-board-head{border-color:#b5ddd1}.mini-site-3 .template-board-logo i{color:#288e7a}
+.mini-site-3 .template-board-copy h4{font-family:Georgia,serif;font-weight:500;letter-spacing:-.045em;color:#17423c}
+.mini-site-3 .template-board-copy>small{color:#287d70}.mini-site-3 .template-board-copy p{color:#4d7771}
+.mini-site-3 .template-board-copy>span{background:#338974;border-color:#338974;color:#fff;border-radius:999px}
+.mini-site-3 .template-board-art{border-color:#9dcfc0;border-radius:11px 11px 3px 11px;background:#6bbcb0}
+.mini-site-3 .template-board-art:before{background:linear-gradient(160deg,#6ed7b91a,#083f4840)}
+.mini-site-3 .template-board-art img{opacity:.85;filter:saturate(.7)}
+.mini-site-3 .template-art-orb{border-color:#d8fff2;color:#c5fff0;border-radius:50%;transform:none;box-shadow:0 0 0 5px #cffff01a}
+.mini-site-3 .template-board-stats{border-color:#b5ddd1}.mini-site-3 .template-board-stats>span{border-color:#b5ddd1}
+.mini-site-3 .template-board-status i{background:#318c6d;box-shadow:none}
+
+/* 05 Vertex — high-precision engineering and blue glass geometry. */
+.mini-site-4{background:radial-gradient(circle at 72% 32%,#234dff66,transparent 31%),linear-gradient(135deg,#06152d,#07345b)!important;color:#eff8ff!important}
+.mini-site-4 .template-board-head{border-color:#225485}.mini-site-4 .template-board-logo i{color:#61eaff;border:1px solid #338eff;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.mini-site-4 .template-board-copy h4{font-weight:750}.mini-site-4 .template-board-copy>small{color:#6bcbff}
+.mini-site-4 .template-board-copy>span{background:linear-gradient(110deg,#3d7cff,#20d2f4);border:0;color:#041428}
+.mini-site-4 .template-board-art{border-color:#398dff;background:#06264a;border-radius:5px}
+.mini-site-4 .template-board-art:before{background:linear-gradient(135deg,#2465ff55,#49e5ff17)}
+.mini-site-4 .template-board-art img{mix-blend-mode:screen;opacity:.52}
+.mini-site-4 .template-art-orb{color:#56e6ff;border-color:#56e6ff;transform:rotate(45deg) skew(7deg,7deg);box-shadow:inset 0 0 15px #428cff55,0 0 25px #448dff}
+.mini-site-4 .template-board-stats{border-color:#255788}.mini-site-4 .template-board-stats>span{border-color:#255788}.mini-site-4 .template-board-stats b{color:#70dbff}
+
+/* 06 Mono — architectural grids, grayscale photography and hard edges. */
+.mini-site-5{background:#f1f2f3!important;color:#131920!important}
+.mini-site-5 .template-board-head{border-color:#c8cdd1;border-bottom:2px solid #232a31}.mini-site-5 .template-board-logo i{color:#252e36;border:1px solid #7e8992}
+.mini-site-5 .template-board-copy h4{font-family:Arial,sans-serif;font-weight:900;letter-spacing:-.07em;color:#111820}
+.mini-site-5 .template-board-copy>small,.mini-site-5 .template-board-copy p{color:#555e68}
+.mini-site-5 .template-board-copy>span{background:#111820;border-color:#111820;border-radius:0;color:#fff}
+.mini-site-5 .template-board-art{border:1px solid #bcc2c7;border-radius:0;background:#cfd4d8}
+.mini-site-5 .template-board-art img{filter:grayscale(1) contrast(1.1);opacity:.76}
+.mini-site-5 .template-art-orb{border-color:#fff;border-radius:0;transform:rotate(45deg);box-shadow:none}
+.mini-site-5 .template-board-stats{border-color:#c5cbd0}.mini-site-5 .template-board-stats>span{border-color:#c5cbd0}
+.mini-site-5 .template-board-status i{background:#3f4b56;box-shadow:none}
+
+/* 07 Eclipse — quiet black with cosmic violet and orbital rings. */
+.mini-site-6{background:radial-gradient(circle at 72% 35%,#6b42c95b,transparent 28%),linear-gradient(135deg,#05050c,#110a21 68%,#1b0c32)!important;color:#f2edff!important}
+.mini-site-6 .template-board-head{border-color:#342452}.mini-site-6 .template-board-logo i{color:#bc97ff;border:1px solid #7650cf;border-radius:50%}
+.mini-site-6 .template-board-copy h4{color:#f9f4ff}.mini-site-6 .template-board-copy>small{color:#bd9bff}
+.mini-site-6 .template-board-copy>span{background:#5b3ab0;border-color:#8e69dd;border-radius:999px}
+.mini-site-6 .template-board-art{border-color:#6a4a9c;border-radius:50%;background:#0b0715}
+.mini-site-6 .template-board-art img{mix-blend-mode:screen;opacity:.35;filter:saturate(.5)}
+.mini-site-6 .template-art-orb{width:68%;right:13%;top:12%;border-radius:50%;border-color:#bb8dff;transform:rotate(-22deg);box-shadow:0 0 0 7px #9357ff12,0 0 26px #a96cff55}
+.mini-site-6 .template-board-stats{border-color:#302146}.mini-site-6 .template-board-stats>span{border-color:#302146}.mini-site-6 .template-board-stats b{color:#c29fff}
+
+/* 08 Zenith — soft future, light-lavender surfaces and fluid forms. */
+.mini-site-7{background:radial-gradient(ellipse at 80% 30%,#f5c7ffab,transparent 34%),linear-gradient(125deg,#faf8ff,#e8eaff 53%,#fff0f7)!important;color:#191c46!important}
+.mini-site-7 .template-board-head{border-color:#d9d4ff}.mini-site-7 .template-board-logo i{color:#6c67e1}
+.mini-site-7 .template-board-copy h4{color:#1c1c48}.mini-site-7 .template-board-copy>small{color:#6e6ac4}
+.mini-site-7 .template-board-copy p{color:#696b93}
+.mini-site-7 .template-board-copy>span{background:linear-gradient(100deg,#8984f4,#bc8af0,#e9a3d6);border:0;color:#fff;border-radius:999px}
+.mini-site-7 .template-board-art{border-color:#d4ccff;background:linear-gradient(130deg,#bfc7ff,#f4c4ec,#a8ebff);border-radius:10px}
+.mini-site-7 .template-board-art img{mix-blend-mode:multiply;opacity:.25;filter:saturate(.5)}
+.mini-site-7 .template-art-orb{width:61%;right:12%;top:14%;border:0;border-radius:46% 10% 46% 12%;transform:rotate(-14deg);background:linear-gradient(130deg,#8587ffb3,#e6a8ff99,#73dfffff);box-shadow:0 10px 28px #7873e53b}
+.mini-site-7 .template-board-stats{border-color:#d8d4f6}.mini-site-7 .template-board-stats>span{border-color:#d8d4f6}
+
+/* 09 Vortex — cinematic ember orange with dramatic silhouette imagery. */
+.mini-site-8{background:radial-gradient(circle at 78% 34%,#f16e1e52,transparent 31%),linear-gradient(135deg,#08090c,#1c1009 60%,#08090b)!important;color:#fff4e8!important}
+.mini-site-8 .template-board-head{border-color:#542d15}.mini-site-8 .template-board-logo i{color:#ff9a32;border:1px solid #b85b20;border-radius:50%}
+.mini-site-8 .template-board-copy h4{font-weight:850;color:#fff7ee}.mini-site-8 .template-board-copy>small{color:#ffad5b}
+.mini-site-8 .template-board-copy>span{background:linear-gradient(100deg,#ff7017,#ffb13a);border:0;border-radius:3px;color:#231005}
+.mini-site-8 .template-board-art{border-color:#a9531f;border-radius:4px;background:#160c07}
+.mini-site-8 .template-board-art img{mix-blend-mode:screen;opacity:.5;filter:saturate(1.15) contrast(1.2)}
+.mini-site-8 .template-art-orb{color:#ff922f;border-color:#ff922f;border-radius:50%;box-shadow:0 0 0 7px #ff9a1b17,0 0 25px #ff781a5e;transform:rotate(12deg)}
+.mini-site-8 .template-board-stats{border-color:#522c17}.mini-site-8 .template-board-stats>span{border-color:#522c17}.mini-site-8 .template-board-stats b{color:#ffb267}
+
+@media(max-width:760px){
+  .template-board-head{min-height:26px;padding:0 7px}
+  .template-board-head nav{gap:4px}
+  .template-board-head nav span{font-size:4px}
+  .template-board-hero{grid-template-columns:minmax(0,1fr) minmax(75px,.75fr);gap:6px;padding:10px 8px 7px}
+  .template-board-copy h4{font-size:clamp(13px,2.3vw,17px)}
+  .template-board-copy p{-webkit-line-clamp:2;font-size:5px;margin:6px 0}
+  .template-board-copy>span{font-size:5px;padding:5px 6px}
+  .template-board-art{min-height:95px}
+  .template-board-stats{padding:5px 7px;gap:5px}
+  .template-board-stats small{font-size:4px}
+  .template-board-stats b{font-size:8px}
+}
+@media(max-width:440px){
+  .template-board-head nav span{font-size:5px}
+  .template-board-copy h4{font-size:clamp(17px,4.5vw,23px)}
+  .template-board-copy p{font-size:6px;-webkit-line-clamp:3}
+  .template-board-stats small{font-size:5px}
+}
