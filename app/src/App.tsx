@@ -418,6 +418,14 @@ export default function App() {
   const [publishing, setPublishing] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [projectUploadingIndex, setProjectUploadingIndex] = useState<number | null>(null)
+  const [draggedSection, setDraggedSection] = useState<PortfolioSectionKey | null>(null)
+  const [historyPast, setHistoryPast] = useState<Portfolio[]>([])
+  const [historyFuture, setHistoryFuture] = useState<Portfolio[]>([])
+  const [historyPending, setHistoryPending] = useState(false)
+  const trackedPortfolioRef = useRef<Portfolio | null>(null)
+  const pendingSnapshotRef = useRef<Portfolio | null>(null)
+  const historyTimerRef = useRef<number | null>(null)
+  const suppressHistoryRef = useRef(false)
   const [inboxOpen, setInboxOpen] = useState(false)
   const [inboxLoading, setInboxLoading] = useState(false)
   const [inboxMessages, setInboxMessages] = useState<Array<{ id: string; sender_name: string; sender_email: string; message: string; created_at: string }>>([])
@@ -487,6 +495,38 @@ export default function App() {
     return () => window.clearTimeout(id)
   }, [portfolio, view, user, portfolioId])
 
+  useEffect(() => {
+    if (suppressHistoryRef.current) {
+      suppressHistoryRef.current = false
+      trackedPortfolioRef.current = portfolio
+      pendingSnapshotRef.current = null
+      setHistoryPending(false)
+      return
+    }
+    const previous = trackedPortfolioRef.current
+    trackedPortfolioRef.current = portfolio
+    if (!previous || previous === portfolio) return
+    if (!pendingSnapshotRef.current) {
+      pendingSnapshotRef.current = previous
+      setHistoryPending(true)
+    }
+    if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current)
+    historyTimerRef.current = window.setTimeout(() => {
+      const snapshot = pendingSnapshotRef.current
+      if (snapshot) {
+        setHistoryPast(past => [...past.slice(-49), snapshot])
+        setHistoryFuture([])
+        pendingSnapshotRef.current = null
+        setHistoryPending(false)
+      }
+      historyTimerRef.current = null
+    }, 650)
+  }, [portfolio])
+
+  useEffect(() => () => {
+    if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current)
+  }, [])
+
   const update = (key: keyof Portfolio, value: unknown) => setPortfolio(p => ({ ...p, [key]: value }))
   const updateProjectDetail = (index: number, key: keyof ProjectDetail, value: string) => {
     setPortfolio(current => {
@@ -539,6 +579,62 @@ export default function App() {
     ...current,
     socialLinks: current.socialLinks.filter((_, itemIndex) => itemIndex !== index),
   }))
+  const resetHistoryFor = (nextPortfolio: Portfolio = portfolio) => {
+    if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current)
+    historyTimerRef.current = null
+    pendingSnapshotRef.current = null
+    setHistoryPending(false)
+    setHistoryPast([])
+    setHistoryFuture([])
+    suppressHistoryRef.current = true
+    trackedPortfolioRef.current = nextPortfolio
+  }
+  const undo = () => {
+    if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current)
+    historyTimerRef.current = null
+    const pending = pendingSnapshotRef.current
+    const target = pending || historyPast[historyPast.length - 1]
+    if (!target) return
+    pendingSnapshotRef.current = null
+    setHistoryPending(false)
+    if (!pending) setHistoryPast(past => past.slice(0, -1))
+    setHistoryFuture(future => [...future.slice(-49), portfolio])
+    suppressHistoryRef.current = true
+    trackedPortfolioRef.current = target
+    setPortfolio(target)
+  }
+  const redo = () => {
+    if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current)
+    historyTimerRef.current = null
+    pendingSnapshotRef.current = null
+    setHistoryPending(false)
+    const target = historyFuture[historyFuture.length - 1]
+    if (!target) return
+    setHistoryFuture(future => future.slice(0, -1))
+    setHistoryPast(past => [...past.slice(-49), portfolio])
+    suppressHistoryRef.current = true
+    trackedPortfolioRef.current = target
+    setPortfolio(target)
+  }
+  const moveSection = (from: PortfolioSectionKey, to: PortfolioSectionKey) => {
+    if (from === to) return
+    setPortfolio(current => {
+      const order = normaliseSectionOrder(current.sectionOrder)
+      const fromIndex = order.indexOf(from)
+      const toIndex = order.indexOf(to)
+      if (fromIndex < 0 || toIndex < 0) return current
+      order.splice(fromIndex, 1)
+      order.splice(toIndex, 0, from)
+      return { ...current, sectionOrder: order }
+    })
+  }
+  const shiftSection = (key: PortfolioSectionKey, amount: -1 | 1) => {
+    const order = normaliseSectionOrder(portfolio.sectionOrder)
+    const index = order.indexOf(key)
+    const targetIndex = index + amount
+    if (targetIndex < 0 || targetIndex >= order.length) return
+    moveSection(key, order[targetIndex])
+  }
   const goHome = () => {
     const host = location.hostname.toLowerCase()
     if (host !== 'taqdom.me' && host.endsWith('.taqdom.me')) {
