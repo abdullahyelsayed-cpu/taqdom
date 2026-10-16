@@ -87,6 +87,8 @@ assert.ok(app.includes('const shiftSection = (key: PortfolioSectionKey'), 'the e
 assert.ok(app.includes('const undo = () =>') && app.includes('const redo = () =>'), 'the editor should support undo and redo')
 assert.ok(app.includes('const [historyPast, setHistoryPast]'), 'undo/redo history must be stored in editor state')
 assert.ok(app.includes('contactContent={data.document.visible.contact ? ('), 'the visitor contact form must move with the contact section')
+assert.ok(app.includes('showSampleContent={false} contactContent={data.document.visible.contact ? ('), 'published portfolios should not receive demo-only placeholder projects or copy')
+assert.ok(app.includes('const projects=enteredProjects.length?enteredProjects:(showSampleContent?'), 'sample projects must only be added in the editor preview')
 assert.ok(workerSource.includes('const allowedSectionOrder = ["about", "skills", "experience", "projects", "socials", "contact"]'), 'API must allowlist section order keys')
 assert.ok(workerSource.includes('    sectionOrder,'), 'API must persist normalized section order')
 assert.ok(exportSource.includes('function normaliseExportSectionOrder(value: unknown)'), 'HTML export must validate section order')
