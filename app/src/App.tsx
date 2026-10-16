@@ -1135,8 +1135,11 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
         document.querySelector('meta[property="og:url"]')?.setAttribute('content', canonicalPath)
         document.querySelector('meta[property="og:type"]')?.setAttribute('content', 'website')
         document.querySelector('meta[property="og:locale"]')?.setAttribute('content', en ? 'en_US' : 'ar')
-        const socialImage = documentData.avatarUrl || new URL('/taqdom-og-card.svg', location.origin).href
+        const socialImage = documentData.avatarUrl
+          ? new URL(documentData.avatarUrl, location.origin).href
+          : new URL('/taqdom-og-card.svg', location.origin).href
         document.querySelector('meta[property="og:image"]')?.setAttribute('content', socialImage)
+        document.querySelector('meta[property="og:image:alt"]')?.setAttribute('content', displayName)
         document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', displayName)
         document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description)
         document.querySelector('meta[name="twitter:image"]')?.setAttribute('content', socialImage)
