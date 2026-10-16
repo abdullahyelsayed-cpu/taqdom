@@ -6,7 +6,7 @@ const checks = [
   ['public portfolios require published status', source.includes("AND status='published'")],
   ['portfolio handles are validated against a reserved-name list', source.includes('function isValidSubdomain(value)') && source.includes('RESERVED_SUBDOMAINS')],
   ['portfolio creation stores a supplied handle', source.includes('const requestedSlug = normalizeSubdomain(body.slug)')],
-  ['portfolio updates preserve a handle unless requested', source.includes('body.slug === void 0 ? existingPortfolio.slug')],
+  ['portfolio updates preserve a handle unless requested', source.includes('const handleWasProvided = body.slug !== void 0') && source.includes('const requestedSlug = handleWasProvided ? normalizeSubdomain(body.slug) : existingPortfolio.slug')],
   ['portfolio handle updates are written to the database', source.includes('SET title=?,template_id=?,status=?,slug=?,document_json=')],
 
   ['AI route uses the same bounded JSON parser', source.includes('const parsed = await readJson(request, 12e3)')],
