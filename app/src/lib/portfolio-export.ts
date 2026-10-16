@@ -76,7 +76,6 @@ export function downloadPortfolioHtml(
   const title = portfolio.name.trim() || (en ? 'My portfolio' : 'موقعي الشخصي')
   const email = safeEmail(portfolio.email)
   const layout = Number.isInteger(template.layout) && template.layout >= 0 && template.layout < themePalettes.length ? template.layout : 0
-  const theme = themePalettes[layout]
   const mood = backgroundStyles.has(portfolio.backgroundStyle || '') ? portfolio.backgroundStyle! : 'signature'
   const role = (en && template.roleEn ? template.roleEn : portfolio.role || template.profession).trim()
   const profession = en && template.professionEn ? template.professionEn : template.profession
