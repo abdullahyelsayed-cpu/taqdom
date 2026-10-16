@@ -1,10 +1,7 @@
 export async function onRequest(context) {
-  const assetResponse = await context.env.ASSETS.fetch(new URL('/', context.request.url));
-  const headers = new Headers(assetResponse.headers);
-  headers.delete('location');
-  headers.set('content-type', 'text/html; charset=utf-8');
-  return new Response(assetResponse.body, {
-    status: 200,
-    headers,
-  });
+  const rawIdentifier = String(context.params?.catchall || '').replace(/^\/+|\/+$/g, '')
+  if (!rawIdentifier || rawIdentifier.includes('/')) {
+    return Response.redirect(new URL('/', context.request.url), 302)
+  }
+  return Response.redirect(new URL('/p/' + encodeURIComponent(rawIdentifier), context.request.url), 301)
 }
