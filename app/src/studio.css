@@ -383,3 +383,17 @@
   .portfolio-site.layout-1 .site-hero{background-size:17px 17px}
   .portfolio-site .site-project-grid{grid-template-columns:1fr!important}
 }
+
+
+.dashboard-project-host{
+  display:block;
+  margin-top:7px;
+  color:#6ee6ff!important;
+  font-family:'DM Sans',sans-serif;
+  font-size:10px!important;
+  line-height:1.5;
+  direction:ltr;
+  text-align:left;
+  overflow-wrap:anywhere;
+  text-shadow:0 0 14px #47dfff1a;
+}
