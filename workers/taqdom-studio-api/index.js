@@ -219,6 +219,19 @@ function isValidSubdomain(value) {
     !RESERVED_SUBDOMAINS.has(value);
 }
 __name(isValidSubdomain, "isValidSubdomain");
+function isValidTemplateId(value) {
+  return typeof value === "string" && /^(?:design|code|photo|writing|consulting|education|architecture|marketing|health|business|law|engineering|people|events)-[0-8]$/.test(value);
+}
+__name(isValidTemplateId, "isValidTemplateId");
+function safeAvatarUrl(value) {
+  if (typeof value !== "string" || !value || value.length > 1e3) return "";
+  if (/^\/api\/media\/[a-f0-9-]{10,100}$/i.test(value)) return value;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" && parsed.hostname.includes(".") ? parsed.href : "";
+  } catch (_) { return ""; }
+}
+__name(safeAvatarUrl, "safeAvatarUrl");
 function sanitizeDocument(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return null;
   const str = /* @__PURE__ */ __name(function(value, max) {
@@ -295,9 +308,10 @@ function sanitizeDocument(input) {
     email: str(input.email, 254),
     location: str(input.location, 160),
     accent,
-    avatarUrl: str(input.avatarUrl, 1e3),
+    avatarUrl: safeAvatarUrl(str(input.avatarUrl, 1e3)),
+    availableForWork: input.availableForWork === true,
     backgroundStyle,
-    templateId: str(input.templateId, 100) || "design-0",
+    templateId: isValidTemplateId(input.templateId) ? input.templateId : "design-0",
     projects,
     projectDetails,
     skills,
@@ -368,9 +382,10 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     if (!row) return reply({ error: "not_found" }, 404, corsHeaders);
     let doc = {};
     try {
-      doc = JSON.parse(row.document_json);
+      doc = sanitizeDocument(JSON.parse(row.document_json)) || {};
     } catch (_) {
     }
+    if (isValidTemplateId(row.template_id)) doc.templateId = row.template_id;
     return reply({
       portfolio: {
         id: row.id,
@@ -429,6 +444,16 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     if (!b64 || !mimeType) return reply({ error: "invalid_image" }, 400, corsHeaders);
     if (b64.length > 15e5) return reply({ error: "image_too_large" }, 413, corsHeaders);
     if (!validRasterImage(b64, mimeType)) return reply({ error: "unsupported_or_invalid_image" }, 400, corsHeaders);
+    // Retain only media that is referenced by a saved portfolio. Unreferenced uploads are
+    // eligible for cleanup after 24 hours, so users can replace assets without a permanent leak.
+    await env.TAQDOM_DB.prepare(
+      "DELETE FROM media WHERE owner_id=? AND created_at < datetime('now','-1 day') AND NOT EXISTS (SELECT 1 FROM portfolios p WHERE p.owner_id=media.owner_id AND instr(p.document_json, '/api/media/' || media.id) > 0)"
+    ).bind(session.row.id).run();
+    const usage = await env.TAQDOM_DB.prepare(
+      "SELECT COUNT(*) AS total, COALESCE(SUM(length(data_base64)),0) AS bytes FROM media WHERE owner_id=?"
+    ).bind(session.row.id).first();
+    if (Number(usage && usage.total || 0) >= 75) return reply({ error: "media_limit_reached", limit: 75 }, 429, corsHeaders);
+    if (Number(usage && usage.bytes || 0) + b64.length > 25e6) return reply({ error: "media_storage_limit_reached", maxBytes: 25e6 }, 429, corsHeaders);
     const id = crypto.randomUUID();
     await env.TAQDOM_DB.prepare(
       "INSERT INTO media (id, owner_id, mime_type, data_base64) VALUES (?, ?, ?, ?)"
@@ -552,7 +577,9 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     if (Number(count && count.total || 0) >= 20) return reply({ error: "portfolio_limit_reached", limit: 20 }, 429, corsHeaders);
     const id = crypto.randomUUID();
     const title = (typeof body.title === "string" ? body.title.trim().slice(0, 120) : "") || document.name || "My portfolio";
-    const templateId = (typeof body.templateId === "string" ? body.templateId.slice(0, 100) : document.templateId) || "design-0";
+    const requestedTemplateId = (typeof body.templateId === "string" ? body.templateId.slice(0, 100) : document.templateId) || "design-0";
+    const templateId = isValidTemplateId(requestedTemplateId) ? requestedTemplateId : document.templateId;
+    document.templateId = templateId;
     const requestedSlug = normalizeSubdomain(body.slug);
     if (body.slug !== void 0 && !isValidSubdomain(requestedSlug)) return reply({ error: "invalid_subdomain" }, 400, corsHeaders);
     const emailLocalPart = typeof session.row.email === "string" ? session.row.email.split("@")[0] : "";
@@ -596,7 +623,9 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     const document = sanitizeDocument(body.document);
     if (!document) return reply({ error: "invalid_document" }, 400, corsHeaders);
     const title = (typeof body.title === "string" ? body.title.trim().slice(0, 120) : "") || document.name || "My portfolio";
-    const templateId = (typeof body.templateId === "string" ? body.templateId.slice(0, 100) : document.templateId) || "design-0";
+    const requestedTemplateId = (typeof body.templateId === "string" ? body.templateId.slice(0, 100) : document.templateId) || "design-0";
+    const templateId = isValidTemplateId(requestedTemplateId) ? requestedTemplateId : document.templateId;
+    document.templateId = templateId;
     const existingPortfolio = await env.TAQDOM_DB.prepare("SELECT status,slug FROM portfolios WHERE id=? AND owner_id=?").bind(id, session.row.id).first();
     if (!existingPortfolio) return reply({ error: "not_found" }, 404, corsHeaders);
     const status = body.status === "published" ? "published" : body.status === "draft" ? "draft" : existingPortfolio.status;
@@ -628,7 +657,7 @@ var index_default = {
     if (origin && !isOriginAllowed(origin, origins)) return reply({ error: "origin_not_allowed" }, 403, headers);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     if (url.pathname === "/api/health" && request.method === "GET") {
-      return reply({ ok: true, service: "taqdom-studio-api", aiConfigured: Boolean(env.AI), databaseConfigured: Boolean(env.TAQDOM_DB), mediaConfigured: true, paymentEnabled: false }, 200, headers);
+      return reply({ ok: true, service: "taqdom-studio-api" }, 200, headers);
     }
     const authResponse = await routeAuthApi(request, env, headers, origins);
     if (authResponse) return authResponse;
