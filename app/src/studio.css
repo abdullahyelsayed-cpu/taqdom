@@ -1012,6 +1012,7 @@
 }
 .portfolio-site:hover .portrait-ring:before{opacity:.68;transform:scale(1.035)}
 .portrait-photo{transition:filter .4s,transform .55s!important}
+.portfolio-site .portrait-placeholder{width:100%;height:100%;display:grid;place-items:center;font-size:clamp(42px,8vw,86px);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--pale));}
 .portfolio-site:hover .portrait-photo{transform:scale(1.025)}
 .portfolio-site .site-copy h1{position:relative;text-wrap:balance}
 .portfolio-site .site-copy>p{line-height:1.95}
