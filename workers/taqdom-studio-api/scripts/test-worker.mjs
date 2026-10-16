@@ -300,7 +300,15 @@ await test('custom subdomain is stored on portfolio creation', async () => {
       title: 'My portfolio',
       templateId: 'design-0',
       status: 'published',
-      document: { name: 'My portfolio', projects: [], backgroundStyle: 'glass' }
+      document: {
+        name: 'My portfolio',
+        projects: ['A polished case study', 'Unsafe project'],
+        projectDetails: [
+          { description: 'A complete product redesign.', url: 'example.com/case-study', imageUrl: '/api/media/11111111-1111-4111-8111-111111111111' },
+          { description: 'Invalid links are removed.', url: 'javascript:alert(1)', imageUrl: 'javascript:alert(1)' }
+        ],
+        backgroundStyle: 'glass'
+      }
     }
   }, makeEnv(db))
   assert.equal(response.status, 201)
@@ -309,7 +317,13 @@ await test('custom subdomain is stored on portfolio creation', async () => {
   const insert = db.calls.find(call => call.kind === 'insert-portfolio')
   assert.ok(insert)
   assert.equal(insert.values[4], 'abdullah-creative')
-  assert.equal(JSON.parse(insert.values[6]).backgroundStyle, 'glass')
+  const savedDocument = JSON.parse(insert.values[6])
+  assert.equal(savedDocument.backgroundStyle, 'glass')
+  assert.equal(savedDocument.projectDetails[0].description, 'A complete product redesign.')
+  assert.equal(savedDocument.projectDetails[0].url, 'https://example.com/case-study')
+  assert.equal(savedDocument.projectDetails[0].imageUrl, '/api/media/11111111-1111-4111-8111-111111111111')
+  assert.equal(savedDocument.projectDetails[1].url, '')
+  assert.equal(savedDocument.projectDetails[1].imageUrl, '')
 })
 
 await test('default subdomain uses a readable username-based handle', async () => {

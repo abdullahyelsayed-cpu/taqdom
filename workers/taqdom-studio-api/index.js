@@ -230,6 +230,25 @@ function sanitizeDocument(input) {
   }).slice(0, 24).map(function(p) {
     return str(p, 160);
   }) : [];
+  const projectDetails = Array.isArray(input.projectDetails) ? input.projectDetails.filter(function(item) {
+    return item && typeof item === "object" && !Array.isArray(item);
+  }).slice(0, 24).map(function(item) {
+    const detail = item || {};
+    const rawUrl = str(detail.url, 500);
+    let url = "";
+    try {
+      const parsedUrl = new URL(/^https?:\/\//i.test(rawUrl) ? rawUrl : "https://" + rawUrl);
+      if ((parsedUrl.protocol === "https:" || parsedUrl.protocol === "http:") && parsedUrl.hostname.includes(".")) url = parsedUrl.href;
+    } catch (_) {
+    }
+    const rawImageUrl = str(detail.imageUrl, 1e3);
+    const imageUrl = /^\/api\/media\/[a-f0-9-]{10,100}$/i.test(rawImageUrl) ? rawImageUrl : /^https:\/\//i.test(rawImageUrl) ? rawImageUrl : "";
+    return {
+      description: str(detail.description, 600),
+      url,
+      imageUrl
+    };
+  }) : [];
   const accent = typeof input.accent === "string" && /^#[0-9a-f]{6}$/i.test(input.accent) ? input.accent : "#b7ff64";
   const allowedBackgroundStyles = ["signature", "aurora", "glass", "orbit", "calm"];
   const backgroundStyle = allowedBackgroundStyles.includes(input.backgroundStyle) ? input.backgroundStyle : "signature";
@@ -244,6 +263,7 @@ function sanitizeDocument(input) {
     backgroundStyle,
     templateId: str(input.templateId, 100) || "design-0",
     projects,
+    projectDetails,
     visible: {
       about: visible.about !== false,
       projects: visible.projects !== false,

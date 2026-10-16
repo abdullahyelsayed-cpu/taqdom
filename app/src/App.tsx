@@ -7,7 +7,8 @@ import { CareerAiError, improveCareerText } from './lib/ai'
 import { downloadPortfolioHtml } from './lib/portfolio-export'
 
 type Template = { id: string; profession: string; role: string; professionEn: string; roleEn: string; layout: number; accent: string; pale: string }
-type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; visible: Record<string, boolean>; backgroundStyle: BackgroundStyle; avatarUrl?: string; slug?: string }
+type ProjectDetail = { description: string; url: string; imageUrl: string }
+type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; projectDetails: ProjectDetail[]; visible: Record<string, boolean>; backgroundStyle: BackgroundStyle; avatarUrl?: string; slug?: string }
 type AppView = 'home' | 'editor' | 'preview' | 'auth' | 'dashboard' | 'public'
 type AuthMode = 'register' | 'login'
 type User = { id: string; email: string; displayName: string; locale: 'ar' | 'en'; emailVerified: boolean; createdAt: string }
@@ -32,6 +33,42 @@ const sitePageLabels: Record<Exclude<SitePage, 'not-found'>, { en: string; ar: s
   terms: { en: 'Terms', ar: 'الشروط' },
 }
 const reservedSubdomains = new Set(['www','api','app','admin','assets','static','cdn','mail','smtp','ftp','support','help','status','docs','blog','dev','staging','preview','dashboard','auth','login','register','pricing','about','templates','features','contact','privacy','terms','taqdom'])
+function emptyProjectDetail(): ProjectDetail {
+  return { description: '', url: '', imageUrl: '' }
+}
+function normaliseProjectDetails(value: unknown, count: number): ProjectDetail[] {
+  const raw = Array.isArray(value) ? value : []
+  return Array.from({ length: Math.min(Math.max(count, 0), 24) }, (_, index) => {
+    const item = raw[index] && typeof raw[index] === 'object' ? raw[index] as Partial<ProjectDetail> : {}
+    return {
+      description: typeof item.description === 'string' ? item.description.slice(0, 600) : '',
+      url: typeof item.url === 'string' ? item.url.slice(0, 500) : '',
+      imageUrl: typeof item.imageUrl === 'string' ? item.imageUrl.slice(0, 1000) : '',
+    }
+  })
+}
+function safeProjectImage(value: string | undefined, fallback: string): string {
+  if (!value) return fallback
+  if (/^\/api\/media\/[a-z0-9-]{10,100}$/i.test(value)) return value
+  if (/^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(value)) return value
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : fallback
+  } catch {
+    return fallback
+  }
+}
+function safeExternalUrl(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed || /^(?:javascript|data|vbscript):/i.test(trimmed)) return ''
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed
+  try {
+    const url = new URL(candidate)
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : ''
+  } catch {
+    return ''
+  }
+}
 function isValidPortfolioSubdomain(value: string): boolean {
   return value.length >= 3 && value.length <= 30 &&
     /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(value) &&
@@ -237,7 +274,7 @@ const backgroundStyles: { id: BackgroundStyle; en: string; ar: string; noteEn: s
   { id: 'calm', en: 'Calm', ar: 'هادئ وبسيط', noteEn: 'Quieter light and less texture', noteAr: 'إضاءة هادئة وتفاصيل أقل' },
 ]
 const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], professionEn: jobEnglish[j][0], roleEn: jobEnglish[j][1], layout: l, accent: colors[l], pale: stylePales[l] })))
-const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true}, backgroundStyle:'signature', avatarUrl:'', slug:'' }
+const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true}, projectDetails:[], backgroundStyle:'signature', avatarUrl:'', slug:'' }
 const imageUrls = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=76',
   'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=720&q=74',
@@ -264,6 +301,7 @@ function readSaved(): Portfolio {
       templateId: typeof saved.templateId === 'string' && templates.some(t => t.id === saved.templateId) ? saved.templateId : initial.templateId,
       backgroundStyle: backgroundStyles.some(item => item.id === saved.backgroundStyle) ? saved.backgroundStyle as BackgroundStyle : initial.backgroundStyle,
       projects,
+      projectDetails: normaliseProjectDetails(saved.projectDetails, projects.length),
       visible: { about: typeof visible.about === 'boolean' ? visible.about : initial.visible.about, projects: typeof visible.projects === 'boolean' ? visible.projects : initial.visible.projects, contact: typeof visible.contact === 'boolean' ? visible.contact : initial.visible.contact },
       avatarUrl: typeof saved.avatarUrl === 'string' ? saved.avatarUrl.slice(0, 1000) : '',
       slug: typeof saved.slug === 'string' ? saved.slug.slice(0, 80) : '',
@@ -286,6 +324,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 function normalisePortfolio(value: unknown, fallback: Portfolio): Portfolio {
   if (!value || typeof value !== 'object') return fallback
   const raw = value as Partial<Portfolio>
+  const projects = Array.isArray(raw.projects) ? raw.projects.filter((p): p is string => typeof p === 'string').slice(0,24) : fallback.projects
   return {
     ...fallback, ...raw,
     name: typeof raw.name === 'string' ? raw.name : fallback.name,
@@ -296,7 +335,8 @@ function normalisePortfolio(value: unknown, fallback: Portfolio): Portfolio {
     accent: typeof raw.accent === 'string' && /^#[0-9a-f]{6}$/i.test(raw.accent) ? raw.accent : fallback.accent,
     templateId: typeof raw.templateId === 'string' && templates.some(t => t.id === raw.templateId) ? raw.templateId : fallback.templateId,
     backgroundStyle: backgroundStyles.some(item => item.id === raw.backgroundStyle) ? raw.backgroundStyle as BackgroundStyle : fallback.backgroundStyle,
-    projects: Array.isArray(raw.projects) ? raw.projects.filter((p): p is string => typeof p === 'string').slice(0,24) : fallback.projects,
+    projects,
+    projectDetails: normaliseProjectDetails(raw.projectDetails, projects.length),
     visible: { ...fallback.visible, ...(raw.visible && typeof raw.visible === 'object' ? raw.visible : {}) },
     avatarUrl: typeof raw.avatarUrl === 'string' ? raw.avatarUrl : (fallback.avatarUrl || ''),
     slug: typeof raw.slug === 'string' ? raw.slug : (fallback.slug || ''),
@@ -330,6 +370,7 @@ export default function App() {
   const [publishModalOpen, setPublishModalOpen] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [projectUploadingIndex, setProjectUploadingIndex] = useState<number | null>(null)
   const [inboxOpen, setInboxOpen] = useState(false)
   const [inboxLoading, setInboxLoading] = useState(false)
   const [inboxMessages, setInboxMessages] = useState<Array<{ id: string; sender_name: string; sender_email: string; message: string; created_at: string }>>([])
@@ -400,6 +441,27 @@ export default function App() {
   }, [portfolio, view, user, portfolioId])
 
   const update = (key: keyof Portfolio, value: unknown) => setPortfolio(p => ({ ...p, [key]: value }))
+  const updateProjectDetail = (index: number, key: keyof ProjectDetail, value: string) => {
+    setPortfolio(current => {
+      const details = normaliseProjectDetails(current.projectDetails, current.projects.length)
+      details[index] = { ...details[index], [key]: value }
+      return { ...current, projectDetails: details }
+    })
+  }
+  const addProject = () => {
+    setPortfolio(current => current.projects.length >= 24 ? current : {
+      ...current,
+      projects: [...current.projects, ''],
+      projectDetails: [...normaliseProjectDetails(current.projectDetails, current.projects.length), emptyProjectDetail()],
+    })
+  }
+  const removeProject = (index: number) => {
+    setPortfolio(current => ({
+      ...current,
+      projects: current.projects.filter((_, itemIndex) => itemIndex !== index),
+      projectDetails: normaliseProjectDetails(current.projectDetails, current.projects.length).filter((_, itemIndex) => itemIndex !== index),
+    }))
+  }
   const goHome = () => {
     const host = location.hostname.toLowerCase()
     if (host !== 'taqdom.me' && host.endsWith('.taqdom.me')) {
@@ -522,6 +584,64 @@ export default function App() {
       alert(en ? 'Failed to upload photo. Please try again.' : 'فشل رفع الصورة. يُرجى المحاولة مجددًا.')
     } finally {
       setAvatarUploading(false)
+    }
+  }
+  const handleProjectImageFile = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    if (!user) {
+      alert(en ? 'Create an account or sign in to upload project images.' : 'اربط حسابك أو سجّل الدخول لرفع صور المشاريع.')
+      openAuth('register')
+      return
+    }
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type)) {
+      alert(en ? 'Use a JPG, PNG, or WebP image.' : 'استخدم صورة JPG أو PNG أو WebP.')
+      return
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      alert(en ? 'Choose an image smaller than 12 MB.' : 'اختر صورة أصغر من 12 ميجابايت.')
+      return
+    }
+    setProjectUploadingIndex(index)
+    try {
+      const img = new Image()
+      const reader = new FileReader()
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          img.onload = () => {
+            const maxDim = 1000
+            let width = img.width
+            let height = img.height
+            if (width > maxDim || height > maxDim) {
+              const scale = maxDim / Math.max(width, height)
+              width = Math.round(width * scale)
+              height = Math.round(height * scale)
+            }
+            const canvas = document.createElement('canvas')
+            canvas.width = width
+            canvas.height = height
+            const ctx = canvas.getContext('2d')
+            if (!ctx) return reject(new Error('canvas_failed'))
+            ctx.drawImage(img, 0, 0, width, height)
+            resolve(canvas.toDataURL('image/jpeg', 0.78).split(',')[1])
+          }
+          img.onerror = () => reject(new Error('image_load_failed'))
+          img.src = reader.result as string
+        }
+        reader.onerror = () => reject(new Error('read_failed'))
+        reader.readAsDataURL(file)
+      })
+      const result = await apiRequest<{ok:boolean; id:string; url:string}>('/api/media', {
+        method:'POST',
+        body:JSON.stringify({mimeType:'image/jpeg',base64:base64Data})
+      })
+      updateProjectDetail(index, 'imageUrl', result.url)
+    } catch (error) {
+      console.error('Project image upload failed', error)
+      alert(en ? 'Could not upload this project image. Please try again.' : 'تعذر رفع صورة المشروع. حاول مرة أخرى.')
+    } finally {
+      setProjectUploadingIndex(null)
     }
   }
   const signOut = async () => {
@@ -651,7 +771,7 @@ export default function App() {
         <div className="control-section"><div className="control-heading"><b>{en?'Atmosphere & background':'أجواء الخلفية'}</b><span>{en?'Choose a mood':'اختار الروح'}</span></div><p className="background-style-intro">{en?'Change the light, texture, and glass feeling without losing the template identity.':'غيّر الإضاءة والتدرجات والزجاجيات مع الحفاظ على هوية القالب.'}</p><div className="background-mood-options">{backgroundStyles.map(mood=><button type="button" key={mood.id} className={'background-mood-option '+(portfolio.backgroundStyle===mood.id?'selected':'')} aria-pressed={portfolio.backgroundStyle===mood.id} onClick={()=>update('backgroundStyle',mood.id)}><span className={'mood-swatch mood-swatch-'+mood.id}><i/><b/></span><span className="mood-option-copy"><strong>{en?mood.en:mood.ar}</strong><small>{en?mood.noteEn:mood.noteAr}</small></span>{portfolio.backgroundStyle===mood.id&&<span className="mood-option-check">✓</span>}</button>)}</div></div>
         <div className="control-section"><div className="control-heading"><b>{en?'Accent color':'اللون الأساسي'}</b><span>{portfolio.accent}</span></div><div className="color-options">{colors.map(c=><button className={portfolio.accent===c?'selected':''} key={c} style={{background:c}} aria-label={'Use '+c} onClick={()=>update('accent',c)}/>)}<label className="custom-color"><span>＋</span><input type="color" value={portfolio.accent} onChange={e=>update('accent',e.target.value)} aria-label="لون مخصص"/></label></div></div>
         <div className="control-section"><div className="control-heading"><b>{en?'Visible sections':'الأقسام الظاهرة'}</b></div>{[['about',en?'About me':'عني'],['projects',en?'Selected work':'أعمال مختارة'],['contact',en?'Contact':'تواصل معي']].map(([key,label])=><label className="toggle-row" key={key}><span>{label}</span><input type="checkbox" checked={Boolean(portfolio.visible[key])} onChange={e=>update('visible',{...portfolio.visible,[key]:e.target.checked})}/><i/></label>)}</div>
-        <div className="control-section"><div className="control-heading"><b>{en?'Project names':'أسماء المشاريع'}</b></div>{portfolio.projects.map((project,index)=><label className="field-label project-field" key={index}>{en?'Project '+(index+1):'مشروع '+(index+1)}<input value={project} onChange={e=>update('projects',portfolio.projects.map((p,i)=>i===index?e.target.value:p))}/></label>)}<button className="add-project" onClick={()=>update('projects',[...portfolio.projects,''])}>＋ {en?'Add project':'إضافة مشروع'}</button></div>
+        <div className="control-section project-editor-section"><div className="control-heading"><b>{en?'Project content':'تفاصيل المشاريع'}</b><span>{portfolio.projects.length}/24</span></div><p className="project-editor-intro">{en?'Give each project its own cover, short story, and destination link.':'أضف لكل مشروع صورة ووصفًا ورابطًا مستقلًا ليظهر كعمل احترافي.'}</p>{portfolio.projects.map((project,index)=>{const detail=portfolio.projectDetails[index] || emptyProjectDetail();return <div className="project-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Project details':'تفاصيل المشروع'}</b><button type="button" className="project-remove" onClick={()=>removeProject(index)} aria-label={en?'Remove project':'حذف المشروع'}>×</button></div><label className="field-label project-field">{en?'Project title':'اسم المشروع'}<input value={project} maxLength={160} onChange={e=>update('projects',portfolio.projects.map((p,i)=>i===index?e.target.value:p))} placeholder={en?'A project name':'اسم المشروع'}/></label><label className="field-label project-field">{en?'Short description':'وصف مختصر'}<textarea value={detail.description} rows={2} maxLength={600} onChange={e=>updateProjectDetail(index,'description',e.target.value)} placeholder={en?'What did you create and why?':'ماذا أنجزت في هذا المشروع؟'}/></label><label className="field-label project-field">{en?'Project link':'رابط المشروع'}<input type="url" value={detail.url} maxLength={500} onChange={e=>updateProjectDetail(index,'url',e.target.value)} placeholder="https://example.com"/></label><div className="project-image-editor">{detail.imageUrl?<img src={safeProjectImage(detail.imageUrl,imageUrls[(index+2)%imageUrls.length])} alt={en?'Project cover preview':'معاينة صورة المشروع'} loading="lazy"/>:<div className="project-image-placeholder"><span>✦</span><small>{en?'Add an image that tells the story':'أضف صورة تعبّر عن المشروع'}</small></div>}<div className="project-image-actions"><label className="project-image-upload">{projectUploadingIndex===index?(en?'Uploading…':'جارٍ الرفع…'):(detail.imageUrl?(en?'Replace cover':'تغيير الصورة'):(en?'Upload cover image':'رفع صورة المشروع'))}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void handleProjectImageFile(index,e)} disabled={projectUploadingIndex!==null} hidden/></label>{detail.imageUrl&&<button type="button" className="project-image-remove" onClick={()=>updateProjectDetail(index,'imageUrl','')}>{en?'Remove image':'حذف الصورة'}</button>}</div></div></div>})}<button className="add-project" onClick={addProject} disabled={portfolio.projects.length>=24}>＋ {en?'Add project':'إضافة مشروع'} {portfolio.projects.length>=24?'· 24/24':''}</button></div>
         <div className="editor-group-label">{en?'03 — Templates':'03 — القوالب'}</div>
         <div className="control-section"><div className="control-heading"><b>{en?'Choose a direction':'اختر نمط الموقع'}</b><span>{templates.length} {en?'starting points':'بداية'}</span></div><input className="search-input" value={search} onChange={e=>{setSearch(e.target.value);setShowAllTemplates(false)}} placeholder={en?'Search profession or style…':'ابحث عن مجال أو تصميم…'}/><div className="category-pills">{[{value:'الكل',ar:'الكل',en:'All'},...jobs.map((j,index)=>({value:j[1],ar:j[1],en:jobEnglish[index][0]}))].map(c=><button className={category===c.value?'active':''} key={c.value} onClick={()=>{setCategory(c.value);setShowAllTemplates(false)}}>{en?c.en:c.ar}</button>)}</div><div className="template-list">{filtered.slice(0,showAllTemplates?filtered.length:10).map(t=><button className={t.id===portfolio.templateId?'chosen':''} key={t.id} onClick={()=>update('templateId',t.id)}><span className={'template-mini template-mini-'+t.layout} style={{'--accent':t.accent,'--pale':t.pale} as CSSProperties}><i/></span><span><b>{en?t.professionEn:t.profession}</b><small>{en?layouts[t.layout]:layoutsAr[t.layout]}</small></span>{t.id===portfolio.templateId&&<b className="checkmark">✓</b>}</button>)}</div>{filtered.length>10&&<button className="show-more" onClick={()=>setShowAllTemplates(v=>!v)}>{showAllTemplates?(en?'Show fewer':'عرض أقل'):(en?'Show all '+filtered.length:'اعرض كل الـ '+filtered.length)} {showAllTemplates?'↑':'↓'}</button>}</div>
       </div><div className="sidebar-bottom"><button className="button button-primary button-wide" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish site 🚀':'انشر موقعك 🚀')}</button><button className="button button-light button-wide" onClick={preview}>{en?'Preview my site':'عاين موقعي'} <span>↗</span></button><button className="button button-light button-wide" onClick={exportSite}>{en?'Export HTML':'نزّل نسخة HTML'} <span>↓</span></button><div className="local-note">{user?(saved?(en?'☁ Saved to your account':'☁ محفوظ على حسابك'):(en?'Saving to cloud…':'جارٍ الحفظ سحابيًا…')):(en?'Saved only on this device':'محفوظ على الجهاز فقط')}</div></div></aside>
@@ -1131,7 +1251,7 @@ function PortfolioCanvas({data,template,language}:{data:Portfolio;template:Templ
       <span className="atmosphere-grid"/>
       <span className="atmosphere-glass"/>
     </div>
-    <div className="site-nav"><span className="site-monogram">{displayName.split(' ').map(s=>s[0]).join('')}</span><div><a href="#about">{en?'About':'عنّي'}</a><a href="#work">{en?'Work':'أعمالي'}</a><a href="#contact">{en?'Contact':'تواصل'}</a></div><span className="site-availability"><i/>{en?'Open to work':'متاح للعمل'}</span></div><section className="site-hero"><div className="site-copy"><small className="site-eyebrow">✳ {en?template.professionEn.toUpperCase():'أهلاً، أنا '+displayName}</small><h1>{displayName}<br/><em>{displayRole}</em></h1>{data.visible.about&&<p id="about">{displayBio}</p>}<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a></div><div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location || (en?'Remote':'عن بُعد')}　·　2026</div></div></section>{data.visible.projects&&<section className="site-work" id="work"><div className="site-section-title"><div><small>01 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{en?'More coming soon':'المزيد قريباً'} ↗</span></div><div className="site-project-grid">{projects.map((name,i)=><div className={'site-project project-'+i} key={name}><div className="site-project-art"><img src={imageUrls[(i+template.layout+1)%imageUrls.length]} alt="" loading="lazy"/><span>{['milo','nūn','else'][i%3]}</span><b>{['✳','◡','✿'][i%3]}</b></div><h3>{name}</h3><small>{projectTypes[i%projectTypes.length]}</small></div>)}</div></section>}{data.visible.contact&&<section className="site-contact" id="contact"><div><small>02 / {en?'SAY HELLO':'كلمّني'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div><a href={'mailto:'+data.email}>{data.email} ↗</a></section>}<footer className="site-footer"><span>© {new Date().getFullYear()} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer></article>
+    <div className="site-nav"><span className="site-monogram">{displayName.split(' ').map(s=>s[0]).join('')}</span><div><a href="#about">{en?'About':'عنّي'}</a><a href="#work">{en?'Work':'أعمالي'}</a><a href="#contact">{en?'Contact':'تواصل'}</a></div><span className="site-availability"><i/>{en?'Open to work':'متاح للعمل'}</span></div><section className="site-hero"><div className="site-copy"><small className="site-eyebrow">✳ {en?template.professionEn.toUpperCase():'أهلاً، أنا '+displayName}</small><h1>{displayName}<br/><em>{displayRole}</em></h1>{data.visible.about&&<p id="about">{displayBio}</p>}<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a></div><div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location || (en?'Remote':'عن بُعد')}　·　2026</div></div></section>{data.visible.projects&&<section className="site-work" id="work"><div className="site-section-title"><div><small>01 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{en?'More coming soon':'المزيد قريباً'} ↗</span></div><div className="site-project-grid">{projects.map((name,i)=>{const detail=data.projectDetails?.[i] || emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,imageUrls[(i+template.layout+1)%imageUrls.length]);const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(i%3)} key={name+'-'+i}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}><img src={image} alt={detail.description || name} loading="lazy"/><span>{projectTypes[i%projectTypes.length]}</span><b>{['✳','◡','✿'][i%3]}</b></div><h3>{name || (en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[i%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>}{data.visible.contact&&<section className="site-contact" id="contact"><div><small>02 / {en?'SAY HELLO':'كلمّني'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div><a href={'mailto:'+data.email}>{data.email} ↗</a></section>}<footer className="site-footer"><span>© {new Date().getFullYear()} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer></article>
 }
 
 function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart }: {
