@@ -53,9 +53,26 @@ export default {
       return jsonError('method_not_allowed', 405)
     }
 
+    // Tenant hosts serve public portfolios only; authentication, inbox, AI and
+    // account mutations must remain on the apex host, never pass a tenant cookie.
+    if (incoming.pathname.startsWith('/api/')) {
+      const isPublicRead =
+        (request.method === 'GET' || request.method === 'HEAD') &&
+        (incoming.pathname.startsWith('/api/portfolios/public/') ||
+          incoming.pathname.startsWith('/api/media/') ||
+          incoming.pathname === '/api/health')
+      const isContactSubmission = incoming.pathname === '/api/messages' && request.method === 'POST'
+      if (!isPublicRead && !isContactSubmission) return jsonError('tenant_api_route_blocked', 404)
+    } else if (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'OPTIONS') {
+      return jsonError('tenant_write_route_blocked', 403)
+    }
+
     const headers = new Headers(request.headers)
     headers.delete('host')
     headers.delete('content-length')
+    // A tenant-origin cookie must never be forwarded to the apex API.
+    headers.delete('cookie')
+    headers.delete('authorization')
     headers.set('Origin', APEX_ORIGIN)
     headers.set('X-Taqdom-Tenant', tenant)
 
