@@ -8,7 +8,9 @@ import { downloadPortfolioHtml } from './lib/portfolio-export'
 
 type Template = { id: string; profession: string; role: string; professionEn: string; roleEn: string; layout: number; accent: string; pale: string }
 type ProjectDetail = { description: string; url: string; imageUrl: string }
-type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; projectDetails: ProjectDetail[]; visible: Record<string, boolean>; backgroundStyle: BackgroundStyle; avatarUrl?: string; slug?: string }
+type ExperienceEntry = { role: string; company: string; period: string; description: string }
+type SocialLink = { label: string; url: string }
+type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; projectDetails: ProjectDetail[]; skills: string[]; experience: ExperienceEntry[]; socialLinks: SocialLink[]; visible: Record<string, boolean>; backgroundStyle: BackgroundStyle; avatarUrl?: string; slug?: string }
 type AppView = 'home' | 'editor' | 'preview' | 'auth' | 'dashboard' | 'public'
 type AuthMode = 'register' | 'login'
 type User = { id: string; email: string; displayName: string; locale: 'ar' | 'en'; emailVerified: boolean; createdAt: string }
@@ -46,6 +48,37 @@ function normaliseProjectDetails(value: unknown, count: number): ProjectDetail[]
       imageUrl: typeof item.imageUrl === 'string' ? item.imageUrl.slice(0, 1000) : '',
     }
   })
+}
+const portfolioSectionKeys = ['about','skills','experience','projects','socials','contact'] as const
+function normaliseVisibleSections(value: unknown, fallback: Record<string, boolean>): Record<string, boolean> {
+  const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  return Object.fromEntries(portfolioSectionKeys.map(key => [key, typeof raw[key] === 'boolean' ? raw[key] as boolean : Boolean(fallback[key])]))
+}
+function normaliseSkills(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string').map(item => item.trim().slice(0, 80)).filter(Boolean).slice(0, 30)
+}
+function normaliseExperience(value: unknown): ExperienceEntry[] {
+  if (!Array.isArray(value)) return []
+  return value.filter(item => item && typeof item === 'object' && !Array.isArray(item)).slice(0, 12).map(item => {
+    const entry = item as Partial<ExperienceEntry>
+    return {
+      role: typeof entry.role === 'string' ? entry.role.trim().slice(0, 160) : '',
+      company: typeof entry.company === 'string' ? entry.company.trim().slice(0, 160) : '',
+      period: typeof entry.period === 'string' ? entry.period.trim().slice(0, 100) : '',
+      description: typeof entry.description === 'string' ? entry.description.trim().slice(0, 600) : '',
+    }
+  }).filter(entry => entry.role || entry.company || entry.description)
+}
+function normaliseSocialLinks(value: unknown): SocialLink[] {
+  if (!Array.isArray(value)) return []
+  return value.filter(item => item && typeof item === 'object' && !Array.isArray(item)).slice(0, 12).map(item => {
+    const entry = item as Partial<SocialLink>
+    return {
+      label: typeof entry.label === 'string' ? entry.label.trim().slice(0, 60) : '',
+      url: typeof entry.url === 'string' ? safeExternalUrl(entry.url).slice(0, 500) : '',
+    }
+  }).filter(entry => entry.label && entry.url)
 }
 function safeProjectImage(value: string | undefined, fallback: string): string {
   if (!value) return fallback
@@ -274,7 +307,7 @@ const backgroundStyles: { id: BackgroundStyle; en: string; ar: string; noteEn: s
   { id: 'calm', en: 'Calm', ar: 'هادئ وبسيط', noteEn: 'Quieter light and less texture', noteAr: 'إضاءة هادئة وتفاصيل أقل' },
 ]
 const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], professionEn: jobEnglish[j][0], roleEn: jobEnglish[j][1], layout: l, accent: colors[l], pale: stylePales[l] })))
-const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true}, projectDetails:[], backgroundStyle:'signature', avatarUrl:'', slug:'' }
+const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], projectDetails:[], skills:['تصميم تجربة المستخدم','Figma','النماذج الأولية','البحث والتجربة'], experience:[{role:'مصممة منتجات رقمية',company:'استوديو نون',period:'2024 — الآن',description:'تصميم تجارب رقمية واضحة وتطوير واجهات سهلة الاستخدام.'}], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, backgroundStyle:'signature', avatarUrl:'', slug:'' }
 const imageUrls = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=76',
   'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=720&q=74',
@@ -302,7 +335,10 @@ function readSaved(): Portfolio {
       backgroundStyle: backgroundStyles.some(item => item.id === saved.backgroundStyle) ? saved.backgroundStyle as BackgroundStyle : initial.backgroundStyle,
       projects,
       projectDetails: normaliseProjectDetails(saved.projectDetails, projects.length),
-      visible: { about: typeof visible.about === 'boolean' ? visible.about : initial.visible.about, projects: typeof visible.projects === 'boolean' ? visible.projects : initial.visible.projects, contact: typeof visible.contact === 'boolean' ? visible.contact : initial.visible.contact },
+      skills: Array.isArray(saved.skills) ? normaliseSkills(saved.skills) : initial.skills,
+      experience: Array.isArray(saved.experience) ? normaliseExperience(saved.experience) : initial.experience,
+      socialLinks: Array.isArray(saved.socialLinks) ? normaliseSocialLinks(saved.socialLinks) : initial.socialLinks,
+      visible: normaliseVisibleSections(visible, initial.visible),
       avatarUrl: typeof saved.avatarUrl === 'string' ? saved.avatarUrl.slice(0, 1000) : '',
       slug: typeof saved.slug === 'string' ? saved.slug.slice(0, 80) : '',
     }
@@ -337,7 +373,10 @@ function normalisePortfolio(value: unknown, fallback: Portfolio): Portfolio {
     backgroundStyle: backgroundStyles.some(item => item.id === raw.backgroundStyle) ? raw.backgroundStyle as BackgroundStyle : fallback.backgroundStyle,
     projects,
     projectDetails: normaliseProjectDetails(raw.projectDetails, projects.length),
-    visible: { ...fallback.visible, ...(raw.visible && typeof raw.visible === 'object' ? raw.visible : {}) },
+    skills: normaliseSkills(raw.skills),
+    experience: normaliseExperience(raw.experience),
+    socialLinks: normaliseSocialLinks(raw.socialLinks),
+    visible: normaliseVisibleSections(raw.visible, fallback.visible),
     avatarUrl: typeof raw.avatarUrl === 'string' ? raw.avatarUrl : (fallback.avatarUrl || ''),
     slug: typeof raw.slug === 'string' ? raw.slug : (fallback.slug || ''),
   }
