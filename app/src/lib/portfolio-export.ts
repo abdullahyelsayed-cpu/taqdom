@@ -107,7 +107,7 @@ export function downloadPortfolioHtml(
   const layout = Number.isInteger(template.layout) && template.layout >= 0 && template.layout < themePalettes.length ? template.layout : 0
   const mood = backgroundStyles.has(portfolio.backgroundStyle || '') ? portfolio.backgroundStyle! : 'signature'
   const sectionOrder = normaliseExportSectionOrder(portfolio.sectionOrder)
-  const role = (en && template.roleEn ? template.roleEn : portfolio.role || template.profession).trim()
+  const role = (portfolio.role || (en ? template.roleEn : '') || template.profession).trim()
   const profession = en && template.professionEn ? template.professionEn : template.profession
   const avatar = safeImageUrl(portfolio.avatarUrl)
   const projects = Array.isArray(portfolio.projects)
@@ -137,8 +137,8 @@ export function downloadPortfolioHtml(
       return `<article class="project project-${index % 3}"><span class="project-number">${String(index + 1).padStart(2, '0')}</span>${artwork}<div><h3>${escapeHtml(project)}</h3>${description ? `<p class="project-description">${escapeHtml(description)}</p>` : ''}<small>${en ? ['Digital experience','Visual identity','Creative direction'][index % 3] : ['تجربة رقمية','هوية بصرية','توجّه إبداعي'][index % 3]}</small>${href ? `<a class="project-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${en ? 'View project' : 'عرض المشروع'} ↗</a>` : ''}</div></article>`
     }).join('')}</div></section>`
     : ''
-  const aboutMarkup = portfolio.visible.about && portfolio.bio.trim()
-    ? `<section id="about" class="section about"><p class="kicker">02 / ${en ? 'ABOUT' : 'نبذة عني'}</p><h2>${en ? 'Thoughtful work starts with a point of view.' : 'كل عمل مميز يبدأ برؤية.'}</h2><p class="bio">${escapeHtml(portfolio.bio)}</p>${portfolio.location.trim() ? `<p class="location">⌖ ${escapeHtml(portfolio.location)}</p>` : ''}</section>`
+  const aboutMarkup = portfolio.visible.about && (portfolio.bio.trim() || portfolio.location.trim())
+    ? `<section id="about" class="section about"><p class="kicker">02 / ${en ? 'ABOUT' : 'نبذة عني'}</p><h2>${en ? 'Thoughtful work starts with a point of view.' : 'كل عمل مميز يبدأ برؤية.'}</h2>${portfolio.bio.trim() ? `<p class="bio">${escapeHtml(portfolio.bio)}</p>` : ''}${portfolio.location.trim() ? `<p class="location">⌖ ${escapeHtml(portfolio.location)}</p>` : ''}</section>`
     : ''
   const contactMarkup = portfolio.visible.contact
     ? `<section id="contact" class="contact"><div><p class="kicker">${en ? '02 / SAY HELLO' : '03 / لنتحدث'}</p><h2>${en ? 'Have something meaningful in mind?' : 'عندك فكرة تستحق التنفيذ؟'}</h2><p>${en ? 'Tell me what you are imagining. Let’s make it real.' : 'احكي لي عن فكرتك، وخلينا نحولها لحاجة حقيقية.'}</p></div>${email ? `<a class="contact-link" href="mailto:${escapeHtml(email)}">${escapeHtml(email)} <span>↗</span></a>` : ''}</section>`
@@ -164,7 +164,7 @@ export function downloadPortfolioHtml(
     contact:{en:'Contact',ar:'تواصل',id:'contact'}
   }
   const navMarkup = sectionOrder.filter(key => sectionAvailability[key]).map(key => `<a href="#${sectionNames[key].id}">${en ? sectionNames[key].en : sectionNames[key].ar}</a>`).join('')
-  const orderedSectionsMarkup = '<div class="site-sections composition-' + layout + '" data-section-order="' + sectionOrder.join(' ') + '">' + sectionOrder.map(key => '<div class="section-slot slot-' + key + '" data-section="' + key + '">' + sectionMarkup[key] + '</div>').join('') + '</div>'
+  const orderedSectionsMarkup = '<div class="site-sections composition-' + layout + '" data-section-order="' + sectionOrder.filter(key => sectionAvailability[key]).join(' ') + '">' + sectionOrder.filter(key => sectionAvailability[key]).map(key => '<div class="section-slot slot-' + key + '" data-section="' + key + '">' + sectionMarkup[key] + '</div>').join('') + '</div>'
   const themeRules = themePalettes.map((palette, index) => `
 body.theme-${index}{--page:${palette.page};--ink:${palette.ink};--muted:${palette.muted};--surface:${palette.surface};--line:${palette.line};--hero-bg:${palette.hero};--radius:${palette.radius};--glow-a:${palette.glowA};--glow-b:${palette.glowB};--glow-c:${palette.glowC};background:${palette.body};color:var(--ink)}
 body.theme-${index} .shell{background:linear-gradient(145deg, color-mix(in srgb,var(--page) 88%,white 3%),var(--page));border-color:var(--line);box-shadow:0 28px 100px #0002}

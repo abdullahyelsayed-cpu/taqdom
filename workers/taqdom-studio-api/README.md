@@ -5,9 +5,10 @@ This directory tracks the API Worker currently used by the Taqdom Pages project.
 ## Safe release order
 
 1. Review changes and CI checks in the pull request.
-2. Apply `migrations/0001_message_attempts.sql` and `migrations/0002_portfolio_subdomains.sql` to the production D1 database attached to `TAQDOM_DB`.
-3. Deploy this Worker to `taqdom-studio-api` while preserving the existing AI, D1, ALLOWED_ORIGINS, and MODEL bindings.
+2. Apply `migrations/0001_message_attempts.sql`, `migrations/0002_portfolio_subdomains.sql`, and `migrations/0003_production_hardening.sql` to the production D1 database attached to `TAQDOM_DB`.
+3. Deploy this Worker to `taqdom-studio-api` while preserving the existing AI, D1, ALLOWED_ORIGINS, and MODEL bindings. The latest API also expects portfolio revision/managed-media columns from migration 0003.
 4. Smoke-test login, draft isolation, published portfolio reads, avatar uploads, contact forms, inbox access control, and AI assistance.
-5. Follow up by replacing the recovered bundle with human-maintained source modules and automate deployment from this repository.
+5. Verify optimistic-save conflicts, account deletion, media cleanup, public portfolio reads, tenant-host restrictions, and contact-message throttling.
+6. Follow up by replacing the recovered bundle with human-maintained source modules and automate deployment from this repository.
 
 Do not deploy before the migration is applied and API checks pass. Do not commit credentials or secret values here.

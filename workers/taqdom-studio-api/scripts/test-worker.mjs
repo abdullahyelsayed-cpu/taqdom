@@ -40,9 +40,13 @@ function createDb(options = {}) {
               ? { id: 'another-portfolio' }
               : null
           }
-          if (sql.includes('SELECT status,slug FROM portfolios WHERE id=? AND owner_id=?')) {
+          if (sql.includes('SELECT status,slug,revision FROM portfolios WHERE id=? AND owner_id=?')) {
             return options.currentPortfolioStatus
-              ? { status: options.currentPortfolioStatus, slug: Object.prototype.hasOwnProperty.call(options, 'currentPortfolioSlug') ? options.currentPortfolioSlug : 'existing-handle' }
+              ? {
+                  status: options.currentPortfolioStatus,
+                  slug: Object.prototype.hasOwnProperty.call(options, 'currentPortfolioSlug') ? options.currentPortfolioSlug : 'existing-handle',
+                  revision: options.currentPortfolioRevision ?? 1
+                }
               : null
           }
           if (sql.includes('FROM portfolios WHERE (id=? OR slug=? COLLATE NOCASE)')) return options.publicPortfolio || null
@@ -52,7 +56,7 @@ function createDb(options = {}) {
           if (sql.includes('SELECT status FROM portfolios WHERE id=? AND owner_id=?')) {
             return options.currentPortfolioStatus ? { status: options.currentPortfolioStatus } : null
           }
-          if (sql.includes('SELECT id,title,template_id,slug,document_json,status,created_at,updated_at FROM portfolios WHERE id=? AND owner_id=?')) {
+          if (sql.includes('SELECT id,title,template_id,slug,document_json,status,revision,created_at,updated_at FROM portfolios WHERE id=? AND owner_id=?')) {
             const insert = calls.find(item => item.sql?.includes('INSERT INTO portfolios (id,owner_id,title,template_id,slug,status,document_json)'))
             const values = insert?.values || []
             return options.createdPortfolio || {
@@ -61,6 +65,7 @@ function createDb(options = {}) {
               template_id: values[3] || 'design-0',
               slug: values[4] || 'site-test00',
               status: values[5] || 'draft',
+              revision: 1,
               document_json: values[6] || '{}',
               created_at: '2026-01-01 00:00:00',
               updated_at: '2026-01-01 00:00:00'
@@ -70,6 +75,7 @@ function createDb(options = {}) {
             return options.ownerPortfolio ? { id: portfolioId } : null
           }
           if (sql.includes('SELECT COUNT(*) AS total FROM portfolios')) return { total: 0 }
+          if (sql.includes('SELECT COUNT(*) AS total FROM media WHERE owner_id=?')) return { total: 0 }
           if (sql.includes('SELECT COUNT(*) AS total FROM auth_attempts')) return { total: 1 }
           return null
         },
@@ -88,6 +94,11 @@ function createDb(options = {}) {
         }
       }
       return statement
+    },
+    async batch(statements) {
+      const results = []
+      for (const statement of statements) results.push(await statement.run())
+      return results
     }
   }
   return db

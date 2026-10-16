@@ -15,7 +15,7 @@ type Portfolio = { name: string; role: string; bio: string; email: string; locat
 type AppView = 'home' | 'editor' | 'preview' | 'auth' | 'dashboard' | 'public'
 type AuthMode = 'register' | 'login'
 type User = { id: string; email: string; displayName: string; locale: 'ar' | 'en'; emailVerified: boolean; createdAt: string }
-type SavedPortfolio = { id: string; title: string; slug?: string; templateId: string; document: Portfolio; status: 'draft' | 'published'; createdAt: string; updatedAt: string }
+type SavedPortfolio = { id: string; title: string; slug?: string; templateId: string; document: Portfolio; status: 'draft' | 'published'; revision?: number; createdAt: string; updatedAt: string }
 type ApiError = Error & { code?: string }
 
 type SitePage = 'home' | 'about' | 'templates' | 'features' | 'pricing' | 'faq' | 'contact' | 'privacy' | 'terms' | 'not-found'
@@ -112,6 +112,10 @@ function isValidPortfolioSubdomain(value: string): boolean {
   return value.length >= 3 && value.length <= 30 &&
     /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(value) &&
     !reservedSubdomains.has(value)
+}
+function mediaIdFromUrl(value: string | undefined): string {
+  const match = typeof value === 'string' ? value.match(/^\/api\/media\/([a-f0-9-]{10,100})$/i) : null
+  return match?.[1] || ''
 }
 function parsePublicRoute(pathname: string, search: string, hostname: string): string | null {
   const query = new URLSearchParams(search)
@@ -323,6 +327,7 @@ const imageUrls = [
   'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=720&q=74',
 ]
 const imageAlt = ['صورة استرشادية لواجهة شخصية إبداعية','مساحة عمل رقمية حديثة','صورة شخصية استرشادية','لوحة ألوان وتصميم بصري','مشهد بصري ملهم','فريق يعمل على مشروع']
+const CURRENT_YEAR = new Date().getFullYear()
 
 function readSaved(): Portfolio {
   try {
@@ -391,7 +396,8 @@ function normalisePortfolio(value: unknown, fallback: Portfolio): Portfolio {
 }
 
 export default function App() {
-  const query = new URLSearchParams(location.search)
+  const queryString = location.search
+  const query = new URLSearchParams(queryString)
   const siteRoute = resolveSiteRoute(location.pathname)
   const publicRouteId = parsePublicRoute(location.pathname, location.search, location.hostname)
   const [portfolio, setPortfolio] = useState<Portfolio>(readSaved)
@@ -412,6 +418,7 @@ export default function App() {
   const [accountPortfolios, setAccountPortfolios] = useState<SavedPortfolio[]>([])
   const [portfolioId, setPortfolioId] = useState<string|null>(null)
   const [portfolioSlug, setPortfolioSlug] = useState('')
+  const [, setPortfolioRevision] = useState(1)
   const [accountError, setAccountError] = useState('')
   const [accountBusy, setAccountBusy] = useState(false)
   const [publishModalOpen, setPublishModalOpen] = useState(false)
@@ -425,7 +432,13 @@ export default function App() {
   const trackedPortfolioRef = useRef<Portfolio | null>(null)
   const pendingSnapshotRef = useRef<Portfolio | null>(null)
   const historyTimerRef = useRef<number | null>(null)
+  const saveTimerRef = useRef<number | null>(null)
+  const saveQueueRef = useRef(Promise.resolve())
+  const saveGenerationRef = useRef(0)
+  const portfolioRevisionRef = useRef(1)
   const suppressHistoryRef = useRef(false)
+  const authReturnViewRef = useRef<AppView>('home')
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false)
   const [inboxOpen, setInboxOpen] = useState(false)
   const [inboxLoading, setInboxLoading] = useState(false)
   const [inboxMessages, setInboxMessages] = useState<Array<{ id: string; sender_name: string; sender_email: string; message: string; created_at: string }>>([])
@@ -461,39 +474,84 @@ export default function App() {
     document.querySelector('meta[property="og:locale"]')?.setAttribute('content', en ? 'en_US' : 'ar')
     document.querySelector('link[rel="canonical"]')?.setAttribute('href', new URL(localizedSitePath(language, siteRoute.page), location.origin).href)
     document.querySelector('meta[name="robots"]')?.setAttribute('content', siteRoute.page === 'not-found' || query.has('auth') || query.has('preview') || view !== 'home' ? 'noindex, follow' : 'index, follow')
-  }, [language, en, view])
+  }, [language, en, view, siteRoute.page, queryString])
   useEffect(() => {
     let active = true
-    // Public content pages do not need an authentication round trip.
+    // The marketing pages do not need account data, but the home page should
+    // restore an existing session whenever the visitor returns to it.
     if (view !== 'home' || siteRoute.page !== 'home') {
       setAccountLoading(false)
       return () => { active = false }
     }
+    setAccountLoading(true)
     apiRequest<{user:User}>('/api/auth/me').then(async result => {
       if (!active) return
       setUser(result.user)
-      try { const data = await apiRequest<{portfolios:SavedPortfolio[]}>('/api/portfolios'); if (active) setAccountPortfolios(data.portfolios) }
-      catch { if (active) setAccountError(en ? 'Could not load your saved sites.' : 'تعذر تحميل مواقعك المحفوظة.') }
-    }).catch(() => { if (active) setUser(null) }).finally(() => { if (active) setAccountLoading(false) })
+      try {
+        const data = await apiRequest<{portfolios:SavedPortfolio[]}>('/api/portfolios')
+        if (active) setAccountPortfolios(data.portfolios)
+      } catch {
+        if (active) setAccountError(en ? 'Could not load your saved sites.' : 'تعذر تحميل مواقعك المحفوظة.')
+      }
+    }).catch(() => {
+      if (active) setUser(null)
+    }).finally(() => {
+      if (active) setAccountLoading(false)
+    })
     return () => { active = false }
-  }, [])
+  }, [view, siteRoute.page, en])
+
+  const savePortfolioNow = async (snapshot: Portfolio, force = false) => {
+    const generation = ++saveGenerationRef.current
+    try { localStorage.setItem('taqdom.portfolio', JSON.stringify(snapshot)) } catch { /* browser storage may be disabled */ }
+    setSaved(false)
+    saveQueueRef.current = saveQueueRef.current.catch(() => undefined).then(async () => {
+      if (!force && generation !== saveGenerationRef.current) return
+      if (view !== 'editor' || !user || !portfolioId) {
+        if (generation === saveGenerationRef.current) setSaved(true)
+        return
+      }
+      const response = await apiRequest<{ revision: number }>('/api/portfolios/' + portfolioId, {
+        method: 'PUT',
+        body: JSON.stringify({
+          title: snapshot.name || (en ? 'My portfolio' : 'موقعي الشخصي'),
+          templateId: snapshot.templateId,
+          document: snapshot,
+          baseRevision: portfolioRevisionRef.current,
+        }),
+      })
+      const nextRevision = Number(response.revision || (portfolioRevisionRef.current + 1))
+      portfolioRevisionRef.current = nextRevision
+      if (generation === saveGenerationRef.current) {
+        setPortfolioRevision(nextRevision)
+        setSaved(true)
+      }
+    }).catch(error => {
+      if (generation === saveGenerationRef.current) {
+        setSaved(false)
+        setAccountError(error instanceof Error && error.message === 'portfolio_conflict'
+          ? (en ? 'This site changed in another tab. Refresh it before continuing.' : 'الموقع اتغير في تبويب آخر. حدّث الصفحة قبل الاستمرار.')
+          : (en ? 'Cloud save failed. Your latest edit remains on this device.' : 'فشل الحفظ السحابي. آخر تعديل ما زال محفوظًا على الجهاز.'))
+      }
+    })
+    return saveQueueRef.current
+  }
 
   useEffect(() => {
     if (view === 'preview') return
+    if (saveTimerRef.current !== null) window.clearTimeout(saveTimerRef.current)
     setSaved(false)
-    const id = window.setTimeout(async () => {
-      try { localStorage.setItem('taqdom.portfolio', JSON.stringify(portfolio)) } catch { /* browser storage may be disabled */ }
-      if (view === 'editor' && user && portfolioId) {
-        try {
-          await apiRequest('/api/portfolios/' + portfolioId, { method:'PUT', body:JSON.stringify({ title: portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'), templateId:portfolio.templateId, document:portfolio }) })
-          setSaved(true)
-        } catch { setSaved(false); setAccountError(en ? 'Cloud save failed. Your latest edit remains on this device.' : 'فشل الحفظ السحابي. آخر تعديل ما زال محفوظًا على الجهاز.') }
-      } else {
-        setSaved(true)
-      }
+    saveTimerRef.current = window.setTimeout(() => {
+      saveTimerRef.current = null
+      void savePortfolioNow(portfolio)
     }, 450)
-    return () => window.clearTimeout(id)
-  }, [portfolio, view, user, portfolioId])
+    return () => {
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current)
+        saveTimerRef.current = null
+      }
+    }
+  }, [portfolio, view, user, portfolioId, en])
 
   useEffect(() => {
     if (suppressHistoryRef.current) {
@@ -648,7 +706,14 @@ export default function App() {
     setAccountError('')
     window.scrollTo(0,0)
   }
-  const openAuth = (mode: AuthMode) => { setAuthMode(mode); history.pushState({}, '', '?auth=' + mode + '&lang=' + language); setView('auth'); setAccountError(''); window.scrollTo(0,0) }
+  const openAuth = (mode: AuthMode) => {
+    authReturnViewRef.current = view
+    setAuthMode(mode)
+    history.pushState({}, '', '?auth=' + mode + '&lang=' + language)
+    setView('auth')
+    setAccountError('')
+    void window.scrollTo(0, 0)
+  }
   const openDashboard = async () => {
     history.replaceState({}, '', location.pathname); setView('dashboard'); setAccountError(''); window.scrollTo(0,0)
     if (user) {
@@ -658,8 +723,41 @@ export default function App() {
       } catch { /* ignore */ }
     }
   }
+  const flushPendingSave = async () => {
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+    }
+    await savePortfolioNow(portfolio, true)
+  }
+
+  const deleteAccount = async () => {
+    if (!user) return
+    const confirmed = window.confirm(en
+      ? 'Delete your Taqdom account, saved sites, images, and visitor messages permanently? This cannot be undone.'
+      : 'هل تريد حذف حساب تقدّم نهائيًا مع المواقع والصور ورسائل الزوار؟ لا يمكن التراجع عن هذا الإجراء؟')
+    if (!confirmed) return
+    setAccountBusy(true)
+    try {
+      await apiRequest('/api/auth/account', { method:'DELETE', body:'{}' })
+      try { localStorage.removeItem('taqdom.portfolio') } catch {}
+      setUser(null)
+      setAccountPortfolios([])
+      setPortfolioId(null)
+      setPortfolioSlug('')
+      setPortfolioRevision(1)
+      portfolioRevisionRef.current = 1
+      goHome()
+    } catch {
+      setAccountError(en ? 'Could not delete your account. Please try again.' : 'تعذر حذف الحساب. حاول مرة أخرى.')
+    } finally {
+      setAccountBusy(false)
+    }
+  }
+
   const publishSite = async () => {
     if (!user) { openAuth('register'); return }
+    if (portfolioId) await flushPendingSave()
     const requestedSlug = portfolioSlug.trim().toLowerCase()
     if (!isValidPortfolioSubdomain(requestedSlug)) {
       setAccountError(en
@@ -677,19 +775,26 @@ export default function App() {
         })
         savedItem = result.portfolio
         setPortfolioId(savedItem.id)
+        const nextRevision = Number(savedItem.revision || 1)
+        setPortfolioRevision(nextRevision)
+        portfolioRevisionRef.current = nextRevision
         setPortfolio(p => ({ ...p, slug: savedItem.slug }))
       } else {
-        await apiRequest<{ok:boolean;status:'published'}>('/api/portfolios/' + portfolioId, {
+        const result = await apiRequest<{ok:boolean;status:'published';revision:number}>('/api/portfolios/' + portfolioId, {
           method: 'PUT',
           body: JSON.stringify({
             title: portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'),
             templateId: portfolio.templateId,
             slug: requestedSlug,
             status: 'published',
-            document: { ...portfolio, status: 'published' }
+            document: { ...portfolio, status: 'published' },
+            baseRevision: portfolioRevisionRef.current
           })
         })
-        savedItem = { id:portfolioId, title:portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'), slug:requestedSlug, templateId:portfolio.templateId, document:portfolio, status:'published', createdAt:'', updatedAt:new Date().toISOString() }
+        const nextRevision = Number(result.revision || (portfolioRevisionRef.current + 1))
+        setPortfolioRevision(nextRevision)
+        portfolioRevisionRef.current = nextRevision
+        savedItem = { id:portfolioId, title:portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'), slug:requestedSlug, templateId:portfolio.templateId, document:portfolio, status:'published', revision:nextRevision, createdAt:'', updatedAt:new Date().toISOString() }
       }
       setPortfolioSlug(savedItem.slug || requestedSlug)
       setSaved(true)
@@ -701,18 +806,32 @@ export default function App() {
         ? (en ? 'That subdomain is already in use. Choose another one.' : 'اسم النطاق ده مستخدم بالفعل. اختار اسمًا تاني.')
         : code === 'invalid_subdomain'
           ? (en ? 'That subdomain is not allowed. Check the name and try again.' : 'اسم النطاق غير صالح. راجع الاسم وحاول مرة أخرى.')
-          : (en ? 'Could not publish site. Please try again.' : 'تعذر نشر الموقع. يُرجى المحاولة مجددًا.'))
+          : code === 'portfolio_conflict'
+            ? (en ? 'This site changed in another tab. Reload it before publishing again.' : 'الموقع اتغير في تبويب آخر. أعد تحميله قبل النشر مرة أخرى.')
+            : (en ? 'Could not publish site. Please try again.' : 'تعذر نشر الموقع. يُرجى المحاولة مجددًا.'))
     } finally {
       setPublishing(false)
     }
   }
+  const discardMedia = async (url: string | undefined) => {
+    const id = mediaIdFromUrl(url)
+    if (!id || !user) return
+    try { await apiRequest('/api/media/' + id, { method:'DELETE', body:'{}' }) } catch { /* cleanup is best-effort */ }
+  }
+
   const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    e.target.value = ''
     if (!file.type.startsWith('image/')) {
       alert(en ? 'Please select an image file.' : 'يرجى اختيار ملف صورة.')
       return
     }
+    if (file.size > 12 * 1024 * 1024) {
+      alert(en ? 'Choose an image smaller than 12 MB.' : 'اختر صورة أصغر من 12 ميجابايت.')
+      return
+    }
+    const previousUrl = portfolio.avatarUrl
     setAvatarUploading(true)
     try {
       const img = new Image()
@@ -750,9 +869,10 @@ export default function App() {
 
       const res = await apiRequest<{ ok: boolean; id: string; url: string }>('/api/media', {
         method: 'POST',
-        body: JSON.stringify({ mimeType: 'image/jpeg', base64: base64Data })
+        body: JSON.stringify({ mimeType: 'image/jpeg', base64: base64Data, portfolioId: portfolioId || undefined })
       })
       update('avatarUrl', res.url)
+      if (previousUrl && previousUrl !== res.url) void discardMedia(previousUrl)
     } catch (err) {
       console.error('Avatar upload failed', err)
       alert(en ? 'Failed to upload photo. Please try again.' : 'فشل رفع الصورة. يُرجى المحاولة مجددًا.')
@@ -806,11 +926,13 @@ export default function App() {
         reader.onerror = () => reject(new Error('read_failed'))
         reader.readAsDataURL(file)
       })
+      const previousUrl = portfolio.projectDetails[index]?.imageUrl || ''
       const result = await apiRequest<{ok:boolean; id:string; url:string}>('/api/media', {
         method:'POST',
-        body:JSON.stringify({mimeType:'image/jpeg',base64:base64Data})
+        body:JSON.stringify({mimeType:'image/jpeg',base64:base64Data,portfolioId:portfolioId || undefined})
       })
       updateProjectDetail(index, 'imageUrl', result.url)
+      if (previousUrl && previousUrl !== result.url) void discardMedia(previousUrl)
     } catch (error) {
       console.error('Project image upload failed', error)
       alert(en ? 'Could not upload this project image. Please try again.' : 'تعذر رفع صورة المشروع. حاول مرة أخرى.')
@@ -822,11 +944,55 @@ export default function App() {
     try { await apiRequest('/api/auth/logout', { method:'POST', body:'{}' }) } catch { /* local workspace still remains available */ }
     setUser(null); setAccountPortfolios([]); setPortfolioId(null); setPortfolioSlug(''); goHome()
   }
+  const hasMeaningfulDraft = (draft: Portfolio) => {
+    return draft.name.trim() !== initial.name ||
+      draft.role.trim() !== initial.role ||
+      draft.bio.trim() !== initial.bio ||
+      draft.email.trim() !== initial.email ||
+      draft.location.trim() !== initial.location ||
+      draft.projects.some((item, index) => item.trim() && item !== initial.projects[index]) ||
+      (draft.skills.length > 0 && JSON.stringify(draft.skills) !== JSON.stringify(initial.skills)) ||
+      (draft.experience.length > 0 && JSON.stringify(draft.experience) !== JSON.stringify(initial.experience)) ||
+      draft.socialLinks.length > 0 ||
+      Boolean(draft.avatarUrl) ||
+      draft.backgroundStyle !== initial.backgroundStyle ||
+      draft.accent !== initial.accent
+  }
+
   const handleAuthSuccess = async (nextUser: User) => {
-    setUser(nextUser); setAccountError(''); setView('dashboard'); history.replaceState({}, '', location.pathname)
-    try { const result = await apiRequest<{portfolios:SavedPortfolio[]}>('/api/portfolios'); setAccountPortfolios(result.portfolios) }
-    catch { setAccountError(en ? 'Your account is ready, but your workspace did not load. Refresh to retry.' : 'تم إنشاء حسابك، لكن تعذر تحميل مساحة العمل. حدّث الصفحة للمحاولة مجددًا.') }
-    window.scrollTo(0,0)
+    setUser(nextUser)
+    setAccountError('')
+    try {
+      const data = await apiRequest<{portfolios:SavedPortfolio[]}>('/api/portfolios')
+      setAccountPortfolios(data.portfolios)
+      if (authReturnViewRef.current === 'editor' && !portfolioId && hasMeaningfulDraft(portfolio)) {
+        const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', {
+          method:'POST',
+          body:JSON.stringify({
+            title: portfolio.name || (en ? 'My portfolio' : 'موقعي الشخصي'),
+            templateId: portfolio.templateId,
+            document: portfolio,
+          })
+        })
+        const item = result.portfolio
+        setPortfolioId(item.id)
+        setPortfolioSlug(item.slug || '')
+        const nextRevision = Number(item.revision || 1)
+        setPortfolioRevision(nextRevision)
+        portfolioRevisionRef.current = nextRevision
+        setAccountPortfolios(items => [item, ...items])
+        history.replaceState({}, '', location.pathname)
+        setView('editor')
+        void window.scrollTo(0, 0)
+        return
+      }
+      history.replaceState({}, '', location.pathname)
+      setView('dashboard')
+    } catch {
+      setAccountError(en ? 'Your account is ready, but your workspace did not load. Refresh to retry.' : 'تم إنشاء حسابك، لكن تعذر تحميل مساحة العمل. حدّث الصفحة للمحاولة مجددًا.')
+      setView('dashboard')
+    }
+    void window.scrollTo(0, 0)
   }
   const createPortfolio = async () => {
     if (!user) { openAuth('register'); return }
@@ -834,7 +1000,18 @@ export default function App() {
     const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], projectDetails:[], skills:[], experience:[], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, sectionOrder:['about','skills','experience','projects','socials','contact'], templateId:'design-0', accent:'#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My first portfolio' : 'موقعي الشخصي', templateId:fresh.templateId, document:fresh }) })
-      const nextPortfolio = normalisePortfolio(result.portfolio.document, fresh); resetHistoryFor(nextPortfolio); setPortfolio(nextPortfolio); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items => [result.portfolio, ...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
+      const nextPortfolio = normalisePortfolio(result.portfolio.document, fresh)
+      const nextRevision = Number(result.portfolio.revision || 1)
+      resetHistoryFor(nextPortfolio)
+      setPortfolio(nextPortfolio)
+      setPortfolioId(result.portfolio.id)
+      setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6))
+      setPortfolioRevision(nextRevision)
+      portfolioRevisionRef.current = nextRevision
+      setAccountPortfolios(items => [result.portfolio, ...items])
+      history.replaceState({}, '', location.pathname)
+      setView('editor')
+      void window.scrollTo(0,0)
     } catch (error) { setAccountError(error instanceof Error && error.message === 'portfolio_limit_reached' ? (en ? 'You reached the current project limit.' : 'وصلت للحد الحالي للمشاريع.') : (en ? 'We could not create your site. Please try again.' : 'تعذر إنشاء موقعك. يُرجى المحاولة مجددًا.')) }
     finally { setAccountBusy(false) }
   }
@@ -853,7 +1030,17 @@ export default function App() {
   }
   const openPortfolio = (item: SavedPortfolio) => {
     const next = normalisePortfolio(item.document, initial)
-    resetHistoryFor(next); setPortfolio(next); setPortfolioId(item.id); setPortfolioSlug(isValidPortfolioSubdomain(item.slug || '') ? item.slug! : 'site-'+item.id.slice(0,6)); history.replaceState({}, '', location.pathname); setView('editor'); setAccountError(''); window.scrollTo(0,0)
+    resetHistoryFor(next)
+    setPortfolio(next)
+    setPortfolioId(item.id)
+    setPortfolioSlug(isValidPortfolioSubdomain(item.slug || '') ? item.slug! : 'site-'+item.id.slice(0,6))
+    const nextRevision = Number(item.revision || 1)
+    setPortfolioRevision(nextRevision)
+    portfolioRevisionRef.current = nextRevision
+    history.replaceState({}, '', location.pathname)
+    setView('editor')
+    setAccountError('')
+    void window.scrollTo(0,0)
   }
   const chooseTemplate = (id: string) => {
     setPortfolio(p => ({...p, templateId:id}))
@@ -866,7 +1053,17 @@ export default function App() {
     const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], projectDetails:[], skills:[], experience:[], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, templateId, accent:templates.find(t=>t.id===templateId)?.accent || '#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My portfolio' : 'موقعي الشخصي', templateId, document:fresh }) })
-      resetHistoryFor(fresh); setPortfolio(fresh); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items=>[result.portfolio,...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
+      const nextRevision = Number(result.portfolio.revision || 1)
+      resetHistoryFor(fresh)
+      setPortfolio(fresh)
+      setPortfolioId(result.portfolio.id)
+      setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6))
+      setPortfolioRevision(nextRevision)
+      portfolioRevisionRef.current = nextRevision
+      setAccountPortfolios(items=>[result.portfolio,...items])
+      history.replaceState({}, '', location.pathname)
+      setView('editor')
+      void window.scrollTo(0,0)
     } catch { setAccountError(en ? 'We could not create the project.' : 'تعذر إنشاء المشروع.') }
     finally { setAccountBusy(false) }
   }
@@ -905,7 +1102,10 @@ export default function App() {
   if (view === 'home' && siteRoute.page !== 'home') return <ContentPage page={siteRoute.page} language={language} onLanguage={toggleLanguage} />
   if (view === 'home') return <LandingPage language={language} user={user} onLanguage={toggleLanguage} onStart={()=>user ? openDashboard() : openAuth('register')} onLogin={()=>user ? openDashboard() : openAuth('login')} onTemplate={chooseTemplate} />
   if (view === 'auth') return <AuthScreen mode={authMode} language={language} onLanguage={toggleLanguage} onBack={goHome} onMode={openAuth} onSuccess={handleAuthSuccess} />
-  if (view === 'dashboard') return <Dashboard language={language} user={user} loading={accountLoading} busy={accountBusy} items={accountPortfolios} error={accountError} onLanguage={toggleLanguage} onHome={goHome} onCreate={()=>void createPortfolio()} onOpen={openPortfolio} onLogout={()=>void signOut()} onClearError={()=>setAccountError('')} />
+  if (view === 'dashboard') return <>
+    <Dashboard language={language} user={user} loading={accountLoading} busy={accountBusy} items={accountPortfolios} error={accountError} onLanguage={toggleLanguage} onHome={goHome} onCreate={()=>void createPortfolio()} onOpen={openPortfolio} onLogout={()=>void signOut()} onDeleteAccount={()=>void deleteAccount()} onChangePassword={()=>setPasswordModalOpen(true)} onClearError={()=>setAccountError('')} />
+    {passwordModalOpen && <PasswordChangeModal language={language} onClose={()=>setPasswordModalOpen(false)} />}
+  </>
   if (view === 'preview') return <div className="preview-screen" style={vars}><div className="preview-bar"><button onClick={()=>{history.replaceState({},'',location.pathname);setView('editor')}}>← {en?'Back to editor':'العودة للمحرر'}</button><span className="preview-status"><i/>{en?'Private preview':'معاينة خاصة'}</span><button className="small-action" onClick={exportSite}>{en?'Download HTML':'تنزيل HTML'} ↓</button></div><PortfolioCanvas data={portfolio} template={chosen} language={language}/></div>
 
   return <div className="app-shell editor-mode">
@@ -926,7 +1126,7 @@ export default function App() {
               {avatarUploading ? (en ? 'Uploading…' : 'جارٍ الرفع…') : (portfolio.avatarUrl ? (en ? 'Change photo' : 'تغيير الصورة') : (en ? 'Upload photo' : 'رفع صورة شخصية'))}
               <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleAvatarFile} style={{ display: 'none' }} disabled={avatarUploading} />
             </label>
-            {portfolio.avatarUrl && <button type="button" className="avatar-remove-btn" onClick={() => update('avatarUrl', '')}>{en ? 'Remove' : 'حذف'}</button>}
+            {portfolio.avatarUrl && <button type="button" className="avatar-remove-btn" onClick={() => { const url=portfolio.avatarUrl; update('avatarUrl',''); void discardMedia(url) }}>{en ? 'Remove' : 'حذف'}</button>}
           </div>
         </div>
         <label className="field-label">{en?'Your name':'الاسم'}<input value={portfolio.name} onChange={e=>update('name',e.target.value)}/></label>
@@ -959,7 +1159,7 @@ export default function App() {
         <div className="control-section profile-editor-section"><div className="control-heading"><b>{en?'Skills & expertise':'المهارات والتخصصات'}</b><span>{portfolio.skills.length}/30</span></div><p className="project-editor-intro">{en?'Show the tools and specialties that make your work yours.':'عرّف الزائر بأهم مهاراتك والأدوات التي تتقنها.'}</p>{portfolio.skills.map((skill,index)=><div className="profile-editor-row" key={index}><span className="profile-row-number">{String(index+1).padStart(2,'0')}</span><input className="search-input" value={skill} maxLength={80} placeholder={en?'e.g. UX research':'مثال: تصميم تجربة المستخدم'} onChange={e=>update('skills',portfolio.skills.map((item,i)=>i===index?e.target.value:item))}/><button type="button" className="profile-remove" onClick={()=>update('skills',portfolio.skills.filter((_,i)=>i!==index))} aria-label={en?'Remove skill':'حذف المهارة'}>×</button></div>)}<button type="button" className="add-project" onClick={()=>update('skills',[...portfolio.skills,''])} disabled={portfolio.skills.length>=30}>＋ {en?'Add skill':'إضافة مهارة'}</button></div>
         <div className="control-section profile-editor-section"><div className="control-heading"><b>{en?'Career experience':'الخبرات المهنية'}</b><span>{portfolio.experience.length}/12</span></div><p className="project-editor-intro">{en?'Show roles, teams, dates and what you contributed.':'أضف المناصب والجهات والفترات وأهم ما أنجزته.'}</p>{portfolio.experience.map((entry,index)=><div className="experience-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Role & impact':'المسمى والإنجاز'}</b><button type="button" className="project-remove" onClick={()=>removeExperience(index)} aria-label={en?'Remove experience':'حذف الخبرة'}>×</button></div><label className="field-label">{en?'Role / title':'المسمى الوظيفي'}<input value={entry.role} maxLength={160} onChange={e=>updateExperience(index,'role',e.target.value)} placeholder={en?'Product Designer':'مصمم منتجات'}/></label><label className="field-label">{en?'Company / organization':'الشركة أو المؤسسة'}<input value={entry.company} maxLength={160} onChange={e=>updateExperience(index,'company',e.target.value)} placeholder={en?'Company name':'اسم الشركة'}/></label><label className="field-label">{en?'Period':'الفترة'}<input value={entry.period} maxLength={100} onChange={e=>updateExperience(index,'period',e.target.value)} placeholder={en?'2023 — Present':'2023 — الآن'}/></label><label className="field-label">{en?'What you did':'أهم ما أنجزته'}<textarea rows={2} value={entry.description} maxLength={600} onChange={e=>updateExperience(index,'description',e.target.value)} placeholder={en?'Describe your impact…':'اكتب نبذة عن دورك ونتائج عملك…'}/></label></div>)}<button type="button" className="add-project" onClick={addExperience} disabled={portfolio.experience.length>=12}>＋ {en?'Add experience':'إضافة خبرة'}</button></div>
         <div className="control-section profile-editor-section"><div className="control-heading"><b>{en?'Social profiles':'حساباتك وروابطك'}</b><span>{portfolio.socialLinks.length}/12</span></div><p className="project-editor-intro">{en?'Add LinkedIn, Behance, GitHub or any public profile.':'أضف روابط لينكدإن وبيهانس وجيت هب أو أي حساب عام.'}</p>{portfolio.socialLinks.map((link,index)=><div className="social-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Profile link':'رابط الحساب'}</b><button type="button" className="project-remove" onClick={()=>removeSocialLink(index)} aria-label={en?'Remove social link':'حذف الرابط'}>×</button></div><label className="field-label">{en?'Platform / label':'اسم المنصة'}<input value={link.label} maxLength={60} onChange={e=>updateSocialLink(index,'label',e.target.value)} placeholder="LinkedIn"/></label><label className="field-label">{en?'Profile URL':'رابط الحساب'}<input value={link.url} maxLength={500} onChange={e=>updateSocialLink(index,'url',e.target.value)} placeholder="https://linkedin.com/in/yourname"/></label></div>)}<button type="button" className="add-project" onClick={addSocialLink} disabled={portfolio.socialLinks.length>=12}>＋ {en?'Add social profile':'إضافة حساب'}</button></div>
-        <div className="control-section project-editor-section"><div className="control-heading"><b>{en?'Project content':'تفاصيل المشاريع'}</b><span>{portfolio.projects.length}/24</span></div><p className="project-editor-intro">{en?'Give each project its own cover, short story, and destination link.':'أضف لكل مشروع صورة ووصفًا ورابطًا مستقلًا ليظهر كعمل احترافي.'}</p>{portfolio.projects.map((project,index)=>{const detail=portfolio.projectDetails[index] || emptyProjectDetail();return <div className="project-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Project details':'تفاصيل المشروع'}</b><button type="button" className="project-remove" onClick={()=>removeProject(index)} aria-label={en?'Remove project':'حذف المشروع'}>×</button></div><label className="field-label project-field">{en?'Project title':'اسم المشروع'}<input value={project} maxLength={160} onChange={e=>update('projects',portfolio.projects.map((p,i)=>i===index?e.target.value:p))} placeholder={en?'A project name':'اسم المشروع'}/></label><label className="field-label project-field">{en?'Short description':'وصف مختصر'}<textarea value={detail.description} rows={2} maxLength={600} onChange={e=>updateProjectDetail(index,'description',e.target.value)} placeholder={en?'What did you create and why?':'ماذا أنجزت في هذا المشروع؟'}/></label><label className="field-label project-field">{en?'Project link':'رابط المشروع'}<input type="url" value={detail.url} maxLength={500} onChange={e=>updateProjectDetail(index,'url',e.target.value)} placeholder="https://example.com"/></label><div className="project-image-editor">{detail.imageUrl?<img src={safeProjectImage(detail.imageUrl,imageUrls[(index+2)%imageUrls.length])} alt={en?'Project cover preview':'معاينة صورة المشروع'} loading="lazy"/>:<div className="project-image-placeholder"><span>✦</span><small>{en?'Add an image that tells the story':'أضف صورة تعبّر عن المشروع'}</small></div>}<div className="project-image-actions"><label className="project-image-upload">{projectUploadingIndex===index?(en?'Uploading…':'جارٍ الرفع…'):(detail.imageUrl?(en?'Replace cover':'تغيير الصورة'):(en?'Upload cover image':'رفع صورة المشروع'))}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void handleProjectImageFile(index,e)} disabled={projectUploadingIndex!==null} hidden/></label>{detail.imageUrl&&<button type="button" className="project-image-remove" onClick={()=>updateProjectDetail(index,'imageUrl','')}>{en?'Remove image':'حذف الصورة'}</button>}</div></div></div>})}<button className="add-project" onClick={addProject} disabled={portfolio.projects.length>=24}>＋ {en?'Add project':'إضافة مشروع'} {portfolio.projects.length>=24?'· 24/24':''}</button></div>
+        <div className="control-section project-editor-section"><div className="control-heading"><b>{en?'Project content':'تفاصيل المشاريع'}</b><span>{portfolio.projects.length}/24</span></div><p className="project-editor-intro">{en?'Give each project its own cover, short story, and destination link.':'أضف لكل مشروع صورة ووصفًا ورابطًا مستقلًا ليظهر كعمل احترافي.'}</p>{portfolio.projects.map((project,index)=>{const detail=portfolio.projectDetails[index] || emptyProjectDetail();return <div className="project-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Project details':'تفاصيل المشروع'}</b><button type="button" className="project-remove" onClick={()=>removeProject(index)} aria-label={en?'Remove project':'حذف المشروع'}>×</button></div><label className="field-label project-field">{en?'Project title':'اسم المشروع'}<input value={project} maxLength={160} onChange={e=>update('projects',portfolio.projects.map((p,i)=>i===index?e.target.value:p))} placeholder={en?'A project name':'اسم المشروع'}/></label><label className="field-label project-field">{en?'Short description':'وصف مختصر'}<textarea value={detail.description} rows={2} maxLength={600} onChange={e=>updateProjectDetail(index,'description',e.target.value)} placeholder={en?'What did you create and why?':'ماذا أنجزت في هذا المشروع؟'}/></label><label className="field-label project-field">{en?'Project link':'رابط المشروع'}<input type="url" value={detail.url} maxLength={500} onChange={e=>updateProjectDetail(index,'url',e.target.value)} placeholder="https://example.com"/></label><div className="project-image-editor">{detail.imageUrl?<img src={safeProjectImage(detail.imageUrl,imageUrls[(index+2)%imageUrls.length])} alt={en?'Project cover preview':'معاينة صورة المشروع'} loading="lazy"/>:<div className="project-image-placeholder"><span>✦</span><small>{en?'Add an image that tells the story':'أضف صورة تعبّر عن المشروع'}</small></div>}<div className="project-image-actions"><label className="project-image-upload">{projectUploadingIndex===index?(en?'Uploading…':'جارٍ الرفع…'):(detail.imageUrl?(en?'Replace cover':'تغيير الصورة'):(en?'Upload cover image':'رفع صورة المشروع'))}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void handleProjectImageFile(index,e)} disabled={projectUploadingIndex!==null} hidden/></label>{detail.imageUrl&&<button type="button" className="project-image-remove" onClick={()=>{ const url=detail.imageUrl; updateProjectDetail(index,'imageUrl',''); void discardMedia(url) }}>{en?'Remove image':'حذف الصورة'}</button>}</div></div></div>})}<button className="add-project" onClick={addProject} disabled={portfolio.projects.length>=24}>＋ {en?'Add project':'إضافة مشروع'} {portfolio.projects.length>=24?'· 24/24':''}</button></div>
         <div className="editor-group-label">{en?'03 — Templates':'03 — القوالب'}</div>
         <div className="control-section"><div className="control-heading"><b>{en?'Choose a direction':'اختر نمط الموقع'}</b><span>{templates.length} {en?'starting points':'بداية'}</span></div><input className="search-input" value={search} onChange={e=>{setSearch(e.target.value);setShowAllTemplates(false)}} placeholder={en?'Search profession or style…':'ابحث عن مجال أو تصميم…'}/><div className="category-pills">{[{value:'الكل',ar:'الكل',en:'All'},...jobs.map((j,index)=>({value:j[1],ar:j[1],en:jobEnglish[index][0]}))].map(c=><button className={category===c.value?'active':''} key={c.value} onClick={()=>{setCategory(c.value);setShowAllTemplates(false)}}>{en?c.en:c.ar}</button>)}</div><div className="template-list">{filtered.slice(0,showAllTemplates?filtered.length:10).map(t=><button className={t.id===portfolio.templateId?'chosen':''} key={t.id} onClick={()=>update('templateId',t.id)}><span className={'template-mini template-mini-'+t.layout} style={{'--accent':t.accent,'--pale':t.pale} as CSSProperties}><i/></span><span><b>{en?t.professionEn:t.profession}</b><small>{en?layouts[t.layout]:layoutsAr[t.layout]}</small></span>{t.id===portfolio.templateId&&<b className="checkmark">✓</b>}</button>)}</div>{filtered.length>10&&<button className="show-more" onClick={()=>setShowAllTemplates(v=>!v)}>{showAllTemplates?(en?'Show fewer':'عرض أقل'):(en?'Show all '+filtered.length:'اعرض كل الـ '+filtered.length)} {showAllTemplates?'↑':'↓'}</button>}</div>
       </div><div className="sidebar-bottom"><button className="button button-primary button-wide" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish site 🚀':'انشر موقعك 🚀')}</button><button className="button button-light button-wide" onClick={preview}>{en?'Preview my site':'عاين موقعي'} <span>↗</span></button><button className="button button-light button-wide" onClick={exportSite}>{en?'Export HTML':'نزّل نسخة HTML'} <span>↓</span></button><div className="local-note">{user?(saved?(en?'☁ Saved to your account':'☁ محفوظ على حسابك'):(en?'Saving to cloud…':'جارٍ الحفظ سحابيًا…')):(en?'Saved only on this device':'محفوظ على الجهاز فقط')}</div></div></aside>
@@ -978,7 +1178,11 @@ export default function App() {
             <input readOnly value={`https://${portfolioSlug}.taqdom.me`} id="publish-link-input"/>
             <button onClick={()=>{
               const el = document.getElementById('publish-link-input') as HTMLInputElement
-              if (el) { el.select(); navigator.clipboard.writeText(el.value); alert(en?'Link copied!':'تم نسخ الرابط بنجاح!') }
+              if (el) {
+                el.select()
+                void navigator.clipboard?.writeText(el.value).catch(() => undefined)
+                alert(en?'Link copied!':'تم نسخ الرابط بنجاح!')
+              }
             }}>{en?'Copy':'نسخ'}</button>
           </div>
           <div className="modal-actions">
@@ -1407,7 +1611,49 @@ function AuthScreen({mode,language,onLanguage,onBack,onMode,onSuccess}:{mode:Aut
   </div>
 }
 
-function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onCreate,onOpen,onLogout,onClearError}:{language:'ar'|'en';user:User|null;loading:boolean;busy:boolean;items:SavedPortfolio[];error:string;onLanguage:()=>void;onHome:()=>void;onCreate:()=>void;onOpen:(item:SavedPortfolio)=>void;onLogout:()=>void;onClearError:()=>void}) {
+function PasswordChangeModal({language,onClose}:{language:'ar'|'en';onClose:()=>void}) {
+  const en=language==='en'
+  const [currentPassword,setCurrentPassword]=useState('')
+  const [newPassword,setNewPassword]=useState('')
+  const [busy,setBusy]=useState(false)
+  const [error,setError]=useState('')
+  const submit=async(e:FormEvent<HTMLFormElement>)=>{
+    e.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest('/api/auth/password',{method:'POST',body:JSON.stringify({currentPassword,newPassword})})
+      onClose()
+      alert(en?'Password changed. Other signed-in sessions were signed out.':'تم تغيير كلمة المرور. تم تسجيل الخروج من الجلسات الأخرى.')
+    } catch(err) {
+      const code=err instanceof Error?err.message:'request_failed'
+      setError(code==='invalid_current_password'
+        ? (en?'Current password is incorrect.':'كلمة المرور الحالية غير صحيحة.')
+        : code==='weak_password'
+          ? (en?'Use a password between 10 and 128 characters.':'استخدم كلمة مرور من 10 إلى 128 حرفًا.')
+          : (en?'Could not change the password. Please try again.':'تعذر تغيير كلمة المرور. حاول مرة أخرى.'))
+    } finally { setBusy(false) }
+  }
+  return <div className="publish-modal-overlay" onClick={onClose}>
+    <div className="publish-modal-card" onClick={e=>e.stopPropagation()}>
+      <button className="close-modal" onClick={onClose}>×</button>
+      <div className="modal-icon">🔐</div>
+      <h3>{en?'Change password':'تغيير كلمة المرور'}</h3>
+      <p>{en?'Choose a new password for your Taqdom account.':'اختر كلمة مرور جديدة لحسابك على تقدّم.'}</p>
+      <form onSubmit={submit} style={{display:'grid',gap:'12px',marginTop:'14px'}}>
+        <label className="field-label">{en?'Current password':'كلمة المرور الحالية'}<input type="password" autoComplete="current-password" minLength={1} maxLength={128} value={currentPassword} onChange={e=>setCurrentPassword(e.target.value)} required/></label>
+        <label className="field-label">{en?'New password':'كلمة المرور الجديدة'}<input type="password" autoComplete="new-password" minLength={10} maxLength={128} value={newPassword} onChange={e=>setNewPassword(e.target.value)} required/></label>
+        {error&&<p className="dashboard-error" role="alert">{error}</p>}
+        <div className="modal-actions" style={{marginTop:'2px'}}>
+          <button type="button" className="button button-light" onClick={onClose}>{en?'Cancel':'إلغاء'}</button>
+          <button type="submit" className="button button-primary" disabled={busy}>{busy?(en?'Changing…':'جارٍ التغيير…'):(en?'Change password':'تغيير كلمة المرور')}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onCreate,onOpen,onLogout,onDeleteAccount,onChangePassword,onClearError}:{language:'ar'|'en';user:User|null;loading:boolean;busy:boolean;items:SavedPortfolio[];error:string;onLanguage:()=>void;onHome:()=>void;onCreate:()=>void;onOpen:(item:SavedPortfolio)=>void;onLogout:()=>void;onDeleteAccount:()=>void;onChangePassword:()=>void;onClearError:()=>void}) {
   const en=language==='en'
   return <div className="dashboard-shell" dir={en?'ltr':'rtl'}><header className="dashboard-top"><button className="auth-brand" onClick={onHome}><BrandMark/><span>taqdom<span className="site-brand-dot">.</span></span></button><div className="dashboard-top-actions"><button className="site-lang" onClick={onLanguage}>{en?'العربية':'English'}</button><button className="dashboard-logout" onClick={onLogout}>{en?'Sign out':'تسجيل الخروج'} ↗</button></div></header>
     <main className="dashboard-main"><div className="dashboard-welcome"><div><div className="section-overline">{en?'YOUR CREATIVE SPACE':'مساحتك الإبداعية'}</div><h1>{en?<>Good to have you,<br/><em>{user?.displayName || 'there'}.</em></>:<>مرحبًا بك،<br/><em>{user?.displayName || 'صاحب الحكاية'}.</em></>}</h1><p>{en?'Your projects live here. Open an existing site or create a new one when you are ready.':'ستجد مشروعاتك هنا. افتح موقعًا سابقًا أو أنشئ موقعًا جديدًا متى شئت.'}</p></div><div className="dashboard-welcome-art"><img src={imageUrls[3]} alt="" loading="lazy"/><div><span>TAQDOM STUDIO</span><b>{en?'Make it yours.':'اجعله معبّرًا عنك.'}</b></div></div></div>
@@ -1415,6 +1661,7 @@ function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onC
       <div className="dashboard-project-heading"><div><span className="section-overline">{en?'YOUR PROJECTS':'مشاريعك'}</span><h2>{en?'A place for your next step':'كل مشروع له مكانه'}</h2></div><button className="dashboard-create" onClick={onCreate} disabled={busy}>{busy?(en?'Creating…':'جارٍ الإنشاء…'):(en?'＋ New website':'＋ موقع جديد')}</button></div>
       {loading?<div className="dashboard-loading"><span className="loading-orbit"/> {en?'Loading your workspace…':'جارٍ تحميل مساحة العمل…'}</div>:items.length===0?<div className="dashboard-empty"><div className="empty-art"><span>✳</span><i/><b/></div><h3>{en?'Your first website starts here.':'موقعك الأول بانتظارك.'}</h3><p>{en?'Start with a blank canvas and shape your own corner of the internet.':'ابدأ بمساحة جديدة وأنشئ حضورك الخاص على الإنترنت.'}</p><button className="dashboard-create" onClick={onCreate} disabled={busy}>{en?'Create my first site':'أنشئ موقعي الأول'} ↗</button></div>:<div className="dashboard-project-grid">{items.map((item,index)=><button className="dashboard-project-card" key={item.id} onClick={()=>onOpen(item)}><div className={'dashboard-project-cover cover-'+(index%6)}><img src={item.document?.avatarUrl || imageUrls[index%imageUrls.length]} alt="" loading="lazy"/><span className="project-draft">{item.status==='published'?(en?'Published 🌐':'منشور 🌐'):(en?'Draft 📝':'مسودة 📝')}</span><div className="cover-brand">t<span>.</span></div><div className="cover-title">{item.document?.name||item.title}<small>{item.document?.role|| (en?'Personal portfolio':'موقع شخصي')}</small></div></div><div className="dashboard-project-info"><div><h3>{item.title}</h3><p>{en?'Edited':'آخر تعديل'} · {new Date(item.updatedAt).toLocaleDateString(en?'en-GB':'ar-EG',{day:'numeric',month:'short'})}</p><small className="dashboard-project-host" dir="ltr">{isValidPortfolioSubdomain(item.slug || '') ? item.slug + '.taqdom.me' : (en ? 'Set a username in the editor' : 'حدّد اسم موقعك من المحرر')}</small></div><span>↗</span></div></button>)}</div>}
       <div className="dashboard-help-row"><span className="help-star">✳</span><div><b>{en?'Small steps. Beautiful work.':'خطوات بسيطة، وشغل يبان.'}</b><p>{en?'You can edit your content, colors, and visible sections at any time.':'تقدر تعدّل المحتوى والألوان والأقسام في أي وقت.'}</p></div><button onClick={onHome}>{en?'Explore Taqdom':'استكشف تقدّم'} ↗</button></div>
+      <div className="dashboard-account-danger"><div><strong>{en?'Account controls':'إدارة الحساب'}</strong><p>{en?'Deleting your account permanently removes saved sites, uploaded media, and visitor messages.':'حذف الحساب يمسح نهائيًا المواقع والصور ورسائل الزوار المحفوظة.'}</p></div><div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}><button type="button" onClick={onChangePassword} disabled={busy}>{en?'Change password':'تغيير كلمة المرور'}</button><button type="button" onClick={onDeleteAccount} disabled={busy}>{en?'Delete account':'حذف الحساب'}</button></div></div>
     </main><footer className="dashboard-footer"><span>taqdom<span>.</span></span><span>{en?'Your space is yours.':'المساحة دي مساحتك.'}</span><small>{user?.email}</small></footer>
   </div>
 }
@@ -1423,14 +1670,13 @@ function PortfolioCanvas({data,template,language,contactContent,showSampleConten
   const en=language==='en'
   const enteredProjects=data.projects.filter(name=>typeof name==='string' && name.trim().length>0)
   const projects=enteredProjects.length?enteredProjects:(showSampleContent?(en?['A calmer way to bank','Learning without limits','A brand built to grow']:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو إبداعي']):[])
-  const portraits=[imageUrls[0],imageUrls[2],imageUrls[5]]
-  const avatarSrc=data.avatarUrl || portraits[template.layout%3]
+  const avatarSrc=safeProjectImage(data.avatarUrl,'')
   const displayName=data.name || (en?'Your Name':'اسمك الشخصي')
-  const displayRole=data.role || (en?template.roleEn:template.role)
+  const displayRole=data.role || (showSampleContent ? (en?template.roleEn:template.role) : '')
   const displayBio=data.bio || (showSampleContent?(en?'Good work starts with curiosity. I turn thoughtful ideas into work that makes everyday life a little better.':'أصمم منتجات رقمية بسيطة وقريبة من الناس.'): '')
   const projectTypes=en
-    ? ['Product design · 2026','Brand identity · 2025','Creative direction · 2024']
-    : ['تصميم منتجات · 2026','هوية بصرية · 2025','إخراج إبداعي · 2024']
+    ? ['Product design','Brand identity','Creative direction']
+    : ['تصميم منتجات','هوية بصرية','توجّه إبداعي']
   const skills=normaliseSkills(data.skills)
   const experience=normaliseExperience(data.experience)
   const socialLinks=normaliseSocialLinks(data.socialLinks)
@@ -1456,7 +1702,7 @@ function PortfolioCanvas({data,template,language,contactContent,showSampleConten
     about:data.visible.about&&(showSampleContent||data.bio.trim()||data.location.trim())?<section className="site-about" id="about"><div className="site-section-title"><div><small>01 / {en?'A LITTLE ABOUT ME':'نبذة عني'}</small><h2>{en?'Thoughtful work starts with a point of view.':'كل عمل مميز يبدأ برؤية.'}</h2></div></div>{displayBio&&<p className="site-about-copy">{displayBio}</p>}{data.location&&<p className="site-about-location">⌖ {data.location}</p>}</section>:null,
     skills:data.visible.skills&&skills.length>0?<section className="site-skills" id="skills"><div className="site-section-title"><div><small>02 / {en?'CAPABILITIES':'المهارات'}</small><h2>{en?'What I bring to the table':'ما أقدمه من مهارات'}</h2></div><span>{skills.length} {en?'specialties':'مهارات'}</span></div><div className="site-skill-tags">{skills.map((skill,index)=><span className="site-skill-pill" key={skill+'-'+index}><i>{String(index+1).padStart(2,'0')}</i>{skill}</span>)}</div></section>:null,
     experience:data.visible.experience&&experience.length>0?<section className="site-experience" id="experience"><div className="site-section-title"><div><small>03 / {en?'THE JOURNEY':'الخبرات'}</small><h2>{en?'Where I’ve made a difference':'محطات من رحلتي المهنية'}</h2></div></div><div className="site-experience-list">{experience.map((entry,index)=><article className="site-experience-entry" key={entry.role+'-'+entry.company+'-'+index}><span className="experience-index">{String(index+1).padStart(2,'0')}</span><div className="experience-main"><h3>{entry.role||(en?'Professional role':'خبرة مهنية')}</h3>{entry.company&&<p className="experience-company">{entry.company}</p>}{entry.description&&<p className="experience-description">{entry.description}</p>}</div>{entry.period&&<span className="experience-period">{entry.period}</span>}</article>)}</div></section>:null,
-    projects:data.visible.projects&&projects.length>0?<section className="site-work" id="work"><div className="site-section-title"><div><small>04 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{projects.length} {en?'projects':'مشاريع'}</span></div><div className="site-project-grid">{projects.map((name,index)=>{const detail=data.projectDetails?.[index]||emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,imageUrls[(index+template.layout+1)%imageUrls.length]);const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(index%3)} key={name+'-'+index}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}><img src={image} alt={detail.description||name} loading="lazy"/><span>{projectTypes[index%projectTypes.length]}</span><b>{['✳','◡','✿'][index%3]}</b></div><h3>{name||(en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[index%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>:null,
+    projects:data.visible.projects&&projects.length>0?<section className="site-work" id="work"><div className="site-section-title"><div><small>04 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{projects.length} {en?'projects':'مشاريع'}</span></div><div className="site-project-grid">{projects.map((name,index)=>{const detail=data.projectDetails?.[index]||emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,'');const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(index%3)} key={name+'-'+index}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}>{image ? <img src={image} alt={detail.description||name} loading="lazy"/> : <div className="site-project-art-placeholder" aria-hidden="true"><span>✦</span><b>{String(index+1).padStart(2,'0')}</b></div>}<span>{projectTypes[index%projectTypes.length]}</span><b>{['✳','◡','✿'][index%3]}</b></div><h3>{name||(en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[index%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>:null,
     socials:data.visible.socials&&socialLinks.length>0?<section className="site-social-links" id="socials"><div><small>05 / {en?'FIND ME ELSEWHERE':'روابط التواصل'}</small><h2>{en?'Let’s connect':'تواصل معي عبر المنصات'}</h2></div><div className="site-social-list">{socialLinks.map((link,index)=>{const href=safeExternalUrl(link.url);return href?<a className="site-social-link" key={link.label+'-'+index} href={href} target="_blank" rel="noopener noreferrer"><span>{link.label}</span><b>↗</b></a>:null})}</div></section>:null,
     contact:data.visible.contact?<><section className="site-contact" id="contact"><div><small>06 / {en?'SAY HELLO':'لنتحدث'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div>{data.email&&<a href={'mailto:'+data.email}>{data.email} ↗</a>}</section>{contactContent}</>:null
   }
@@ -1471,21 +1717,21 @@ function PortfolioCanvas({data,template,language,contactContent,showSampleConten
     <div className="site-nav">
       <span className="site-monogram">{displayName.split(' ').map(character=>character[0]).join('')}</span>
       <div className="site-nav-links">{sectionOrder.filter(key=>sectionAvailable[key]).map(key=><a href={'#'+sectionIds[key]} key={key}>{en?sectionLabels[key].en:sectionLabels[key].ar}</a>)}</div>
-      <span className="site-availability"><i/>{en?'Open to work':'متاح للعمل'}</span>
+      <span className="site-nav-context">{data.location || ''}</span>
     </div>
     <section className="site-hero">
       <div className="site-copy">
         <small className="site-eyebrow">✳ {en?template.professionEn.toUpperCase():'أهلاً، أنا '+displayName}</small>
-        <h1>{displayName}<br/><em>{displayRole}</em></h1>
+        <h1>{displayName}{displayRole && <><br/><em>{displayRole}</em></>}</h1>
         {data.visible.about&&data.bio.trim()&&<p className="site-hero-summary">{data.bio.length>170?data.bio.slice(0,167).trimEnd()+'…':data.bio}</p>}
         {data.visible.contact&&data.email&&<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a>}
       </div>
-      <div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location||(en?'Remote':'عن بُعد')}</div></div>
+      <div className="site-portrait"><div className="portrait-ring">{avatarSrc ? <img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/> : <div className="portrait-placeholder" aria-hidden="true">{displayName.split(' ').map(part => part[0]).join('').slice(0,3)}</div>}<span className="portrait-decoration">✿</span></div>{data.location&&<div className="portrait-label">{data.location}</div>}</div>
     </section>
     <div className={'site-sections composition-'+template.layout} data-section-container="true">
       {sectionOrder.filter(key=>sectionAvailable[key]).map(key=><div className={'site-section-slot slot-'+key} key={key} data-section={key}>{sectionNodes[key]}</div>)}
     </div>
-    <footer className="site-footer"><span>© {new Date().getFullYear()} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer>
+    <footer className="site-footer"><span>© {CURRENT_YEAR} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer>
   </article>
 }
 
@@ -1665,7 +1911,7 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
       </main>
 
       <footer className="public-bottom-badge">
-        <span>© {new Date().getFullYear()} {data.document.name || 'Taqdom'}</span>
+        <span>© {CURRENT_YEAR} {data.document.name || 'Taqdom'}</span>
         <span>{en ? 'Powered by' : 'مدعوم بواسطة'} <a href="https://taqdom.me" target="_blank" rel="noreferrer">taqdom.me</a></span>
       </footer>
     </div>

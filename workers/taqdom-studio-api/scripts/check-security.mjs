@@ -11,6 +11,12 @@ const checks = [
 
   ['portfolio updates preserve a handle unless requested', source.includes('const handleWasProvided = body.slug !== void 0') && source.includes('const requestedSlug = handleWasProvided ? normalizeSubdomain(body.slug) : existingPortfolio.slug')],
   ['portfolio handle updates are written to the database', source.includes('SET title=?,template_id=?,status=?,slug=?,document_json=')],
+  ['portfolio updates use optimistic revisions', source.includes('portfolio_conflict') && source.includes('revision=?,updated_at=datetime')],
+  ['managed media is tied to the owning portfolio when provided', source.includes('portfolio_id') && source.includes('INSERT INTO media (id, owner_id, portfolio_id')],
+  ['media deletion is owner-scoped', source.includes('DELETE FROM media WHERE id=? AND owner_id=?')],
+  ['portfolio deletion cleans related messages and media', source.includes('DELETE FROM messages WHERE portfolio_id=?') && source.includes('DELETE FROM media WHERE owner_id=? AND portfolio_id=?')],
+  ['account deletion removes stored account data', source.includes('path === "/api/auth/account"') && source.includes('DELETE FROM users WHERE id=?')],
+  ['signed-in password changes rehash the password and revoke other sessions', source.includes('path === "/api/auth/password"') && source.includes('DELETE FROM sessions WHERE user_id=? AND token_hash<>?')],
 
   ['AI route uses the same bounded JSON parser', source.includes('const parsed = await readJson(request, 12e3)')],
   ['autosave preserves an unchanged portfolio status', source.includes('existingPortfolio.status')],
