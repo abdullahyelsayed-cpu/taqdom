@@ -7,7 +7,7 @@ import { CareerAiError, improveCareerText } from './lib/ai'
 import { downloadPortfolioHtml } from './lib/portfolio-export'
 
 type Template = { id: string; profession: string; role: string; professionEn: string; roleEn: string; layout: number; accent: string; pale: string }
-type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; visible: Record<string, boolean>; avatarUrl?: string; slug?: string }
+type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; visible: Record<string, boolean>; backgroundStyle: BackgroundStyle; avatarUrl?: string; slug?: string }
 type AppView = 'home' | 'editor' | 'preview' | 'auth' | 'dashboard' | 'public'
 type AuthMode = 'register' | 'login'
 type User = { id: string; email: string; displayName: string; locale: 'ar' | 'en'; emailVerified: boolean; createdAt: string }
@@ -16,6 +16,7 @@ type ApiError = Error & { code?: string }
 
 type SitePage = 'home' | 'about' | 'templates' | 'features' | 'pricing' | 'faq' | 'contact' | 'privacy' | 'terms' | 'not-found'
 type SiteLanguage = 'en' | 'ar'
+type BackgroundStyle = 'signature' | 'aurora' | 'glass' | 'orbit' | 'calm'
 type ContentBlock = { heading: string; text: string; bullets?: string[] }
 type ContentPageCopy = { title: string; description: string; eyebrow: string; heading: string; lead: string; blocks: ContentBlock[] }
 
@@ -228,8 +229,15 @@ const demoPalettes: [string, string][] = [
 ]
 const colors = ['#35b7ff','#5c9b76','#ff3b92','#42d9c3','#367dff','#b9c0cc','#9e64ff','#7a6eff','#ff861c']
 const stylePales = ['#0a1b33','#f1ecdf','#291027','#e2f2e9','#071b35','#e6e8eb','#17102c','#f4f0ff','#29170d']
+const backgroundStyles: { id: BackgroundStyle; en: string; ar: string; noteEn: string; noteAr: string }[] = [
+  { id: 'signature', en: 'Signature', ar: 'هوية القالب', noteEn: 'Keep each template’s own mood', noteAr: 'ألوان وروح القالب الأصلية' },
+  { id: 'aurora', en: 'Aurora', ar: 'شفق نوراني', noteEn: 'Broader, flowing color light', noteAr: 'تدرجات لونية أوسع وانسيابية' },
+  { id: 'glass', en: 'Glass', ar: 'زجاج مضيء', noteEn: 'More frosted glass and shine', noteAr: 'زجاج ضبابي ولمعان أوضح' },
+  { id: 'orbit', en: 'Orbit', ar: 'مدارات تقنية', noteEn: 'Geometric rings and light trails', noteAr: 'مدارات هندسية ومسارات ضوئية' },
+  { id: 'calm', en: 'Calm', ar: 'هادئ وبسيط', noteEn: 'Quieter light and less texture', noteAr: 'إضاءة هادئة وتفاصيل أقل' },
+]
 const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], professionEn: jobEnglish[j][0], roleEn: jobEnglish[j][1], layout: l, accent: colors[l], pale: stylePales[l] })))
-const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true}, avatarUrl:'', slug:'' }
+const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], visible:{about:true,projects:true,contact:true}, backgroundStyle:'signature', avatarUrl:'', slug:'' }
 const imageUrls = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=76',
   'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=720&q=74',
@@ -254,6 +262,7 @@ function readSaved(): Portfolio {
       location: typeof saved.location === 'string' ? saved.location.slice(0,160) : initial.location,
       accent: typeof saved.accent === 'string' && /^#[0-9a-f]{6}$/i.test(saved.accent) ? saved.accent : initial.accent,
       templateId: typeof saved.templateId === 'string' && templates.some(t => t.id === saved.templateId) ? saved.templateId : initial.templateId,
+      backgroundStyle: backgroundStyles.some(item => item.id === saved.backgroundStyle) ? saved.backgroundStyle as BackgroundStyle : initial.backgroundStyle,
       projects,
       visible: { about: typeof visible.about === 'boolean' ? visible.about : initial.visible.about, projects: typeof visible.projects === 'boolean' ? visible.projects : initial.visible.projects, contact: typeof visible.contact === 'boolean' ? visible.contact : initial.visible.contact },
       avatarUrl: typeof saved.avatarUrl === 'string' ? saved.avatarUrl.slice(0, 1000) : '',
@@ -286,6 +295,7 @@ function normalisePortfolio(value: unknown, fallback: Portfolio): Portfolio {
     location: typeof raw.location === 'string' ? raw.location : fallback.location,
     accent: typeof raw.accent === 'string' && /^#[0-9a-f]{6}$/i.test(raw.accent) ? raw.accent : fallback.accent,
     templateId: typeof raw.templateId === 'string' && templates.some(t => t.id === raw.templateId) ? raw.templateId : fallback.templateId,
+    backgroundStyle: backgroundStyles.some(item => item.id === raw.backgroundStyle) ? raw.backgroundStyle as BackgroundStyle : fallback.backgroundStyle,
     projects: Array.isArray(raw.projects) ? raw.projects.filter((p): p is string => typeof p === 'string').slice(0,24) : fallback.projects,
     visible: { ...fallback.visible, ...(raw.visible && typeof raw.visible === 'object' ? raw.visible : {}) },
     avatarUrl: typeof raw.avatarUrl === 'string' ? raw.avatarUrl : (fallback.avatarUrl || ''),
@@ -638,6 +648,7 @@ export default function App() {
         <label className="field-label">{en?'Contact email':'إيميل التواصل'}<input type="email" value={portfolio.email} onChange={e=>update('email',e.target.value)}/></label>
         <label className="field-label">{en?'Location':'مكانك'}<input value={portfolio.location} onChange={e=>update('location',e.target.value)}/></label>
         <div className="editor-group-label">{en?'02 — Visual identity':'02 — الهوية البصرية'}</div>
+        <div className="control-section"><div className="control-heading"><b>{en?'Atmosphere & background':'أجواء الخلفية'}</b><span>{en?'Choose a mood':'اختار الروح'}</span></div><p className="background-style-intro">{en?'Change the light, texture, and glass feeling without losing the template identity.':'غيّر الإضاءة والتدرجات والزجاجيات مع الحفاظ على هوية القالب.'}</p><div className="background-mood-options">{backgroundStyles.map(mood=><button type="button" key={mood.id} className={'background-mood-option '+(portfolio.backgroundStyle===mood.id?'selected':'')} aria-pressed={portfolio.backgroundStyle===mood.id} onClick={()=>update('backgroundStyle',mood.id)}><span className={'mood-swatch mood-swatch-'+mood.id}><i/><b/></span><span className="mood-option-copy"><strong>{en?mood.en:mood.ar}</strong><small>{en?mood.noteEn:mood.noteAr}</small></span>{portfolio.backgroundStyle===mood.id&&<span className="mood-option-check">✓</span>}</button>)}</div></div>
         <div className="control-section"><div className="control-heading"><b>{en?'Accent color':'اللون الأساسي'}</b><span>{portfolio.accent}</span></div><div className="color-options">{colors.map(c=><button className={portfolio.accent===c?'selected':''} key={c} style={{background:c}} aria-label={'Use '+c} onClick={()=>update('accent',c)}/>)}<label className="custom-color"><span>＋</span><input type="color" value={portfolio.accent} onChange={e=>update('accent',e.target.value)} aria-label="لون مخصص"/></label></div></div>
         <div className="control-section"><div className="control-heading"><b>{en?'Visible sections':'الأقسام الظاهرة'}</b></div>{[['about',en?'About me':'عني'],['projects',en?'Selected work':'أعمال مختارة'],['contact',en?'Contact':'تواصل معي']].map(([key,label])=><label className="toggle-row" key={key}><span>{label}</span><input type="checkbox" checked={Boolean(portfolio.visible[key])} onChange={e=>update('visible',{...portfolio.visible,[key]:e.target.checked})}/><i/></label>)}</div>
         <div className="control-section"><div className="control-heading"><b>{en?'Project names':'أسماء المشاريع'}</b></div>{portfolio.projects.map((project,index)=><label className="field-label project-field" key={index}>{en?'Project '+(index+1):'مشروع '+(index+1)}<input value={project} onChange={e=>update('projects',portfolio.projects.map((p,i)=>i===index?e.target.value:p))}/></label>)}<button className="add-project" onClick={()=>update('projects',[...portfolio.projects,''])}>＋ {en?'Add project':'إضافة مشروع'}</button></div>
@@ -1112,8 +1123,8 @@ function PortfolioCanvas({data,template,language}:{data:Portfolio;template:Templ
   const projectTypes = en
     ? ['Product design · 2026', 'Brand identity · 2025', 'Creative direction · 2024']
     : ['تصميم منتجات · 2026', 'هوية بصرية · 2025', 'إخراج إبداعي · 2024']
-  return <article className={'portfolio-site layout-'+template.layout} data-layout={template.layout} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}>
-    <div className={'site-atmosphere atmosphere-'+template.layout} aria-hidden="true">
+  return <article className={'portfolio-site layout-'+template.layout+' mood-'+(data.backgroundStyle || 'signature')} data-layout={template.layout} data-mood={data.backgroundStyle || 'signature'} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}>
+    <div className={'site-atmosphere atmosphere-'+template.layout+' effect-'+(data.backgroundStyle || 'signature')} aria-hidden="true">
       <span className="atmosphere-glow atmosphere-glow-a"/>
       <span className="atmosphere-glow atmosphere-glow-b"/>
       <span className="atmosphere-orbit"/>
