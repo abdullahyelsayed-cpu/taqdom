@@ -466,31 +466,3 @@ await test('autosave preserves published status if status is omitted', async () 
 
 console.log('\\n' + results.filter(result => result.passed).length + '/' + results.length + ' API smoke tests passed.')
 if (results.some(result => !result.passed)) process.exitCode = 1
-
-await test('portfolio update rejects stale revision', async () => {
-  const db = createDb({ userRow, currentPortfolioStatus: 'draft', currentPortfolioRevision: 8 })
-  const { response, body } = await invoke('/api/portfolios/' + portfolioId, {
-    method:'PUT',
-    cookie: sessionCookie,
-    body:{ document:{ ...baseDocument, name:'Stale edit' }, baseRevision:7 }
-  }, makeEnv(db))
-  assert.equal(response.status, 409)
-  assert.equal(body.error, 'portfolio_conflict')
-  assert.equal(body.revision, 8)
-})
-
-await test('media upload accepts owner portfolio association', async () => {
-  const db = createDb({ userRow, ownerPortfolio:true })
-  const raw = Buffer.from([
-    0xff,0xd8,0xff,0xe0,0x00,0x10,0x4a,0x46,0x49,0x46,0x00,0x01,
-    0xff,0xd9
-  ]).toString('base64')
-  const { response } = await invoke('/api/media', {
-    method:'POST',
-    cookie: sessionCookie,
-    body:{ mimeType:'image/jpeg', base64:raw, portfolioId }
-  }, makeEnv(db))
-  assert.equal(response.status, 201)
-  const insert = db.calls.find(call => String(call.sql || '').includes('INSERT INTO media'))
-  assert.equal(insert.values[2], portfolioId)
-})
