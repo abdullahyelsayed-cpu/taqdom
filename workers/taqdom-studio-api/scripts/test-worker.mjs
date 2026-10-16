@@ -20,7 +20,7 @@ function createDb(options = {}) {
   const calls = []
   const db = {
     calls,
-    async prepare(sql) {
+    prepare(sql) {
       const call = { sql, values: [] }
       calls.push(call)
       const statement = {
