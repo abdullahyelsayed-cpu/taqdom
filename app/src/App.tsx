@@ -1098,7 +1098,7 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
 }) {
   const en = language === 'en'
   const [loading, setLoading] = useState(true)
-  const [data, setData] = useState<{ id: string; title: string; document: Portfolio; templateId: string; status: string } | null>(null)
+  const [data, setData] = useState<{ id: string; title: string; slug?: string; document: Portfolio; templateId: string; status: string } | null>(null)
   const [error, setError] = useState('')
   const [senderName, setSenderName] = useState('')
   const [senderEmail, setSenderEmail] = useState('')
