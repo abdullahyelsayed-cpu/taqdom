@@ -44,19 +44,19 @@ Taqdom is free for everyone. There are no paid plans or subscriptions. The produ
 | Marketing site, animated art direction and brand mark | Implemented |
 | Arabic / English and responsive layouts | Implemented |
 | Editor, live preview and HTML export | Implemented |
-| Signup, sign-in and cloud-saved drafts | Initial implementation |
-| Email verification and password recovery | Not enabled |
-| Publish a portfolio to a personal subdomain | Not enabled |
-| User image upload and managed media library | Not enabled |
+| Signup, sign-in, ordered cloud saves and account-owned drafts | Implemented |
+| Email verification and password recovery | Not enabled yet; password changes are supported for signed-in users |
+| Publish a portfolio to a personal subdomain | Implemented |
+| User image upload and managed media lifecycle | Implemented with type/signature validation, per-account limits, ownership, and cleanup |
 | Access and pricing | Free for everyone; no paid plans or subscriptions |
 
-The gallery uses illustrative external photography. It is not a customer-media library. External media is subject to its own source terms; the MIT license below applies to this repository's code and accompanying original documentation, not third-party assets.
+The gallery uses illustrative external photography. It is not customer media. User uploads are stored separately through the API and are subject to the account and media limits enforced by the service. External gallery media remains subject to its own source terms; the MIT license below applies to this repository's code and accompanying original documentation, not third-party assets.
 
 ## Architecture
 
 - **Frontend:** React, TypeScript, Vite, CSS, accessible UI states, and reduced-motion support.
 - **Edge / API:** Cloudflare Pages Functions proxy requests to a Cloudflare Worker.
-- **Data:** Cloudflare D1 stores account, session, and portfolio records.
+- **Data:** Cloudflare D1 stores account, session, portfolio, message, and media metadata/records. Portfolio updates use a revision token so an older tab cannot silently overwrite a newer save.
 - **AI copy assistance:** the Worker calls Cloudflare Workers AI through the `AI` resource binding, with the model selected by the non-secret `MODEL` variable. The current deployment requires no external vendor API key. `ALLOWED_ORIGINS` is also a non-secret configuration variable; D1 and Workers AI are resource bindings.
 - **Build checks:** GitHub Actions runs the TypeScript production build and lint.
 
@@ -66,7 +66,7 @@ Production configuration and secrets belong in Cloudflare-managed settings. Do n
 
 The Arabic homepage is served at `/` using Modern Standard Arabic and right-to-left layout. English is available at `/en/`. Core content pages follow the same pattern: Arabic at `/features/`, English at `/en/features/`.
 
-Each route has its own HTML title and description, canonical URL, reciprocal `hreflang` references, Open Graph metadata, and JSON-LD structured data. `app/public/sitemap.xml` lists the canonical English and Arabic pages, while `app/public/robots.txt` advertises the sitemap and keeps API routes out of crawl discovery. A branded 404 page is included.
+Each route has its own HTML title and description, canonical URL, reciprocal `hreflang` references, Open Graph metadata, and JSON-LD structured data. Published portfolio pages now get their metadata at the Cloudflare Pages edge before the SPA loads, including custom subdomain canonicals. `app/public/sitemap.xml` lists the canonical English and Arabic marketing pages, while `app/public/robots.txt` advertises the sitemap and keeps API routes out of crawl discovery. A branded 404 page is included.
 
 ## Performance and quality
 
@@ -95,7 +95,7 @@ The frontend expects same-origin `/api/*` routes in the deployed environment. So
 
 ## Roadmap
 
-The next product milestones are deeper, genuinely distinct layout systems; richer typography and spacing controls; image uploads and asset management; better publishing and custom-subdomain controls; verified email and account recovery; and accessibility and security reviews. Taqdom is intended to remain free for everyone; paid plans and subscriptions are out of scope.
+The remaining release gates are transactional email for verification and password recovery, a browser-level end-to-end test suite, deeper typography/spacing controls, and continued accessibility/security review. Publishing, custom subdomains, managed user media, account deletion, and conflict-safe autosave are already part of the current product. Taqdom is intended to remain free for everyone; paid plans and subscriptions are out of scope.
 
 Priorities will be driven by actual user feedback and the needs of future collaborators and supporters. No sponsor or partner is represented as confirmed unless announced with permission.
 
