@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check index.js && node scripts/check-security.mjs"
+    "check": "node --check index.js && node scripts/check-security.mjs && node scripts/test-worker.mjs"
   }
 }
