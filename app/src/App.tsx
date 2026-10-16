@@ -1109,7 +1109,7 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
 
   useEffect(() => {
     let active = true
-    apiRequest<{ portfolio: { id: string; title: string; document: Portfolio; templateId: string; status: string } }>(`/api/portfolios/public/${encodeURIComponent(idOrSlug)}`)
+    apiRequest<{ portfolio: { id: string; title: string; slug?: string; document: Portfolio; templateId: string; status: string } }>(`/api/portfolios/public/${encodeURIComponent(idOrSlug)}`)
       .then(res => {
         if (!active) return
         setData(res.portfolio)
