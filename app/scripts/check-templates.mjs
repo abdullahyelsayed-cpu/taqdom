@@ -30,5 +30,16 @@ for (let index = 0; index < expected.length; index += 1) {
 
 assert.ok(app.includes('126 Starting Combinations'), 'homepage copy should show the correct combination count')
 assert.ok(!app.includes('five shared layout systems'), 'outdated five-layout copy should be removed')
+assert.ok(app.includes('site-atmosphere atmosphere-'), 'each public portfolio should mount an ambient background layer')
+assert.ok(studioCss.includes('.site-atmosphere:before'), 'ambient gradient mesh should be available')
+assert.ok(studioCss.includes('backdrop-filter:blur(22px)'), 'glassmorphism surfaces should be available')
+assert.ok(studioCss.includes('@keyframes taqdom-atmosphere-breathe'), 'ambient light should have gentle motion')
+assert.ok(studioCss.includes('@media(prefers-reduced-motion:reduce)'), 'ambient motion must respect reduced-motion preference')
+for (let index = 0; index < expected.length; index += 1) {
+  assert.ok(studioCss.includes(`.portfolio-site.layout-${index}{--mood-glow-a:`), `${expected[index]} should own an atmosphere palette`)
+  assert.ok(studioCss.includes(`.mini-site-${index}{--preview-glow:`), `${expected[index]} should own a gallery glow palette`)
+}
+assert.ok(!/var\\(--accent\\)\\w/.test(studioCss), 'accent color alpha must use valid CSS color-mix instead of invalid hex suffixes')
 console.log(`PASS: ${layouts.length} visual systems × ${professionCount} profession categories = ${layouts.length * professionCount} starting combinations`)
 console.log('PASS: public templates, gallery mockups, editor swatches, and localized counts are in sync')
+console.log('PASS: all themes include ambient glow, layered backgrounds, glass surfaces, and reduced-motion support')
