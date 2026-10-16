@@ -188,6 +188,17 @@ await test('oversized streamed JSON bodies are rejected', async () => {
   assert.equal(db.calls.length, 0)
 })
 
+await test('AI endpoint rejects oversized JSON bodies even without Content-Length', async () => {
+  const db = createDb()
+  const { response, body } = await invoke('/api/ai/improve', {
+    method: 'POST',
+    body: { text: 'x'.repeat(15000), kind: 'bio', locale: 'en' }
+  }, makeEnv(db))
+  assert.equal(response.status, 413)
+  assert.equal(body.error, 'request_too_large')
+  assert.equal(db.calls.length, 0)
+})
+
 await test('unauthenticated users cannot read portfolio inbox messages', async () => {
   const { response, body } = await invoke('/api/messages/' + portfolioId, { origin: allowedOrigin })
   assert.equal(response.status, 401)
