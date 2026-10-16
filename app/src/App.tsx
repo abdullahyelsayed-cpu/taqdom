@@ -509,6 +509,7 @@ export default function App() {
     if (!pendingSnapshotRef.current) {
       pendingSnapshotRef.current = previous
       setHistoryPending(true)
+      setHistoryFuture([])
     }
     if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current)
     historyTimerRef.current = window.setTimeout(() => {
@@ -833,7 +834,7 @@ export default function App() {
     const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], projectDetails:[], skills:[], experience:[], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, sectionOrder:['about','skills','experience','projects','socials','contact'], templateId:'design-0', accent:'#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My first portfolio' : 'موقعي الشخصي', templateId:fresh.templateId, document:fresh }) })
-      setPortfolio(normalisePortfolio(result.portfolio.document, fresh)); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items => [result.portfolio, ...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
+      const nextPortfolio = normalisePortfolio(result.portfolio.document, fresh); resetHistoryFor(nextPortfolio); setPortfolio(nextPortfolio); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items => [result.portfolio, ...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
     } catch (error) { setAccountError(error instanceof Error && error.message === 'portfolio_limit_reached' ? (en ? 'You reached the current project limit.' : 'وصلت للحد الحالي للمشاريع.') : (en ? 'We could not create your site. Please try again.' : 'تعذر إنشاء موقعك. يُرجى المحاولة مجددًا.')) }
     finally { setAccountBusy(false) }
   }
@@ -852,7 +853,7 @@ export default function App() {
   }
   const openPortfolio = (item: SavedPortfolio) => {
     const next = normalisePortfolio(item.document, initial)
-    setPortfolio(next); setPortfolioId(item.id); setPortfolioSlug(isValidPortfolioSubdomain(item.slug || '') ? item.slug! : 'site-'+item.id.slice(0,6)); history.replaceState({}, '', location.pathname); setView('editor'); setAccountError(''); window.scrollTo(0,0)
+    resetHistoryFor(next); setPortfolio(next); setPortfolioId(item.id); setPortfolioSlug(isValidPortfolioSubdomain(item.slug || '') ? item.slug! : 'site-'+item.id.slice(0,6)); history.replaceState({}, '', location.pathname); setView('editor'); setAccountError(''); window.scrollTo(0,0)
   }
   const chooseTemplate = (id: string) => {
     setPortfolio(p => ({...p, templateId:id}))
@@ -865,7 +866,7 @@ export default function App() {
     const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], projectDetails:[], skills:[], experience:[], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, templateId, accent:templates.find(t=>t.id===templateId)?.accent || '#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My portfolio' : 'موقعي الشخصي', templateId, document:fresh }) })
-      setPortfolio(fresh); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items=>[result.portfolio,...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
+      resetHistoryFor(fresh); setPortfolio(fresh); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items=>[result.portfolio,...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
     } catch { setAccountError(en ? 'We could not create the project.' : 'تعذر إنشاء المشروع.') }
     finally { setAccountBusy(false) }
   }
