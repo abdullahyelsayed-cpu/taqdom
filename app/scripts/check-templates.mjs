@@ -81,6 +81,22 @@ assert.ok(studioCss.includes('.portfolio-contact-panel.layout-0') && studioCss.i
 assert.ok(studioCss.includes('.portfolio-contact-panel.layout-1') && studioCss.includes('.portfolio-contact-panel.layout-7'), 'public contact form must support light themes')
 assert.ok(studioCss.includes('.portfolio-contact-panel.mood-glass'), 'contact form should honor the selected glass atmosphere')
 
+assert.ok(app.includes('function normaliseSectionOrder(value: unknown)'), 'section order must be normalized before rendering')
+assert.ok(app.includes('onDragStart={event=>'), 'the editor should support native drag-and-drop section ordering')
+assert.ok(app.includes('const shiftSection = (key: PortfolioSectionKey'), 'the editor should provide precise accessible move controls')
+assert.ok(app.includes('const undo = () =>') && app.includes('const redo = () =>'), 'the editor should support undo and redo')
+assert.ok(app.includes('const [historyPast, setHistoryPast]'), 'undo/redo history must be stored in editor state')
+assert.ok(app.includes('contactContent={data.document.visible.contact ? ('), 'the visitor contact form must move with the contact section')
+assert.ok(workerSource.includes('const allowedSectionOrder = ["about", "skills", "experience", "projects", "socials", "contact"]'), 'API must allowlist section order keys')
+assert.ok(workerSource.includes('    sectionOrder,'), 'API must persist normalized section order')
+assert.ok(exportSource.includes('function normaliseExportSectionOrder(value: unknown)'), 'HTML export must validate section order')
+assert.ok(exportSource.includes('const orderedSectionsMarkup = sectionOrder.map(key => sectionMarkup[key]).join(\'\')'), 'HTML export must preserve page section order')
+for (let index = 0; index < expected.length; index += 1) {
+  assert.ok(studioCss.includes(`.portfolio-site.layout-${index} .site-sections.composition-${index}`), `${expected[index]} should have a distinct section composition system`)
+}
+assert.ok(studioCss.includes('.section-order-item') && studioCss.includes('.history-action'), 'section order and history controls must be styled');
+
+
 for (let index = 0; index < expected.length; index += 1) {
   assert.ok(studioCss.includes(`.portfolio-site.layout-${index}{--mood-glow-a:`), `${expected[index]} should own an atmosphere palette`)
   assert.ok(studioCss.includes(`.mini-site-${index}{--preview-glow:`), `${expected[index]} should own a gallery glow palette`)
