@@ -572,6 +572,27 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     if (token) await env.TAQDOM_DB.prepare("DELETE FROM sessions WHERE token_hash=?").bind(await hash(token)).run();
     return reply({ ok: true }, 200, Object.assign({}, corsHeaders, { "set-cookie": sessionCookie("", 0) }));
   }
+  if (path === "/api/auth/password" && method === "POST") {
+    const session = await currentUser(request, env);
+    if (!session) return reply({ error: "not_authenticated" }, 401, corsHeaders);
+    const parsed = await readJson(request, 12e3);
+    if (parsed.error) return reply({ error: parsed.error }, parsed.status, corsHeaders);
+    const body = parsed.body || {};
+    const currentPassword = typeof body.currentPassword === "string" ? body.currentPassword : "";
+    const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
+    if (newPassword.length < 10 || newPassword.length > 128) return reply({ error: "weak_password" }, 400, corsHeaders);
+    const userRow = await env.TAQDOM_DB.prepare("SELECT id,password_salt,password_hash FROM users WHERE id=?").bind(session.row.id).first();
+    if (!userRow) return reply({ error: "not_authenticated" }, 401, corsHeaders);
+    const candidate = await derivePassword(currentPassword, userRow.password_salt);
+    if (!constantTimeEqual(candidate, userRow.password_hash)) return reply({ error: "invalid_current_password" }, 401, corsHeaders);
+    const saltBytes = new Uint8Array(16);
+    crypto.getRandomValues(saltBytes);
+    const salt = encodeB64Url(saltBytes);
+    const passwordHash = await derivePassword(newPassword, salt);
+    await env.TAQDOM_DB.prepare("UPDATE users SET password_salt=?,password_hash=?,updated_at=datetime('now') WHERE id=?").bind(salt, passwordHash, session.row.id).run();
+    await env.TAQDOM_DB.prepare("DELETE FROM sessions WHERE user_id=? AND token_hash<>?").bind(session.row.id, session.tokenHash).run();
+    return reply({ ok: true }, 200, corsHeaders);
+  }
   if (path === "/api/auth/account" && method === "DELETE") {
     const session = await currentUser(request, env);
     if (!session) return reply({ error: "not_authenticated" }, 401, corsHeaders);
