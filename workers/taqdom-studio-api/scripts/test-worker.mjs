@@ -31,6 +31,7 @@ function createDb(options = {}) {
         async first() {
           if (sql.includes('JOIN users')) return options.userRow || null
           if (sql.includes('SELECT mime_type, data_base64 FROM media')) return options.mediaRow || null
+          if (sql.includes('SELECT COUNT(*) AS total, COALESCE(SUM(length(data_base64)),0) AS bytes FROM media')) return options.mediaUsage || { total: 0, bytes: 0 }
           if (sql.includes('SELECT id FROM portfolios WHERE lower(slug)=lower(?)')) {
             const candidate = String(call.values[0] || '').toLowerCase()
             const excluded = call.values[1]
@@ -247,6 +248,21 @@ await test('SVG uploads are rejected for an authenticated user', async () => {
   assert.equal(db.calls.some(call => call.sql?.includes('INSERT INTO media')), false)
 })
 
+await test('per-account media quota blocks excess image uploads', async () => {
+  const db = createDb({ userRow, mediaUsage: { total: 75, bytes: 1000 } })
+  const bytes = new Uint8Array(16)
+  bytes.set([255, 216, 255], 0)
+  bytes.set([255, 217], bytes.length - 2)
+  const base64 = btoa(Array.from(bytes, b => String.fromCharCode(b)).join(''))
+  const { response, body } = await invoke('/api/media', {
+    method: 'POST', cookie: sessionCookie,
+    body: { data: 'data:image/jpeg;base64,' + base64 }
+  }, makeEnv(db))
+  assert.equal(response.status, 429)
+  assert.equal(body.error, 'media_limit_reached')
+  assert.equal(db.calls.some(call => call.kind === 'insert-media'), false)
+})
+
 await test('JPEG uploads pass type/signature validation for authenticated users', async () => {
   const db = createDb({ userRow })
   const env = makeEnv(db)
@@ -319,7 +335,9 @@ await test('custom subdomain is stored on portfolio creation', async () => {
         ],
         visible: { about:true, skills:true, experience:true, projects:true, socials:true, contact:true },
         sectionOrder: ['projects', 'about', 'skills', 'projects', 'unknown'],
-        backgroundStyle: 'glass'
+        backgroundStyle: 'glass',
+        availableForWork: true,
+        avatarUrl: 'javascript:alert(1)'
       }
     }
   }, makeEnv(db))
@@ -331,6 +349,8 @@ await test('custom subdomain is stored on portfolio creation', async () => {
   assert.equal(insert.values[4], 'abdullah-creative')
   const savedDocument = JSON.parse(insert.values[6])
   assert.equal(savedDocument.backgroundStyle, 'glass')
+  assert.equal(savedDocument.availableForWork, true)
+  assert.equal(savedDocument.avatarUrl, '')
   assert.equal(savedDocument.projectDetails[0].description, 'A complete product redesign.')
   assert.equal(savedDocument.projectDetails[0].url, 'https://example.com/case-study')
   assert.equal(savedDocument.projectDetails[0].imageUrl, '/api/media/11111111-1111-4111-8111-111111111111')
