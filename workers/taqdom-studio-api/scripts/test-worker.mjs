@@ -40,7 +40,7 @@ function createDb(options = {}) {
           }
           if (sql.includes('SELECT status,slug FROM portfolios WHERE id=? AND owner_id=?')) {
             return options.currentPortfolioStatus
-              ? { status: options.currentPortfolioStatus, slug: options.currentPortfolioSlug || 'existing-handle' }
+              ? { status: options.currentPortfolioStatus, slug: Object.prototype.hasOwnProperty.call(options, 'currentPortfolioSlug') ? options.currentPortfolioSlug : 'existing-handle' }
               : null
           }
           if (sql.includes('FROM portfolios WHERE (id=? OR slug=? COLLATE NOCASE)')) return options.publicPortfolio || null
@@ -344,6 +344,43 @@ await test('owner can change a portfolio subdomain without changing publish stat
   assert.ok(update)
   assert.equal(update.values[2], 'published')
   assert.equal(update.values[3], 'new-handle')
+})
+
+await test('autosave still supports a legacy portfolio with no slug', async () => {
+  const db = createDb({ userRow, currentPortfolioStatus: 'published', currentPortfolioSlug: null })
+  const { response, body } = await invoke('/api/portfolios/' + portfolioId, {
+    method: 'PUT',
+    cookie: sessionCookie,
+    body: {
+      title: 'Legacy site',
+      templateId: 'design-0',
+      document: { name: 'Legacy site', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 200)
+  assert.equal(body.status, 'published')
+  const update = db.calls.find(call => call.kind === 'update-portfolio')
+  assert.ok(update)
+  assert.equal(update.values[2], 'published')
+  assert.equal(update.values[3], null)
+})
+
+await test('autosave still supports a legacy Arabic slug until the owner changes it', async () => {
+  const db = createDb({ userRow, currentPortfolioStatus: 'draft', currentPortfolioSlug: 'مشروعي-قديم' })
+  const { response, body } = await invoke('/api/portfolios/' + portfolioId, {
+    method: 'PUT',
+    cookie: sessionCookie,
+    body: {
+      title: 'Legacy site',
+      templateId: 'design-0',
+      document: { name: 'Legacy site', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 200)
+  assert.equal(body.status, 'draft')
+  const update = db.calls.find(call => call.kind === 'update-portfolio')
+  assert.ok(update)
+  assert.equal(update.values[3], 'مشروعي-قديم')
 })
 
 await test('autosave preserves published status if status is omitted', async () => {
