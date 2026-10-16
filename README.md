@@ -30,7 +30,7 @@ The experience is designed for **Arabic and English**, including right-to-left a
 - **Immersive visual identity** — a custom vector mark, spectral violet/cyan palette, animated aurora layers, and a layered website-studio showcase.
 - **Bilingual experience** — Arabic RTL and English LTR across the landing page, account screens, workspace, editor, and portfolio preview.
 - **Visual portfolio editor** — edit profile content, accent colors, project names, and visible sections with a live preview.
-- **Template starting points** — 14 professional categories combined with five shared layout systems. These are 70 starting combinations, not 70 completely unique designs.
+- **Template starting points** — nine distinct art-directed visual systems across 14 professional categories, giving 126 profession-and-style combinations. Each system has its own palette, composition, and component styling.
 - **Account workspace** — signup, sign-in, session handling, and account-owned portfolio records stored via the backend.
 - **AI writing helper** — optional, user-triggered help for improving a selected headline or biography. It uses Cloudflare's native Workers AI binding (`AI`) with a server-selected model; this deployment does not need an external vendor API key. Users review changes before using suggestions.
 - **Portable output** — export a standalone HTML copy of the portfolio.
