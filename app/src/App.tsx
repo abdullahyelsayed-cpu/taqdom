@@ -1113,13 +1113,39 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
       .then(res => {
         if (!active) return
         setData(res.portfolio)
-        if (res.portfolio?.document?.name) {
-          document.title = `${res.portfolio.document.name} — ${en ? 'Personal Portfolio' : 'معرض أعمال'}`
-        }
+        const portfolio = res.portfolio
+        const documentData = portfolio?.document || {}
+        const displayName = String(documentData.name || portfolio?.title || (en ? 'Personal Portfolio' : 'معرض أعمال')).trim()
+        const role = String(documentData.role || '').trim()
+        const bio = String(documentData.bio || '').replace(/\\s+/g, ' ').trim()
+        const description = (bio || role || (en ? 'A personal website and portfolio made with Taqdom.' : 'موقع شخصي ومعرض أعمال على تقدّم.')).slice(0, 160)
+        const host = location.hostname.toLowerCase()
+        const tenantSuffix = '.taqdom.me'
+        const isTenantHost = host.endsWith(tenantSuffix) && host !== 'taqdom.me' && !host.slice(0, -tenantSuffix.length).includes('.')
+        const canonicalPath = isTenantHost
+          ? `https://${host}/`
+          : `${location.origin}/p/${encodeURIComponent(portfolio.slug || idOrSlug)}`
+        const canonical = document.querySelector('link[rel="canonical"]')
+        canonical?.setAttribute('href', canonicalPath)
+        document.title = `${displayName} — ${en ? 'Personal Portfolio' : 'معرض أعمال'}`
+        document.querySelector('meta[name="description"]')?.setAttribute('content', description)
+        document.querySelector('meta[name="robots"]')?.setAttribute('content', 'index, follow, max-image-preview:large')
+        document.querySelector('meta[property="og:title"]')?.setAttribute('content', displayName)
+        document.querySelector('meta[property="og:description"]')?.setAttribute('content', description)
+        document.querySelector('meta[property="og:url"]')?.setAttribute('content', canonicalPath)
+        document.querySelector('meta[property="og:type"]')?.setAttribute('content', 'website')
+        document.querySelector('meta[property="og:locale"]')?.setAttribute('content', en ? 'en_US' : 'ar')
+        const socialImage = documentData.avatarUrl || new URL('/taqdom-og-card.svg', location.origin).href
+        document.querySelector('meta[property="og:image"]')?.setAttribute('content', socialImage)
+        document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', displayName)
+        document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description)
+        document.querySelector('meta[name="twitter:image"]')?.setAttribute('content', socialImage)
       })
       .catch(() => {
         if (!active) return
         setError(en ? 'Portfolio not found or unavailable.' : 'معرض الأعمال غير موجود أو غير متاح حاليًا.')
+        document.querySelector('meta[name="robots"]')?.setAttribute('content', 'noindex, follow')
+        document.title = en ? 'Portfolio not found | Taqdom' : 'الموقع غير موجود | تقدّم'
       })
       .finally(() => {
         if (active) setLoading(false)
