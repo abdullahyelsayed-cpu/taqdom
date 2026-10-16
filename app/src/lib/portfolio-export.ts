@@ -112,7 +112,7 @@ export function downloadPortfolioHtml(
   const profession = role || (en ? 'PERSONAL PORTFOLIO' : 'معرض أعمال شخصي')
   const avatar = safeImageUrl(portfolio.avatarUrl)
   const projects = Array.isArray(portfolio.projects)
-    ? portfolio.projects.filter((project) => typeof project === 'string' && project.trim()).slice(0, 24)
+    ? portfolio.projects.map((name, index) => ({ name, index })).filter((project) => typeof project.name === 'string' && project.name.trim()).slice(0, 24)
     : []
   const skills = Array.isArray(portfolio.skills) ? portfolio.skills.filter((skill) => typeof skill === 'string' && skill.trim()).map(skill => skill.trim().slice(0,80)).slice(0,30) : []
   const experience = Array.isArray(portfolio.experience) ? portfolio.experience.filter(item => item && typeof item === 'object').slice(0,12) : []
@@ -128,17 +128,17 @@ export function downloadPortfolioHtml(
     : ''
   const projectMarkup = portfolio.visible.projects && projects.length
     ? `<section id="work" class="section work"><div class="section-heading"><div><p class="kicker">01 / ${en ? 'SELECTED WORK' : 'أعمال مختارة'}</p><h2>${en ? 'A few things I’ve made' : 'أعمال صنعتها بشغف'}</h2></div><span class="section-note">${en ? 'Selected projects' : 'مشاريع مختارة'} ↗</span></div><div class="projects">${projects.map((project, index) => {
-      const detail = portfolio.projectDetails?.[index] || {}
+      const detail = portfolio.projectDetails?.[project.index] || {}
       const cover = safeImageUrl(detail.imageUrl)
       const href = safeExternalUrl(detail.url)
       const description = typeof detail.description === 'string' ? detail.description.trim().slice(0, 600) : ''
       const artwork = cover
         ? `<div class="project-art has-photo"><img src="${escapeHtml(cover)}" alt="${escapeHtml(description || project)}" loading="lazy"></div>`
         : `<div class="project-art" aria-hidden="true"><i></i><b>${['✳', '◈', '✦'][index % 3]}</b></div>`
-      return `<article class="project project-${index % 3}"><span class="project-number">${String(index + 1).padStart(2, '0')}</span>${artwork}<div><h3>${escapeHtml(project)}</h3>${description ? `<p class="project-description">${escapeHtml(description)}</p>` : ''}<small>${en ? 'PROJECT ' + String(index + 1).padStart(2, '0') : 'مشروع ' + String(index + 1).padStart(2, '0')}</small>${href ? `<a class="project-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${en ? 'View project' : 'عرض المشروع'} ↗</a>` : ''}</div></article>`
+      return `<article class="project project-${index % 3}"><span class="project-number">${String(index + 1).padStart(2, '0')}</span>${artwork}<div><h3>${escapeHtml(project.name)}</h3>${description ? `<p class="project-description">${escapeHtml(description)}</p>` : ''}<small>${en ? 'PROJECT ' + String(index + 1).padStart(2, '0') : 'مشروع ' + String(index + 1).padStart(2, '0')}</small>${href ? `<a class="project-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${en ? 'View project' : 'عرض المشروع'} ↗</a>` : ''}</div></article>`
     }).join('')}</div></section>`
     : ''
-  const aboutMarkup = portfolio.visible.about && portfolio.bio.trim()
+  const aboutMarkup = portfolio.visible.about && (portfolio.bio.trim() || portfolio.location.trim())
     ? `<section id="about" class="section about"><p class="kicker">02 / ${en ? 'ABOUT' : 'نبذة عني'}</p><h2>${en ? 'Thoughtful work starts with a point of view.' : 'كل عمل مميز يبدأ برؤية.'}</h2><p class="bio">${escapeHtml(portfolio.bio)}</p>${portfolio.location.trim() ? `<p class="location">⌖ ${escapeHtml(portfolio.location)}</p>` : ''}</section>`
     : ''
   const contactMarkup = portfolio.visible.contact
