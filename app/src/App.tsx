@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties, FormEvent } from 'react'
+import type { CSSProperties, FormEvent, ReactNode } from 'react'
 import './App.css'
 import './landing.css'
 import './studio.css'
@@ -10,7 +10,8 @@ type Template = { id: string; profession: string; role: string; professionEn: st
 type ProjectDetail = { description: string; url: string; imageUrl: string }
 type ExperienceEntry = { role: string; company: string; period: string; description: string }
 type SocialLink = { label: string; url: string }
-type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; projectDetails: ProjectDetail[]; skills: string[]; experience: ExperienceEntry[]; socialLinks: SocialLink[]; visible: Record<string, boolean>; backgroundStyle: BackgroundStyle; avatarUrl?: string; slug?: string }
+type PortfolioSectionKey = 'about' | 'skills' | 'experience' | 'projects' | 'socials' | 'contact'
+type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; projectDetails: ProjectDetail[]; skills: string[]; experience: ExperienceEntry[]; socialLinks: SocialLink[]; visible: Record<string, boolean>; sectionOrder: PortfolioSectionKey[]; backgroundStyle: BackgroundStyle; avatarUrl?: string; slug?: string }
 type AppView = 'home' | 'editor' | 'preview' | 'auth' | 'dashboard' | 'public'
 type AuthMode = 'register' | 'login'
 type User = { id: string; email: string; displayName: string; locale: 'ar' | 'en'; emailVerified: boolean; createdAt: string }
@@ -49,7 +50,12 @@ function normaliseProjectDetails(value: unknown, count: number): ProjectDetail[]
     }
   })
 }
-const portfolioSectionKeys = ['about','skills','experience','projects','socials','contact'] as const
+const portfolioSectionKeys: PortfolioSectionKey[] = ['about','skills','experience','projects','socials','contact']
+function normaliseSectionOrder(value: unknown): PortfolioSectionKey[] {
+  const raw = Array.isArray(value) ? value : []
+  const valid = raw.filter((item): item is PortfolioSectionKey => typeof item === 'string' && portfolioSectionKeys.includes(item as PortfolioSectionKey))
+  return [...new Set(valid), ...portfolioSectionKeys.filter(key => !valid.includes(key))]
+}
 function normaliseVisibleSections(value: unknown, fallback: Record<string, boolean>): Record<string, boolean> {
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {}
   return Object.fromEntries(portfolioSectionKeys.map(key => [key, typeof raw[key] === 'boolean' ? raw[key] as boolean : Boolean(fallback[key])]))
@@ -307,7 +313,7 @@ const backgroundStyles: { id: BackgroundStyle; en: string; ar: string; noteEn: s
   { id: 'calm', en: 'Calm', ar: 'هادئ وبسيط', noteEn: 'Quieter light and less texture', noteAr: 'إضاءة هادئة وتفاصيل أقل' },
 ]
 const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], professionEn: jobEnglish[j][0], roleEn: jobEnglish[j][1], layout: l, accent: colors[l], pale: stylePales[l] })))
-const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], projectDetails:[], skills:['تصميم تجربة المستخدم','Figma','النماذج الأولية','البحث والتجربة'], experience:[{role:'مصممة منتجات رقمية',company:'استوديو نون',period:'2024 — الآن',description:'تصميم تجارب رقمية واضحة وتطوير واجهات سهلة الاستخدام.'}], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, backgroundStyle:'signature', avatarUrl:'', slug:'' }
+const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], projectDetails:[], skills:['تصميم تجربة المستخدم','Figma','النماذج الأولية','البحث والتجربة'], experience:[{role:'مصممة منتجات رقمية',company:'استوديو نون',period:'2024 — الآن',description:'تصميم تجارب رقمية واضحة وتطوير واجهات سهلة الاستخدام.'}], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, sectionOrder:['about','skills','experience','projects','socials','contact'], backgroundStyle:'signature', avatarUrl:'', slug:'' }
 const imageUrls = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=76',
   'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=720&q=74',
@@ -338,6 +344,7 @@ function readSaved(): Portfolio {
       skills: Array.isArray(saved.skills) ? normaliseSkills(saved.skills) : initial.skills,
       experience: Array.isArray(saved.experience) ? normaliseExperience(saved.experience) : initial.experience,
       socialLinks: Array.isArray(saved.socialLinks) ? normaliseSocialLinks(saved.socialLinks) : initial.socialLinks,
+      sectionOrder: normaliseSectionOrder(saved.sectionOrder),
       visible: normaliseVisibleSections(visible, initial.visible),
       avatarUrl: typeof saved.avatarUrl === 'string' ? saved.avatarUrl.slice(0, 1000) : '',
       slug: typeof saved.slug === 'string' ? saved.slug.slice(0, 80) : '',
@@ -376,6 +383,7 @@ function normalisePortfolio(value: unknown, fallback: Portfolio): Portfolio {
     skills: normaliseSkills(raw.skills),
     experience: normaliseExperience(raw.experience),
     socialLinks: normaliseSocialLinks(raw.socialLinks),
+    sectionOrder: normaliseSectionOrder(raw.sectionOrder),
     visible: normaliseVisibleSections(raw.visible, fallback.visible),
     avatarUrl: typeof raw.avatarUrl === 'string' ? raw.avatarUrl : (fallback.avatarUrl || ''),
     slug: typeof raw.slug === 'string' ? raw.slug : (fallback.slug || ''),
@@ -410,6 +418,14 @@ export default function App() {
   const [publishing, setPublishing] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [projectUploadingIndex, setProjectUploadingIndex] = useState<number | null>(null)
+  const [draggedSection, setDraggedSection] = useState<PortfolioSectionKey | null>(null)
+  const [historyPast, setHistoryPast] = useState<Portfolio[]>([])
+  const [historyFuture, setHistoryFuture] = useState<Portfolio[]>([])
+  const [historyPending, setHistoryPending] = useState(false)
+  const trackedPortfolioRef = useRef<Portfolio | null>(null)
+  const pendingSnapshotRef = useRef<Portfolio | null>(null)
+  const historyTimerRef = useRef<number | null>(null)
+  const suppressHistoryRef = useRef(false)
   const [inboxOpen, setInboxOpen] = useState(false)
   const [inboxLoading, setInboxLoading] = useState(false)
   const [inboxMessages, setInboxMessages] = useState<Array<{ id: string; sender_name: string; sender_email: string; message: string; created_at: string }>>([])
@@ -479,6 +495,39 @@ export default function App() {
     return () => window.clearTimeout(id)
   }, [portfolio, view, user, portfolioId])
 
+  useEffect(() => {
+    if (suppressHistoryRef.current) {
+      suppressHistoryRef.current = false
+      trackedPortfolioRef.current = portfolio
+      pendingSnapshotRef.current = null
+      setHistoryPending(false)
+      return
+    }
+    const previous = trackedPortfolioRef.current
+    trackedPortfolioRef.current = portfolio
+    if (!previous || previous === portfolio) return
+    if (!pendingSnapshotRef.current) {
+      pendingSnapshotRef.current = previous
+      setHistoryPending(true)
+      setHistoryFuture([])
+    }
+    if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current)
+    historyTimerRef.current = window.setTimeout(() => {
+      const snapshot = pendingSnapshotRef.current
+      if (snapshot) {
+        setHistoryPast(past => [...past.slice(-49), snapshot])
+        setHistoryFuture([])
+        pendingSnapshotRef.current = null
+        setHistoryPending(false)
+      }
+      historyTimerRef.current = null
+    }, 650)
+  }, [portfolio])
+
+  useEffect(() => () => {
+    if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current)
+  }, [])
+
   const update = (key: keyof Portfolio, value: unknown) => setPortfolio(p => ({ ...p, [key]: value }))
   const updateProjectDetail = (index: number, key: keyof ProjectDetail, value: string) => {
     setPortfolio(current => {
@@ -531,6 +580,62 @@ export default function App() {
     ...current,
     socialLinks: current.socialLinks.filter((_, itemIndex) => itemIndex !== index),
   }))
+  const resetHistoryFor = (nextPortfolio: Portfolio = portfolio) => {
+    if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current)
+    historyTimerRef.current = null
+    pendingSnapshotRef.current = null
+    setHistoryPending(false)
+    setHistoryPast([])
+    setHistoryFuture([])
+    suppressHistoryRef.current = true
+    trackedPortfolioRef.current = nextPortfolio
+  }
+  const undo = () => {
+    if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current)
+    historyTimerRef.current = null
+    const pending = pendingSnapshotRef.current
+    const target = pending || historyPast[historyPast.length - 1]
+    if (!target) return
+    pendingSnapshotRef.current = null
+    setHistoryPending(false)
+    if (!pending) setHistoryPast(past => past.slice(0, -1))
+    setHistoryFuture(future => [...future.slice(-49), portfolio])
+    suppressHistoryRef.current = true
+    trackedPortfolioRef.current = target
+    setPortfolio(target)
+  }
+  const redo = () => {
+    if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current)
+    historyTimerRef.current = null
+    pendingSnapshotRef.current = null
+    setHistoryPending(false)
+    const target = historyFuture[historyFuture.length - 1]
+    if (!target) return
+    setHistoryFuture(future => future.slice(0, -1))
+    setHistoryPast(past => [...past.slice(-49), portfolio])
+    suppressHistoryRef.current = true
+    trackedPortfolioRef.current = target
+    setPortfolio(target)
+  }
+  const moveSection = (from: PortfolioSectionKey, to: PortfolioSectionKey) => {
+    if (from === to) return
+    setPortfolio(current => {
+      const order = normaliseSectionOrder(current.sectionOrder)
+      const fromIndex = order.indexOf(from)
+      const toIndex = order.indexOf(to)
+      if (fromIndex < 0 || toIndex < 0) return current
+      order.splice(fromIndex, 1)
+      order.splice(toIndex, 0, from)
+      return { ...current, sectionOrder: order }
+    })
+  }
+  const shiftSection = (key: PortfolioSectionKey, amount: -1 | 1) => {
+    const order = normaliseSectionOrder(portfolio.sectionOrder)
+    const index = order.indexOf(key)
+    const targetIndex = index + amount
+    if (targetIndex < 0 || targetIndex >= order.length) return
+    moveSection(key, order[targetIndex])
+  }
   const goHome = () => {
     const host = location.hostname.toLowerCase()
     if (host !== 'taqdom.me' && host.endsWith('.taqdom.me')) {
@@ -726,10 +831,10 @@ export default function App() {
   const createPortfolio = async () => {
     if (!user) { openAuth('register'); return }
     setAccountBusy(true); setAccountError('')
-    const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], projectDetails:[], skills:[], experience:[], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, templateId:'design-0', accent:'#8b5cff' }
+    const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], projectDetails:[], skills:[], experience:[], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, sectionOrder:['about','skills','experience','projects','socials','contact'], templateId:'design-0', accent:'#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My first portfolio' : 'موقعي الشخصي', templateId:fresh.templateId, document:fresh }) })
-      setPortfolio(normalisePortfolio(result.portfolio.document, fresh)); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items => [result.portfolio, ...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
+      const nextPortfolio = normalisePortfolio(result.portfolio.document, fresh); resetHistoryFor(nextPortfolio); setPortfolio(nextPortfolio); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items => [result.portfolio, ...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
     } catch (error) { setAccountError(error instanceof Error && error.message === 'portfolio_limit_reached' ? (en ? 'You reached the current project limit.' : 'وصلت للحد الحالي للمشاريع.') : (en ? 'We could not create your site. Please try again.' : 'تعذر إنشاء موقعك. يُرجى المحاولة مجددًا.')) }
     finally { setAccountBusy(false) }
   }
@@ -748,7 +853,7 @@ export default function App() {
   }
   const openPortfolio = (item: SavedPortfolio) => {
     const next = normalisePortfolio(item.document, initial)
-    setPortfolio(next); setPortfolioId(item.id); setPortfolioSlug(isValidPortfolioSubdomain(item.slug || '') ? item.slug! : 'site-'+item.id.slice(0,6)); history.replaceState({}, '', location.pathname); setView('editor'); setAccountError(''); window.scrollTo(0,0)
+    resetHistoryFor(next); setPortfolio(next); setPortfolioId(item.id); setPortfolioSlug(isValidPortfolioSubdomain(item.slug || '') ? item.slug! : 'site-'+item.id.slice(0,6)); history.replaceState({}, '', location.pathname); setView('editor'); setAccountError(''); window.scrollTo(0,0)
   }
   const chooseTemplate = (id: string) => {
     setPortfolio(p => ({...p, templateId:id}))
@@ -761,7 +866,7 @@ export default function App() {
     const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], projectDetails:[], skills:[], experience:[], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, templateId, accent:templates.find(t=>t.id===templateId)?.accent || '#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My portfolio' : 'موقعي الشخصي', templateId, document:fresh }) })
-      setPortfolio(fresh); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items=>[result.portfolio,...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
+      resetHistoryFor(fresh); setPortfolio(fresh); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items=>[result.portfolio,...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
     } catch { setAccountError(en ? 'We could not create the project.' : 'تعذر إنشاء المشروع.') }
     finally { setAccountBusy(false) }
   }
@@ -806,7 +911,7 @@ export default function App() {
   return <div className="app-shell editor-mode">
     <header className="topbar"><a className="brand" href="#" onClick={e=>{e.preventDefault();user?openDashboard():goHome()}}><BrandMark/><span>taqdom<span className="brand-dot">.</span></span></a>
       <div className="editor-breadcrumb">{en?'My workspace':'مساحة عملي'} <b>/</b> <strong>{portfolio.name || (en?'New portfolio':'موقعي الجديد')}</strong></div>
-      <div className="top-actions"><span className={'save-indicator '+(saved?'is-saved':'')}><i/>{saved?(en?'Saved':'تم الحفظ'):(en?'Saving…':'جارٍ الحفظ…')}</span><button className="lang-switch" onClick={toggleLanguage}>{en?'العربية':'English'}</button>{user?<button className="button button-light hide-mobile" onClick={openDashboard}>{en?'Workspace':'مساحة العمل'}</button>:<button className="button button-light hide-mobile" onClick={()=>openAuth('register')}>{en?'Create account':'إنشاء حساب'}</button>}<button className="button button-dark hide-mobile" onClick={exportSite}>{en?'Export site':'نزّل الموقع'} <span>↓</span></button></div>
+      <div className="top-actions"><span className={'save-indicator '+(saved?'is-saved':'')}><i/>{saved?(en?'Saved':'تم الحفظ'):(en?'Saving…':'جارٍ الحفظ…')}</span><div className="history-actions" aria-label={en?'Edit history':'سجل التعديلات'}><button type="button" className="history-action" onClick={undo} disabled={historyPast.length===0&&!historyPending} aria-label={en?'Undo change':'التراجع عن التعديل'} title={en?'Undo':'تراجع'}><span aria-hidden="true">↶</span><small>{en?'Undo':'تراجع'}</small></button><button type="button" className="history-action" onClick={redo} disabled={historyFuture.length===0} aria-label={en?'Redo change':'إعادة التعديل'} title={en?'Redo':'إعادة'}><span aria-hidden="true">↷</span><small>{en?'Redo':'إعادة'}</small></button></div><button className="lang-switch" onClick={toggleLanguage}>{en?'العربية':'English'}</button>{user?<button className="button button-light hide-mobile" onClick={openDashboard}>{en?'Workspace':'مساحة العمل'}</button>:<button className="button button-light hide-mobile" onClick={()=>openAuth('register')}>{en?'Create account':'إنشاء حساب'}</button>}<button className="button button-dark hide-mobile" onClick={exportSite}>{en?'Export site':'نزّل الموقع'} <span>↓</span></button></div>
     </header>
     <main className="editor-layout">
       <aside className={'editor-sidebar '+(mobilePanel?'panel-open':'')}><div className="sidebar-scroll">
@@ -840,6 +945,17 @@ export default function App() {
         <div className="control-section"><div className="control-heading"><b>{en?'Atmosphere & background':'أجواء الخلفية'}</b><span>{en?'Choose a mood':'اختار الروح'}</span></div><p className="background-style-intro">{en?'Change the light, texture, and glass feeling without losing the template identity.':'غيّر الإضاءة والتدرجات والزجاجيات مع الحفاظ على هوية القالب.'}</p><div className="background-mood-options">{backgroundStyles.map(mood=><button type="button" key={mood.id} className={'background-mood-option '+(portfolio.backgroundStyle===mood.id?'selected':'')} aria-pressed={portfolio.backgroundStyle===mood.id} onClick={()=>update('backgroundStyle',mood.id)}><span className={'mood-swatch mood-swatch-'+mood.id}><i/><b/></span><span className="mood-option-copy"><strong>{en?mood.en:mood.ar}</strong><small>{en?mood.noteEn:mood.noteAr}</small></span>{portfolio.backgroundStyle===mood.id&&<span className="mood-option-check">✓</span>}</button>)}</div></div>
         <div className="control-section"><div className="control-heading"><b>{en?'Accent color':'اللون الأساسي'}</b><span>{portfolio.accent}</span></div><div className="color-options">{colors.map(c=><button className={portfolio.accent===c?'selected':''} key={c} style={{background:c}} aria-label={'Use '+c} onClick={()=>update('accent',c)}/>)}<label className="custom-color"><span>＋</span><input type="color" value={portfolio.accent} onChange={e=>update('accent',e.target.value)} aria-label="لون مخصص"/></label></div></div>
         <div className="control-section"><div className="control-heading"><b>{en?'Visible sections':'الأقسام الظاهرة'}</b></div>{[['about',en?'About me':'نبذة عني'],['skills',en?'Skills':'المهارات'],['experience',en?'Experience':'الخبرات'],['projects',en?'Selected work':'المشاريع'],['socials',en?'Social links':'روابط التواصل'],['contact',en?'Contact':'التواصل']].map(([key,label])=><label className="toggle-row" key={key}><span>{label}</span><input type="checkbox" checked={Boolean(portfolio.visible[key])} onChange={e=>update('visible',{...portfolio.visible,[key]:e.target.checked})}/><i/></label>)}</div>
+        <div className="editor-group-label">{en?'04 — Page structure':'04 — ترتيب الصفحة'}</div>
+        <div className="control-section section-order-editor">
+          <div className="control-heading"><b>{en?'Section order':'ترتيب الأقسام'}</b><span>{en?'Drag to move':'اسحب للترتيب'}</span></div>
+          <p className="project-editor-intro">{en?'Drag a row to rearrange the page, or use the arrows for precise placement on mobile. Hidden sections keep their position when you turn them back on.':'اسحب أي قسم لمكانه الجديد، أو استخدم الأسهم على الموبايل. الأقسام المخفية بتحتفظ بترتيبها عند إظهارها مرة أخرى.'}</p>
+          <div className="section-order-list">{normaliseSectionOrder(portfolio.sectionOrder).map((key,index)=><div key={key} className={'section-order-item '+(draggedSection===key?'is-dragging':'')} onDragOver={event=>{event.preventDefault();event.dataTransfer.dropEffect='move'}} onDrop={event=>{event.preventDefault();const from=draggedSection||event.dataTransfer.getData('text/plain') as PortfolioSectionKey;if(portfolioSectionKeys.includes(from))moveSection(from,key);setDraggedSection(null)}}>
+            <button type="button" className="section-drag-handle" draggable onDragStart={event=>{event.stopPropagation();setDraggedSection(key);event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',key)}} onDragEnd={()=>setDraggedSection(null)} aria-label={en?'Drag section':'اسحب القسم'} title={en?'Drag to reorder':'اسحب لإعادة الترتيب'}>⠿</button>
+            <span className="section-order-index">{String(index+1).padStart(2,'0')}</span>
+            <div className="section-order-copy"><strong>{en?({about:'About',skills:'Skills',experience:'Experience',projects:'Projects',socials:'Social links',contact:'Contact'} as Record<PortfolioSectionKey,string>)[key]:({about:'نبذة عني',skills:'المهارات',experience:'الخبرات',projects:'المشاريع',socials:'روابط التواصل',contact:'التواصل'} as Record<PortfolioSectionKey,string>)[key]}</strong><small>{portfolio.visible[key]?(en?'Visible on the page':'ظاهر في الصفحة'):(en?'Hidden from visitors':'مخفي عن الزوار')}</small></div>
+            <div className="section-order-arrows"><button type="button" onClick={()=>shiftSection(key,-1)} disabled={index===0} aria-label={en?'Move up':'تحريك لأعلى'} title={en?'Move up':'لأعلى'}>↑</button><button type="button" onClick={()=>shiftSection(key,1)} disabled={index===portfolioSectionKeys.length-1} aria-label={en?'Move down':'تحريك لأسفل'} title={en?'Move down':'لأسفل'}>↓</button></div>
+          </div>)}</div>
+        </div>
         <div className="control-section profile-editor-section"><div className="control-heading"><b>{en?'Skills & expertise':'المهارات والتخصصات'}</b><span>{portfolio.skills.length}/30</span></div><p className="project-editor-intro">{en?'Show the tools and specialties that make your work yours.':'عرّف الزائر بأهم مهاراتك والأدوات التي تتقنها.'}</p>{portfolio.skills.map((skill,index)=><div className="profile-editor-row" key={index}><span className="profile-row-number">{String(index+1).padStart(2,'0')}</span><input className="search-input" value={skill} maxLength={80} placeholder={en?'e.g. UX research':'مثال: تصميم تجربة المستخدم'} onChange={e=>update('skills',portfolio.skills.map((item,i)=>i===index?e.target.value:item))}/><button type="button" className="profile-remove" onClick={()=>update('skills',portfolio.skills.filter((_,i)=>i!==index))} aria-label={en?'Remove skill':'حذف المهارة'}>×</button></div>)}<button type="button" className="add-project" onClick={()=>update('skills',[...portfolio.skills,''])} disabled={portfolio.skills.length>=30}>＋ {en?'Add skill':'إضافة مهارة'}</button></div>
         <div className="control-section profile-editor-section"><div className="control-heading"><b>{en?'Career experience':'الخبرات المهنية'}</b><span>{portfolio.experience.length}/12</span></div><p className="project-editor-intro">{en?'Show roles, teams, dates and what you contributed.':'أضف المناصب والجهات والفترات وأهم ما أنجزته.'}</p>{portfolio.experience.map((entry,index)=><div className="experience-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Role & impact':'المسمى والإنجاز'}</b><button type="button" className="project-remove" onClick={()=>removeExperience(index)} aria-label={en?'Remove experience':'حذف الخبرة'}>×</button></div><label className="field-label">{en?'Role / title':'المسمى الوظيفي'}<input value={entry.role} maxLength={160} onChange={e=>updateExperience(index,'role',e.target.value)} placeholder={en?'Product Designer':'مصمم منتجات'}/></label><label className="field-label">{en?'Company / organization':'الشركة أو المؤسسة'}<input value={entry.company} maxLength={160} onChange={e=>updateExperience(index,'company',e.target.value)} placeholder={en?'Company name':'اسم الشركة'}/></label><label className="field-label">{en?'Period':'الفترة'}<input value={entry.period} maxLength={100} onChange={e=>updateExperience(index,'period',e.target.value)} placeholder={en?'2023 — Present':'2023 — الآن'}/></label><label className="field-label">{en?'What you did':'أهم ما أنجزته'}<textarea rows={2} value={entry.description} maxLength={600} onChange={e=>updateExperience(index,'description',e.target.value)} placeholder={en?'Describe your impact…':'اكتب نبذة عن دورك ونتائج عملك…'}/></label></div>)}<button type="button" className="add-project" onClick={addExperience} disabled={portfolio.experience.length>=12}>＋ {en?'Add experience':'إضافة خبرة'}</button></div>
         <div className="control-section profile-editor-section"><div className="control-heading"><b>{en?'Social profiles':'حساباتك وروابطك'}</b><span>{portfolio.socialLinks.length}/12</span></div><p className="project-editor-intro">{en?'Add LinkedIn, Behance, GitHub or any public profile.':'أضف روابط لينكدإن وبيهانس وجيت هب أو أي حساب عام.'}</p>{portfolio.socialLinks.map((link,index)=><div className="social-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Profile link':'رابط الحساب'}</b><button type="button" className="project-remove" onClick={()=>removeSocialLink(index)} aria-label={en?'Remove social link':'حذف الرابط'}>×</button></div><label className="field-label">{en?'Platform / label':'اسم المنصة'}<input value={link.label} maxLength={60} onChange={e=>updateSocialLink(index,'label',e.target.value)} placeholder="LinkedIn"/></label><label className="field-label">{en?'Profile URL':'رابط الحساب'}<input value={link.url} maxLength={500} onChange={e=>updateSocialLink(index,'url',e.target.value)} placeholder="https://linkedin.com/in/yourname"/></label></div>)}<button type="button" className="add-project" onClick={addSocialLink} disabled={portfolio.socialLinks.length>=12}>＋ {en?'Add social profile':'إضافة حساب'}</button></div>
@@ -1303,30 +1419,74 @@ function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onC
   </div>
 }
 
-function PortfolioCanvas({data,template,language}:{data:Portfolio;template:Template;language:'ar'|'en'}) {
+function PortfolioCanvas({data,template,language,contactContent,showSampleContent=true}:{data:Portfolio;template:Template;language:'ar'|'en';contactContent?:ReactNode;showSampleContent?:boolean}) {
   const en=language==='en'
   const enteredProjects=data.projects.filter(name=>typeof name==='string' && name.trim().length>0)
-  const projects=enteredProjects.length?enteredProjects:(en?['A calmer way to bank','Learning without limits','A brand built to grow']:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو إبداعي'])
+  const projects=enteredProjects.length?enteredProjects:(showSampleContent?(en?['A calmer way to bank','Learning without limits','A brand built to grow']:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو إبداعي']):[])
   const portraits=[imageUrls[0],imageUrls[2],imageUrls[5]]
-  const avatarSrc = data.avatarUrl || portraits[template.layout%3]
-  const displayName = data.name || (en ? 'Your Name' : 'اسمك الشخصي')
-  const displayRole = data.role || (en ? template.roleEn : template.role)
-  const displayBio = data.bio || (en ? 'Good work starts with curiosity. I turn thoughtful ideas into work that makes everyday life a little better.' : 'أصمم منتجات رقمية بسيطة وقريبة من الناس.')
-  const projectTypes = en
-    ? ['Product design · 2026', 'Brand identity · 2025', 'Creative direction · 2024']
-    : ['تصميم منتجات · 2026', 'هوية بصرية · 2025', 'إخراج إبداعي · 2024']
-  const skills = normaliseSkills(data.skills)
-  const experience = normaliseExperience(data.experience)
-  const socialLinks = normaliseSocialLinks(data.socialLinks)
-  return <article className={'portfolio-site layout-'+template.layout+' mood-'+(data.backgroundStyle || 'signature')} data-layout={template.layout} data-mood={data.backgroundStyle || 'signature'} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}>
-    <div className={'site-atmosphere atmosphere-'+template.layout+' effect-'+(data.backgroundStyle || 'signature')} aria-hidden="true">
+  const avatarSrc=data.avatarUrl || portraits[template.layout%3]
+  const displayName=data.name || (en?'Your Name':'اسمك الشخصي')
+  const displayRole=data.role || (en?template.roleEn:template.role)
+  const displayBio=data.bio || (showSampleContent?(en?'Good work starts with curiosity. I turn thoughtful ideas into work that makes everyday life a little better.':'أصمم منتجات رقمية بسيطة وقريبة من الناس.'): '')
+  const projectTypes=en
+    ? ['Product design · 2026','Brand identity · 2025','Creative direction · 2024']
+    : ['تصميم منتجات · 2026','هوية بصرية · 2025','إخراج إبداعي · 2024']
+  const skills=normaliseSkills(data.skills)
+  const experience=normaliseExperience(data.experience)
+  const socialLinks=normaliseSocialLinks(data.socialLinks)
+  const sectionOrder=normaliseSectionOrder(data.sectionOrder)
+  const sectionIds: Record<PortfolioSectionKey,string>={about:'about',skills:'skills',experience:'experience',projects:'work',socials:'socials',contact:'contact'}
+  const sectionLabels: Record<PortfolioSectionKey,{en:string;ar:string}>={
+    about:{en:'About',ar:'نبذة'},
+    skills:{en:'Skills',ar:'المهارات'},
+    experience:{en:'Experience',ar:'الخبرات'},
+    projects:{en:'Work',ar:'أعمالي'},
+    socials:{en:'Social',ar:'روابطي'},
+    contact:{en:'Contact',ar:'تواصل'}
+  }
+  const sectionAvailable: Record<PortfolioSectionKey,boolean>={
+    about:Boolean(data.visible.about&&(showSampleContent||data.bio.trim()||data.location.trim())),
+    skills:Boolean(data.visible.skills&&skills.length),
+    experience:Boolean(data.visible.experience&&experience.length),
+    projects:Boolean(data.visible.projects&&projects.length),
+    socials:Boolean(data.visible.socials&&socialLinks.length),
+    contact:Boolean(data.visible.contact)
+  }
+  const sectionNodes: Record<PortfolioSectionKey,ReactNode>={
+    about:data.visible.about&&(showSampleContent||data.bio.trim()||data.location.trim())?<section className="site-about" id="about"><div className="site-section-title"><div><small>01 / {en?'A LITTLE ABOUT ME':'نبذة عني'}</small><h2>{en?'Thoughtful work starts with a point of view.':'كل عمل مميز يبدأ برؤية.'}</h2></div></div>{displayBio&&<p className="site-about-copy">{displayBio}</p>}{data.location&&<p className="site-about-location">⌖ {data.location}</p>}</section>:null,
+    skills:data.visible.skills&&skills.length>0?<section className="site-skills" id="skills"><div className="site-section-title"><div><small>02 / {en?'CAPABILITIES':'المهارات'}</small><h2>{en?'What I bring to the table':'ما أقدمه من مهارات'}</h2></div><span>{skills.length} {en?'specialties':'مهارات'}</span></div><div className="site-skill-tags">{skills.map((skill,index)=><span className="site-skill-pill" key={skill+'-'+index}><i>{String(index+1).padStart(2,'0')}</i>{skill}</span>)}</div></section>:null,
+    experience:data.visible.experience&&experience.length>0?<section className="site-experience" id="experience"><div className="site-section-title"><div><small>03 / {en?'THE JOURNEY':'الخبرات'}</small><h2>{en?'Where I’ve made a difference':'محطات من رحلتي المهنية'}</h2></div></div><div className="site-experience-list">{experience.map((entry,index)=><article className="site-experience-entry" key={entry.role+'-'+entry.company+'-'+index}><span className="experience-index">{String(index+1).padStart(2,'0')}</span><div className="experience-main"><h3>{entry.role||(en?'Professional role':'خبرة مهنية')}</h3>{entry.company&&<p className="experience-company">{entry.company}</p>}{entry.description&&<p className="experience-description">{entry.description}</p>}</div>{entry.period&&<span className="experience-period">{entry.period}</span>}</article>)}</div></section>:null,
+    projects:data.visible.projects&&projects.length>0?<section className="site-work" id="work"><div className="site-section-title"><div><small>04 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{projects.length} {en?'projects':'مشاريع'}</span></div><div className="site-project-grid">{projects.map((name,index)=>{const detail=data.projectDetails?.[index]||emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,imageUrls[(index+template.layout+1)%imageUrls.length]);const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(index%3)} key={name+'-'+index}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}><img src={image} alt={detail.description||name} loading="lazy"/><span>{projectTypes[index%projectTypes.length]}</span><b>{['✳','◡','✿'][index%3]}</b></div><h3>{name||(en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[index%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>:null,
+    socials:data.visible.socials&&socialLinks.length>0?<section className="site-social-links" id="socials"><div><small>05 / {en?'FIND ME ELSEWHERE':'روابط التواصل'}</small><h2>{en?'Let’s connect':'تواصل معي عبر المنصات'}</h2></div><div className="site-social-list">{socialLinks.map((link,index)=>{const href=safeExternalUrl(link.url);return href?<a className="site-social-link" key={link.label+'-'+index} href={href} target="_blank" rel="noopener noreferrer"><span>{link.label}</span><b>↗</b></a>:null})}</div></section>:null,
+    contact:data.visible.contact?<><section className="site-contact" id="contact"><div><small>06 / {en?'SAY HELLO':'لنتحدث'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div>{data.email&&<a href={'mailto:'+data.email}>{data.email} ↗</a>}</section>{contactContent}</>:null
+  }
+  return <article className={'portfolio-site layout-'+template.layout+' mood-'+(data.backgroundStyle||'signature')} data-layout={template.layout} data-mood={data.backgroundStyle||'signature'} data-section-order={sectionOrder.join(' ')} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}>
+    <div className={'site-atmosphere atmosphere-'+template.layout+' effect-'+(data.backgroundStyle||'signature')} aria-hidden="true">
       <span className="atmosphere-glow atmosphere-glow-a"/>
       <span className="atmosphere-glow atmosphere-glow-b"/>
       <span className="atmosphere-orbit"/>
       <span className="atmosphere-grid"/>
       <span className="atmosphere-glass"/>
     </div>
-    <div className="site-nav"><span className="site-monogram">{displayName.split(' ').map(s=>s[0]).join('')}</span><div className="site-nav-links">{data.visible.about&&<a href="#about">{en?'About':'عنّي'}</a>}{data.visible.skills&&skills.length>0&&<a href="#skills">{en?'Skills':'المهارات'}</a>}{data.visible.experience&&experience.length>0&&<a href="#experience">{en?'Experience':'الخبرات'}</a>}{data.visible.projects&&<a href="#work">{en?'Work':'أعمالي'}</a>}{data.visible.socials&&socialLinks.length>0&&<a href="#socials">{en?'Social':'روابطي'}</a>}{data.visible.contact&&<a href="#contact">{en?'Contact':'تواصل'}</a>}</div><span className="site-availability"><i/>{en?'Open to work':'متاح للعمل'}</span></div><section className="site-hero"><div className="site-copy"><small className="site-eyebrow">✳ {en?template.professionEn.toUpperCase():'أهلاً، أنا '+displayName}</small><h1>{displayName}<br/><em>{displayRole}</em></h1>{data.visible.about&&<p id="about">{displayBio}</p>}<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a></div><div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location || (en?'Remote':'عن بُعد')}　·　2026</div></div></section>{data.visible.skills&&skills.length>0&&<section className="site-skills" id="skills"><div className="site-section-title"><div><small>01 / {en?'CAPABILITIES':'المهارات'}</small><h2>{en?'What I bring to the table':'ما أقدمه من مهارات'}</h2></div><span>{skills.length} {en?'specialties':'مهارات'}</span></div><div className="site-skill-tags">{skills.map((skill,index)=><span className="site-skill-pill" key={skill+'-'+index}><i>{String(index+1).padStart(2,'0')}</i>{skill}</span>)}</div></section>}{data.visible.experience&&experience.length>0&&<section className="site-experience" id="experience"><div className="site-section-title"><div><small>02 / {en?'THE JOURNEY':'الخبرات'}</small><h2>{en?'Where I’ve made a difference':'محطات من رحلتي المهنية'}</h2></div></div><div className="site-experience-list">{experience.map((entry,index)=><article className="site-experience-entry" key={entry.role+'-'+entry.company+'-'+index}><span className="experience-index">{String(index+1).padStart(2,'0')}</span><div className="experience-main"><h3>{entry.role || (en?'Professional role':'خبرة مهنية')}</h3><p className="experience-company">{entry.company}</p>{entry.description&&<p className="experience-description">{entry.description}</p>}</div>{entry.period&&<span className="experience-period">{entry.period}</span>}</article>)}</div></section>}{data.visible.projects&&<section className="site-work" id="work"><div className="site-section-title"><div><small>01 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{en?'More coming soon':'المزيد قريباً'} ↗</span></div><div className="site-project-grid">{projects.map((name,i)=>{const detail=data.projectDetails?.[i] || emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,imageUrls[(i+template.layout+1)%imageUrls.length]);const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(i%3)} key={name+'-'+i}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}><img src={image} alt={detail.description || name} loading="lazy"/><span>{projectTypes[i%projectTypes.length]}</span><b>{['✳','◡','✿'][i%3]}</b></div><h3>{name || (en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[i%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>}{data.visible.socials&&socialLinks.length>0&&<section className="site-social-links" id="socials"><div><small>03 / {en?'FIND ME ELSEWHERE':'روابط التواصل'}</small><h2>{en?'Let’s connect':'تواصل معي عبر المنصات'}</h2></div><div className="site-social-list">{socialLinks.map((link,index)=>{const href=safeExternalUrl(link.url);return href?<a className="site-social-link" key={link.label+'-'+index} href={href} target="_blank" rel="noopener noreferrer"><span>{link.label}</span><b>↗</b></a>:null})}</div></section>}{data.visible.contact&&<section className="site-contact" id="contact"><div><small>02 / {en?'SAY HELLO':'كلمّني'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div><a href={'mailto:'+data.email}>{data.email} ↗</a></section>}<footer className="site-footer"><span>© {new Date().getFullYear()} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer></article>
+    <div className="site-nav">
+      <span className="site-monogram">{displayName.split(' ').map(character=>character[0]).join('')}</span>
+      <div className="site-nav-links">{sectionOrder.filter(key=>sectionAvailable[key]).map(key=><a href={'#'+sectionIds[key]} key={key}>{en?sectionLabels[key].en:sectionLabels[key].ar}</a>)}</div>
+      <span className="site-availability"><i/>{en?'Open to work':'متاح للعمل'}</span>
+    </div>
+    <section className="site-hero">
+      <div className="site-copy">
+        <small className="site-eyebrow">✳ {en?template.professionEn.toUpperCase():'أهلاً، أنا '+displayName}</small>
+        <h1>{displayName}<br/><em>{displayRole}</em></h1>
+        {data.visible.about&&data.bio.trim()&&<p className="site-hero-summary">{data.bio.length>170?data.bio.slice(0,167).trimEnd()+'…':data.bio}</p>}
+        {data.visible.contact&&data.email&&<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a>}
+      </div>
+      <div className="site-portrait"><div className="portrait-ring"><img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/><span className="portrait-decoration">✿</span></div><div className="portrait-label">{data.location||(en?'Remote':'عن بُعد')}</div></div>
+    </section>
+    <div className={'site-sections composition-'+template.layout} data-section-container="true">
+      {sectionOrder.filter(key=>sectionAvailable[key]).map(key=><div className={'site-section-slot slot-'+key} key={key} data-section={key}>{sectionNodes[key]}</div>)}
+    </div>
+    <footer className="site-footer"><span>© {new Date().getFullYear()} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer>
+  </article>
 }
 
 function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart }: {
@@ -1472,9 +1632,7 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
       </header>
 
       <main style={{ flex: 1, padding: '20px 10px' }}>
-        <PortfolioCanvas data={data.document} template={chosenTemplate} language={language} />
-
-        {data.document.visible.contact && <section className={'portfolio-contact-panel layout-'+chosenTemplate.layout+' mood-'+(data.document.backgroundStyle || 'signature')} dir={en?'ltr':'rtl'} style={{'--accent':data.document.accent,'--pale':chosenTemplate.pale} as CSSProperties}>
+        <PortfolioCanvas data={data.document} template={chosenTemplate} language={language} showSampleContent={false} contactContent={data.document.visible.contact ? (<section className={'portfolio-contact-panel layout-'+chosenTemplate.layout+' mood-'+(data.document.backgroundStyle || 'signature')} dir={en?'ltr':'rtl'} style={{'--accent':data.document.accent,'--pale':chosenTemplate.pale} as CSSProperties}>
           <div className="portfolio-contact-head">
             <div>
               <small>{en?'03 / LET’S CONNECT':'03 / لنتواصل'}</small>
@@ -1501,7 +1659,9 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
               </button>
             </form>
           )}
-        </section>}
+        </section>) : null} />
+
+
       </main>
 
       <footer className="public-bottom-badge">

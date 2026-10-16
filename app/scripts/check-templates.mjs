@@ -55,9 +55,9 @@ assert.ok(exportSource.includes('function safeExternalUrl(value: string | undefi
 assert.ok(app.includes('type ExperienceEntry ='), 'portfolio model must include work experience')
 assert.ok(app.includes('type SocialLink ='), 'portfolio model must include social profile links')
 assert.ok(app.includes("['skills',en?'Skills':'المهارات']"), 'editor must allow hiding/showing the skills section')
-assert.ok(app.includes('const skills = normaliseSkills(data.skills)'), 'public template must render the skill list')
-assert.ok(app.includes('const experience = normaliseExperience(data.experience)'), 'public template must render work history')
-assert.ok(app.includes('const socialLinks = normaliseSocialLinks(data.socialLinks)'), 'public template must render external social profiles')
+assert.ok(app.includes('const skills=normaliseSkills(data.skills)'), 'public template must render the skill list')
+assert.ok(app.includes('const experience=normaliseExperience(data.experience)'), 'public template must render work history')
+assert.ok(app.includes('const socialLinks=normaliseSocialLinks(data.socialLinks)'), 'public template must render external social profiles')
 assert.ok(workerSource.includes('const skills = Array.isArray(input.skills)'), 'API must accept a skill list')
 assert.ok(workerSource.includes('const experience = Array.isArray(input.experience)'), 'API must accept work experience')
 assert.ok(workerSource.includes('const socialLinks = Array.isArray(input.socialLinks)'), 'API must accept public profile links')
@@ -75,11 +75,30 @@ assert.ok(studioCss.includes('backdrop-filter:blur(22px)'), 'glassmorphism surfa
 assert.ok(studioCss.includes('@keyframes taqdom-atmosphere-breathe'), 'ambient light should have gentle motion')
 assert.ok(studioCss.includes('@media(prefers-reduced-motion:reduce)'), 'ambient motion must respect reduced-motion preference')
 
-assert.ok(app.includes("data.document.visible.contact && <section className={'portfolio-contact-panel layout-'"), 'public contact form must respect the section visibility switch')
+assert.ok(app.includes("contactContent={data.document.visible.contact ? ("), 'public contact form must respect the section visibility switch and remain part of the ordered contact section')
 assert.ok(app.includes('contact-visually-hidden'), 'public contact fields should have accessible labels')
 assert.ok(studioCss.includes('.portfolio-contact-panel.layout-0') && studioCss.includes('.portfolio-contact-panel.layout-8'), 'public contact form must support both cool and warm dark themes')
 assert.ok(studioCss.includes('.portfolio-contact-panel.layout-1') && studioCss.includes('.portfolio-contact-panel.layout-7'), 'public contact form must support light themes')
 assert.ok(studioCss.includes('.portfolio-contact-panel.mood-glass'), 'contact form should honor the selected glass atmosphere')
+
+assert.ok(app.includes('function normaliseSectionOrder(value: unknown)'), 'section order must be normalized before rendering')
+assert.ok(app.includes('onDragStart={event=>'), 'the editor should support native drag-and-drop section ordering')
+assert.ok(app.includes('const shiftSection = (key: PortfolioSectionKey'), 'the editor should provide precise accessible move controls')
+assert.ok(app.includes('const undo = () =>') && app.includes('const redo = () =>'), 'the editor should support undo and redo')
+assert.ok(app.includes('const [historyPast, setHistoryPast]'), 'undo/redo history must be stored in editor state')
+assert.ok(app.includes('contactContent={data.document.visible.contact ? ('), 'the visitor contact form must move with the contact section')
+assert.ok(app.includes('showSampleContent={false} contactContent={data.document.visible.contact ? ('), 'published portfolios should not receive demo-only placeholder projects or copy')
+assert.ok(app.includes('const projects=enteredProjects.length?enteredProjects:(showSampleContent?'), 'sample projects must only be added in the editor preview')
+assert.ok(workerSource.includes('const allowedSectionOrder = ["about", "skills", "experience", "projects", "socials", "contact"]'), 'API must allowlist section order keys')
+assert.ok(workerSource.includes('    sectionOrder,'), 'API must persist normalized section order')
+assert.ok(exportSource.includes('function normaliseExportSectionOrder(value: unknown)'), 'HTML export must validate section order')
+assert.ok(exportSource.includes('const orderedSectionsMarkup = \'<div class="site-sections composition-\' + layout'), 'HTML export must preserve page section order and provide structural section slots')
+assert.ok(exportSource.includes('const compositionRules ='), 'HTML export must include template-specific section compositions')
+for (let index = 0; index < expected.length; index += 1) {
+  assert.ok(studioCss.includes(`.portfolio-site.layout-${index} .site-sections.composition-${index}`), `${expected[index]} should have a distinct section composition system`)
+}
+assert.ok(studioCss.includes('.section-order-item') && studioCss.includes('.history-action'), 'section order and history controls must be styled');
+
 
 for (let index = 0; index < expected.length; index += 1) {
   assert.ok(studioCss.includes(`.portfolio-site.layout-${index}{--mood-glow-a:`), `${expected[index]} should own an atmosphere palette`)
