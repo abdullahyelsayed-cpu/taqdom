@@ -33,8 +33,10 @@ export async function onRequest(context) {
 
   try {
     return await api.fetch(new Request(target.toString(), init));
-  } catch (err) {
-    return Response.json({ error: 'api_unavailable', detail: String(err && err.message || err) }, {
+  } catch {
+    // Keep internal binding/network errors out of browser responses.
+    console.error('Taqdom API service binding failed');
+    return Response.json({ error: 'api_unavailable' }, {
       status: 502,
       headers: { 'cache-control': 'no-store' },
     });
