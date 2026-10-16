@@ -318,6 +318,7 @@ await test('custom subdomain is stored on portfolio creation', async () => {
           { label: '', url: 'https://example.com' }
         ],
         visible: { about:true, skills:true, experience:true, projects:true, socials:true, contact:true },
+        sectionOrder: ['projects', 'about', 'skills', 'projects', 'unknown'],
         backgroundStyle: 'glass'
       }
     }
@@ -341,6 +342,7 @@ await test('custom subdomain is stored on portfolio creation', async () => {
   assert.equal(savedDocument.visible.skills, true)
   assert.equal(savedDocument.visible.experience, true)
   assert.equal(savedDocument.visible.socials, true)
+  assert.deepEqual(savedDocument.sectionOrder, ['projects','about','skills','experience','socials','contact'])
 })
 
 await test('default subdomain uses a readable username-based handle', async () => {
