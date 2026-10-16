@@ -77,7 +77,8 @@ export default {
     headers.set('Origin', APEX_ORIGIN)
     headers.set('X-Taqdom-Tenant', tenant)
 
-    const target = new URL(incoming.pathname + incoming.search, APEX_ORIGIN)
+    const upstreamPath = incoming.pathname === '/' ? '/p/' + encodeURIComponent(tenant) : incoming.pathname
+    const target = new URL(upstreamPath + incoming.search, APEX_ORIGIN)
     const init = {
       method: request.method,
       headers,
