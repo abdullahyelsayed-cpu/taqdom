@@ -501,6 +501,36 @@ export default function App() {
       projectDetails: normaliseProjectDetails(current.projectDetails, current.projects.length).filter((_, itemIndex) => itemIndex !== index),
     }))
   }
+  const updateExperience = (index: number, key: keyof ExperienceEntry, value: string) => {
+    setPortfolio(current => {
+      const entries = normaliseExperience(current.experience)
+      entries[index] = { ...(entries[index] || { role:'',company:'',period:'',description:'' }), [key]: value }
+      return { ...current, experience: entries }
+    })
+  }
+  const addExperience = () => setPortfolio(current => current.experience.length >= 12 ? current : {
+    ...current,
+    experience: [...current.experience, { role:'',company:'',period:'',description:'' }],
+  })
+  const removeExperience = (index: number) => setPortfolio(current => ({
+    ...current,
+    experience: current.experience.filter((_, itemIndex) => itemIndex !== index),
+  }))
+  const updateSocialLink = (index: number, key: keyof SocialLink, value: string) => {
+    setPortfolio(current => {
+      const links = [...current.socialLinks]
+      links[index] = { ...(links[index] || {label:'',url:''}), [key]:value }
+      return { ...current, socialLinks: links }
+    })
+  }
+  const addSocialLink = () => setPortfolio(current => current.socialLinks.length >= 12 ? current : {
+    ...current,
+    socialLinks: [...current.socialLinks, {label:'',url:''}],
+  })
+  const removeSocialLink = (index: number) => setPortfolio(current => ({
+    ...current,
+    socialLinks: current.socialLinks.filter((_, itemIndex) => itemIndex !== index),
+  }))
   const goHome = () => {
     const host = location.hostname.toLowerCase()
     if (host !== 'taqdom.me' && host.endsWith('.taqdom.me')) {
@@ -696,7 +726,7 @@ export default function App() {
   const createPortfolio = async () => {
     if (!user) { openAuth('register'); return }
     setAccountBusy(true); setAccountError('')
-    const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], visible:{about:true,projects:true,contact:true}, templateId:'design-0', accent:'#8b5cff' }
+    const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], projectDetails:[], skills:[], experience:[], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, templateId:'design-0', accent:'#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My first portfolio' : 'موقعي الشخصي', templateId:fresh.templateId, document:fresh }) })
       setPortfolio(normalisePortfolio(result.portfolio.document, fresh)); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items => [result.portfolio, ...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
@@ -728,7 +758,7 @@ export default function App() {
   const createPortfolioWithTemplate = async (templateId: string) => {
     if (!user) { openAuth('register'); return }
     setAccountBusy(true); setAccountError('')
-    const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], visible:{about:true,projects:true,contact:true}, templateId, accent:templates.find(t=>t.id===templateId)?.accent || '#8b5cff' }
+    const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], projectDetails:[], skills:[], experience:[], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, templateId, accent:templates.find(t=>t.id===templateId)?.accent || '#8b5cff' }
     try {
       const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My portfolio' : 'موقعي الشخصي', templateId, document:fresh }) })
       setPortfolio(fresh); setPortfolioId(result.portfolio.id); setPortfolioSlug(result.portfolio.slug || 'site-'+result.portfolio.id.slice(0,6)); setAccountPortfolios(items=>[result.portfolio,...items]); history.replaceState({}, '', location.pathname); setView('editor'); window.scrollTo(0,0)
