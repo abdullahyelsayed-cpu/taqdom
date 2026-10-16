@@ -438,6 +438,7 @@ export default function App() {
   const portfolioRevisionRef = useRef(1)
   const suppressHistoryRef = useRef(false)
   const authReturnViewRef = useRef<AppView>('home')
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false)
   const [inboxOpen, setInboxOpen] = useState(false)
   const [inboxLoading, setInboxLoading] = useState(false)
   const [inboxMessages, setInboxMessages] = useState<Array<{ id: string; sender_name: string; sender_email: string; message: string; created_at: string }>>([])
@@ -1101,7 +1102,10 @@ export default function App() {
   if (view === 'home' && siteRoute.page !== 'home') return <ContentPage page={siteRoute.page} language={language} onLanguage={toggleLanguage} />
   if (view === 'home') return <LandingPage language={language} user={user} onLanguage={toggleLanguage} onStart={()=>user ? openDashboard() : openAuth('register')} onLogin={()=>user ? openDashboard() : openAuth('login')} onTemplate={chooseTemplate} />
   if (view === 'auth') return <AuthScreen mode={authMode} language={language} onLanguage={toggleLanguage} onBack={goHome} onMode={openAuth} onSuccess={handleAuthSuccess} />
-  if (view === 'dashboard') return <Dashboard language={language} user={user} loading={accountLoading} busy={accountBusy} items={accountPortfolios} error={accountError} onLanguage={toggleLanguage} onHome={goHome} onCreate={()=>void createPortfolio()} onOpen={openPortfolio} onLogout={()=>void signOut()} onDeleteAccount={()=>void deleteAccount()} onClearError={()=>setAccountError('')} />
+  if (view === 'dashboard') return <>
+    <Dashboard language={language} user={user} loading={accountLoading} busy={accountBusy} items={accountPortfolios} error={accountError} onLanguage={toggleLanguage} onHome={goHome} onCreate={()=>void createPortfolio()} onOpen={openPortfolio} onLogout={()=>void signOut()} onDeleteAccount={()=>void deleteAccount()} onChangePassword={()=>setPasswordModalOpen(true)} onClearError={()=>setAccountError('')} />
+    {passwordModalOpen && <PasswordChangeModal language={language} onClose={()=>setPasswordModalOpen(false)} />}
+  </>
   if (view === 'preview') return <div className="preview-screen" style={vars}><div className="preview-bar"><button onClick={()=>{history.replaceState({},'',location.pathname);setView('editor')}}>← {en?'Back to editor':'العودة للمحرر'}</button><span className="preview-status"><i/>{en?'Private preview':'معاينة خاصة'}</span><button className="small-action" onClick={exportSite}>{en?'Download HTML':'تنزيل HTML'} ↓</button></div><PortfolioCanvas data={portfolio} template={chosen} language={language}/></div>
 
   return <div className="app-shell editor-mode">
@@ -1607,7 +1611,49 @@ function AuthScreen({mode,language,onLanguage,onBack,onMode,onSuccess}:{mode:Aut
   </div>
 }
 
-function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onCreate,onOpen,onLogout,onDeleteAccount,onClearError}:{language:'ar'|'en';user:User|null;loading:boolean;busy:boolean;items:SavedPortfolio[];error:string;onLanguage:()=>void;onHome:()=>void;onCreate:()=>void;onOpen:(item:SavedPortfolio)=>void;onLogout:()=>void;onDeleteAccount:()=>void;onClearError:()=>void}) {
+function PasswordChangeModal({language,onClose}:{language:'ar'|'en';onClose:()=>void}) {
+  const en=language==='en'
+  const [currentPassword,setCurrentPassword]=useState('')
+  const [newPassword,setNewPassword]=useState('')
+  const [busy,setBusy]=useState(false)
+  const [error,setError]=useState('')
+  const submit=async(e:FormEvent<HTMLFormElement>)=>{
+    e.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest('/api/auth/password',{method:'POST',body:JSON.stringify({currentPassword,newPassword})})
+      onClose()
+      alert(en?'Password changed. Other signed-in sessions were signed out.':'تم تغيير كلمة المرور. تم تسجيل الخروج من الجلسات الأخرى.')
+    } catch(err) {
+      const code=err instanceof Error?err.message:'request_failed'
+      setError(code==='invalid_current_password'
+        ? (en?'Current password is incorrect.':'كلمة المرور الحالية غير صحيحة.')
+        : code==='weak_password'
+          ? (en?'Use a password between 10 and 128 characters.':'استخدم كلمة مرور من 10 إلى 128 حرفًا.')
+          : (en?'Could not change the password. Please try again.':'تعذر تغيير كلمة المرور. حاول مرة أخرى.'))
+    } finally { setBusy(false) }
+  }
+  return <div className="publish-modal-overlay" onClick={onClose}>
+    <div className="publish-modal-card" onClick={e=>e.stopPropagation()}>
+      <button className="close-modal" onClick={onClose}>×</button>
+      <div className="modal-icon">🔐</div>
+      <h3>{en?'Change password':'تغيير كلمة المرور'}</h3>
+      <p>{en?'Choose a new password for your Taqdom account.':'اختر كلمة مرور جديدة لحسابك على تقدّم.'}</p>
+      <form onSubmit={submit} style={{display:'grid',gap:'12px',marginTop:'14px'}}>
+        <label className="field-label">{en?'Current password':'كلمة المرور الحالية'}<input type="password" autoComplete="current-password" minLength={1} maxLength={128} value={currentPassword} onChange={e=>setCurrentPassword(e.target.value)} required/></label>
+        <label className="field-label">{en?'New password':'كلمة المرور الجديدة'}<input type="password" autoComplete="new-password" minLength={10} maxLength={128} value={newPassword} onChange={e=>setNewPassword(e.target.value)} required/></label>
+        {error&&<p className="dashboard-error" role="alert">{error}</p>}
+        <div className="modal-actions" style={{marginTop:'2px'}}>
+          <button type="button" className="button button-light" onClick={onClose}>{en?'Cancel':'إلغاء'}</button>
+          <button type="submit" className="button button-primary" disabled={busy}>{busy?(en?'Changing…':'جارٍ التغيير…'):(en?'Change password':'تغيير كلمة المرور')}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onCreate,onOpen,onLogout,onDeleteAccount,onChangePassword,onClearError}:{language:'ar'|'en';user:User|null;loading:boolean;busy:boolean;items:SavedPortfolio[];error:string;onLanguage:()=>void;onHome:()=>void;onCreate:()=>void;onOpen:(item:SavedPortfolio)=>void;onLogout:()=>void;onDeleteAccount:()=>void;onChangePassword:()=>void;onClearError:()=>void}) {
   const en=language==='en'
   return <div className="dashboard-shell" dir={en?'ltr':'rtl'}><header className="dashboard-top"><button className="auth-brand" onClick={onHome}><BrandMark/><span>taqdom<span className="site-brand-dot">.</span></span></button><div className="dashboard-top-actions"><button className="site-lang" onClick={onLanguage}>{en?'العربية':'English'}</button><button className="dashboard-logout" onClick={onLogout}>{en?'Sign out':'تسجيل الخروج'} ↗</button></div></header>
     <main className="dashboard-main"><div className="dashboard-welcome"><div><div className="section-overline">{en?'YOUR CREATIVE SPACE':'مساحتك الإبداعية'}</div><h1>{en?<>Good to have you,<br/><em>{user?.displayName || 'there'}.</em></>:<>مرحبًا بك،<br/><em>{user?.displayName || 'صاحب الحكاية'}.</em></>}</h1><p>{en?'Your projects live here. Open an existing site or create a new one when you are ready.':'ستجد مشروعاتك هنا. افتح موقعًا سابقًا أو أنشئ موقعًا جديدًا متى شئت.'}</p></div><div className="dashboard-welcome-art"><img src={imageUrls[3]} alt="" loading="lazy"/><div><span>TAQDOM STUDIO</span><b>{en?'Make it yours.':'اجعله معبّرًا عنك.'}</b></div></div></div>
@@ -1615,7 +1661,7 @@ function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onC
       <div className="dashboard-project-heading"><div><span className="section-overline">{en?'YOUR PROJECTS':'مشاريعك'}</span><h2>{en?'A place for your next step':'كل مشروع له مكانه'}</h2></div><button className="dashboard-create" onClick={onCreate} disabled={busy}>{busy?(en?'Creating…':'جارٍ الإنشاء…'):(en?'＋ New website':'＋ موقع جديد')}</button></div>
       {loading?<div className="dashboard-loading"><span className="loading-orbit"/> {en?'Loading your workspace…':'جارٍ تحميل مساحة العمل…'}</div>:items.length===0?<div className="dashboard-empty"><div className="empty-art"><span>✳</span><i/><b/></div><h3>{en?'Your first website starts here.':'موقعك الأول بانتظارك.'}</h3><p>{en?'Start with a blank canvas and shape your own corner of the internet.':'ابدأ بمساحة جديدة وأنشئ حضورك الخاص على الإنترنت.'}</p><button className="dashboard-create" onClick={onCreate} disabled={busy}>{en?'Create my first site':'أنشئ موقعي الأول'} ↗</button></div>:<div className="dashboard-project-grid">{items.map((item,index)=><button className="dashboard-project-card" key={item.id} onClick={()=>onOpen(item)}><div className={'dashboard-project-cover cover-'+(index%6)}><img src={item.document?.avatarUrl || imageUrls[index%imageUrls.length]} alt="" loading="lazy"/><span className="project-draft">{item.status==='published'?(en?'Published 🌐':'منشور 🌐'):(en?'Draft 📝':'مسودة 📝')}</span><div className="cover-brand">t<span>.</span></div><div className="cover-title">{item.document?.name||item.title}<small>{item.document?.role|| (en?'Personal portfolio':'موقع شخصي')}</small></div></div><div className="dashboard-project-info"><div><h3>{item.title}</h3><p>{en?'Edited':'آخر تعديل'} · {new Date(item.updatedAt).toLocaleDateString(en?'en-GB':'ar-EG',{day:'numeric',month:'short'})}</p><small className="dashboard-project-host" dir="ltr">{isValidPortfolioSubdomain(item.slug || '') ? item.slug + '.taqdom.me' : (en ? 'Set a username in the editor' : 'حدّد اسم موقعك من المحرر')}</small></div><span>↗</span></div></button>)}</div>}
       <div className="dashboard-help-row"><span className="help-star">✳</span><div><b>{en?'Small steps. Beautiful work.':'خطوات بسيطة، وشغل يبان.'}</b><p>{en?'You can edit your content, colors, and visible sections at any time.':'تقدر تعدّل المحتوى والألوان والأقسام في أي وقت.'}</p></div><button onClick={onHome}>{en?'Explore Taqdom':'استكشف تقدّم'} ↗</button></div>
-      <div className="dashboard-account-danger"><div><strong>{en?'Account controls':'إدارة الحساب'}</strong><p>{en?'Deleting your account permanently removes saved sites, uploaded media, and visitor messages.':'حذف الحساب يمسح نهائيًا المواقع والصور ورسائل الزوار المحفوظة.'}</p></div><button type="button" onClick={onDeleteAccount} disabled={busy}>{en?'Delete account':'حذف الحساب'}</button></div>
+      <div className="dashboard-account-danger"><div><strong>{en?'Account controls':'إدارة الحساب'}</strong><p>{en?'Deleting your account permanently removes saved sites, uploaded media, and visitor messages.':'حذف الحساب يمسح نهائيًا المواقع والصور ورسائل الزوار المحفوظة.'}</p></div><div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}><button type="button" onClick={onChangePassword} disabled={busy}>{en?'Change password':'تغيير كلمة المرور'}</button><button type="button" onClick={onDeleteAccount} disabled={busy}>{en?'Delete account':'حذف الحساب'}</button></div></div>
     </main><footer className="dashboard-footer"><span>taqdom<span>.</span></span><span>{en?'Your space is yours.':'المساحة دي مساحتك.'}</span><small>{user?.email}</small></footer>
   </div>
 }
