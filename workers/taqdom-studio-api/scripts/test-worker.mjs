@@ -311,6 +311,21 @@ await test('custom subdomain is stored on portfolio creation', async () => {
   assert.equal(insert.values[4], 'abdullah-creative')
 })
 
+await test('default subdomain uses a readable username-based handle', async () => {
+  const db = createDb({ userRow })
+  const { response, body } = await invoke('/api/portfolios', {
+    method: 'POST',
+    cookie: sessionCookie,
+    body: {
+      title: 'My portfolio',
+      templateId: 'design-0',
+      document: { name: 'My portfolio', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 201)
+  assert.match(body.portfolio.slug, /^test-[0-9a-f]{6}$/)
+})
+
 await test('subdomains cannot be claimed by a second portfolio', async () => {
   const db = createDb({ userRow, slugExists: 'team-portfolio' })
   const { response, body } = await invoke('/api/portfolios', {
