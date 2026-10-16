@@ -34,7 +34,9 @@ function createDb(options = {}) {
           if (sql.includes('SELECT id FROM portfolios WHERE lower(slug)=lower(?)')) {
             const candidate = String(call.values[0] || '').toLowerCase()
             const excluded = call.values[1]
-            return options.slugExists && options.slugExists.toLowerCase() === candidate && options.slugExistsOwnerId !== excluded
+            return options.slugExists &&
+              options.slugExists.toLowerCase() === candidate &&
+              (options.slugExistsOwnerId === undefined || options.slugExistsOwnerId !== excluded)
               ? { id: 'another-portfolio' }
               : null
           }
