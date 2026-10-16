@@ -44,10 +44,10 @@ Taqdom is free for everyone. There are no paid plans or subscriptions. The produ
 | Marketing site, animated art direction and brand mark | Implemented |
 | Arabic / English and responsive layouts | Implemented |
 | Editor, live preview and HTML export | Implemented |
-| Signup, sign-in and cloud-saved drafts | Initial implementation |
-| Email verification and password recovery | Not enabled |
-| Publish a portfolio to a personal subdomain | Not enabled |
-| User image upload and managed media library | Not enabled |
+| Signup, sign-in and cloud-saved drafts | Implemented; email verification and account recovery remain unavailable |
+| Publish a portfolio to a personal `username.taqdom.me` subdomain | Implemented |
+| Profile and project image uploads | Implemented with account-level upload limits; an asset browser and immediate permanent deletion are not available |
+| Contact form and owner-only inbox | Implemented with rate limiting |
 | Access and pricing | Free for everyone; no paid plans or subscriptions |
 
 The gallery uses illustrative external photography. It is not a customer-media library. External media is subject to its own source terms; the MIT license below applies to this repository's code and accompanying original documentation, not third-party assets.
@@ -55,10 +55,15 @@ The gallery uses illustrative external photography. It is not a customer-media l
 ## Architecture
 
 - **Frontend:** React, TypeScript, Vite, CSS, accessible UI states, and reduced-motion support.
-- **Edge / API:** Cloudflare Pages Functions proxy requests to a Cloudflare Worker.
-- **Data:** Cloudflare D1 stores account, session, and portfolio records.
-- **AI copy assistance:** the Worker calls Cloudflare Workers AI through the `AI` resource binding, with the model selected by the non-secret `MODEL` variable. The current deployment requires no external vendor API key. `ALLOWED_ORIGINS` is also a non-secret configuration variable; D1 and Workers AI are resource bindings.
-- **Build checks:** GitHub Actions runs the TypeScript production build and lint.
+- **Edge / API:** Cloudflare Pages Functions proxy first-party API requests to a Cloudflare Worker; a separate tenant router handles `*.taqdom.me`.
+- **Data:** Cloudflare D1 stores accounts, sessions, portfolios, uploaded raster images, inbox messages, and abuse-prevention counters.
+- **AI copy assistance:** the Worker calls Cloudflare Workers AI through the `AI` resource binding, with the model selected by the non-secret `MODEL` variable. The current deployment requires no external vendor API key.
+- **Uploads:** the API accepts JPEG, PNG, and WebP, with a cap of 75 media items and 25 MB of encoded image data per account. Unreferenced uploads older than one day are eligible for cleanup on a subsequent upload. A dedicated asset browser, immediate deletion, and object-storage migration remain future work.
+- **Build checks:** GitHub Actions runs the TypeScript production build, lint, localized SEO checks, template consistency checks, API security tests, tenant-router tests, schema checks, and a full Git-history secret scan.
+
+### D1 schema and migrations
+
+`workers/taqdom-studio-api/schema/bootstrap.sql` is the complete, idempotent starting schema for a **new, empty database**. Do not use it to reset or replace an existing database. Existing installations should receive only pending numbered migrations, after reviewing the SQL and confirming a backup/rollback plan.
 
 Production configuration and secrets belong in Cloudflare-managed settings. Do not copy live credentials, environment values, customer data, or operational exports into source control.
 
