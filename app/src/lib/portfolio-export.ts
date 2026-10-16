@@ -107,7 +107,7 @@ export function downloadPortfolioHtml(
   const layout = Number.isInteger(template.layout) && template.layout >= 0 && template.layout < themePalettes.length ? template.layout : 0
   const mood = backgroundStyles.has(portfolio.backgroundStyle || '') ? portfolio.backgroundStyle! : 'signature'
   const sectionOrder = normaliseExportSectionOrder(portfolio.sectionOrder)
-  const role = (portfolio.role || (en ? template.roleEn : template.role) || template.profession).trim()
+  const role = (portfolio.role || (en ? template.roleEn : template.profession)).trim()
   const profession = en && template.professionEn ? template.professionEn : template.profession
   const avatar = safeImageUrl(portfolio.avatarUrl)
   const projects = Array.isArray(portfolio.projects)
