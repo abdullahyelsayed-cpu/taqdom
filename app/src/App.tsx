@@ -1419,7 +1419,7 @@ function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onC
   </div>
 }
 
-function PortfolioCanvas({data,template,language}:{data:Portfolio;template:Template;language:'ar'|'en'}) {
+function PortfolioCanvas({data,template,language,contactContent}:{data:Portfolio;template:Template;language:'ar'|'en';contactContent?:ReactNode}) {
   const en=language==='en'
   const enteredProjects=data.projects.filter(name=>typeof name==='string' && name.trim().length>0)
   const projects=enteredProjects.length?enteredProjects:(en?['A calmer way to bank','Learning without limits','A brand built to grow']:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو إبداعي'])
@@ -1458,7 +1458,7 @@ function PortfolioCanvas({data,template,language}:{data:Portfolio;template:Templ
     experience:data.visible.experience&&experience.length>0?<section className="site-experience" id="experience"><div className="site-section-title"><div><small>03 / {en?'THE JOURNEY':'الخبرات'}</small><h2>{en?'Where I’ve made a difference':'محطات من رحلتي المهنية'}</h2></div></div><div className="site-experience-list">{experience.map((entry,index)=><article className="site-experience-entry" key={entry.role+'-'+entry.company+'-'+index}><span className="experience-index">{String(index+1).padStart(2,'0')}</span><div className="experience-main"><h3>{entry.role||(en?'Professional role':'خبرة مهنية')}</h3>{entry.company&&<p className="experience-company">{entry.company}</p>}{entry.description&&<p className="experience-description">{entry.description}</p>}</div>{entry.period&&<span className="experience-period">{entry.period}</span>}</article>)}</div></section>:null,
     projects:data.visible.projects&&projects.length>0?<section className="site-work" id="work"><div className="site-section-title"><div><small>04 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{projects.length} {en?'projects':'مشاريع'}</span></div><div className="site-project-grid">{projects.map((name,index)=>{const detail=data.projectDetails?.[index]||emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,imageUrls[(index+template.layout+1)%imageUrls.length]);const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(index%3)} key={name+'-'+index}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}><img src={image} alt={detail.description||name} loading="lazy"/><span>{projectTypes[index%projectTypes.length]}</span><b>{['✳','◡','✿'][index%3]}</b></div><h3>{name||(en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[index%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>:null,
     socials:data.visible.socials&&socialLinks.length>0?<section className="site-social-links" id="socials"><div><small>05 / {en?'FIND ME ELSEWHERE':'روابط التواصل'}</small><h2>{en?'Let’s connect':'تواصل معي عبر المنصات'}</h2></div><div className="site-social-list">{socialLinks.map((link,index)=>{const href=safeExternalUrl(link.url);return href?<a className="site-social-link" key={link.label+'-'+index} href={href} target="_blank" rel="noopener noreferrer"><span>{link.label}</span><b>↗</b></a>:null})}</div></section>:null,
-    contact:data.visible.contact?<section className="site-contact" id="contact"><div><small>06 / {en?'SAY HELLO':'لنتحدث'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div>{data.email&&<a href={'mailto:'+data.email}>{data.email} ↗</a>}</section>:null
+    contact:data.visible.contact?<><section className="site-contact" id="contact"><div><small>06 / {en?'SAY HELLO':'لنتحدث'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div>{data.email&&<a href={'mailto:'+data.email}>{data.email} ↗</a>}</section>{contactContent}</>:null
   }
   return <article className={'portfolio-site layout-'+template.layout+' mood-'+(data.backgroundStyle||'signature')} data-layout={template.layout} data-mood={data.backgroundStyle||'signature'} data-section-order={sectionOrder.join(' ')} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}>
     <div className={'site-atmosphere atmosphere-'+template.layout+' effect-'+(data.backgroundStyle||'signature')} aria-hidden="true">
@@ -1632,9 +1632,7 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
       </header>
 
       <main style={{ flex: 1, padding: '20px 10px' }}>
-        <PortfolioCanvas data={data.document} template={chosenTemplate} language={language} />
-
-        {data.document.visible.contact && <section className={'portfolio-contact-panel layout-'+chosenTemplate.layout+' mood-'+(data.document.backgroundStyle || 'signature')} dir={en?'ltr':'rtl'} style={{'--accent':data.document.accent,'--pale':chosenTemplate.pale} as CSSProperties}>
+        <PortfolioCanvas data={data.document} template={chosenTemplate} language={language} contactContent={data.document.visible.contact ? (<section className={'portfolio-contact-panel layout-'+chosenTemplate.layout+' mood-'+(data.document.backgroundStyle || 'signature')} dir={en?'ltr':'rtl'} style={{'--accent':data.document.accent,'--pale':chosenTemplate.pale} as CSSProperties}>
           <div className="portfolio-contact-head">
             <div>
               <small>{en?'03 / LET’S CONNECT':'03 / لنتواصل'}</small>
@@ -1661,7 +1659,9 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
               </button>
             </form>
           )}
-        </section>}
+        </section>) : null} />
+
+
       </main>
 
       <footer className="public-bottom-badge">
