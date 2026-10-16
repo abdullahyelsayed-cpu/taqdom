@@ -249,6 +249,35 @@ function sanitizeDocument(input) {
       imageUrl
     };
   }) : [];
+  const skills = Array.isArray(input.skills) ? input.skills.filter(function(item) {
+    return typeof item === "string";
+  }).slice(0, 30).map(function(item) {
+    return str(item, 80);
+  }).filter(Boolean) : [];
+  const experience = Array.isArray(input.experience) ? input.experience.filter(function(item) {
+    return item && typeof item === "object" && !Array.isArray(item);
+  }).slice(0, 12).map(function(item) {
+    const entry = item || {};
+    return {
+      role: str(entry.role, 160),
+      company: str(entry.company, 160),
+      period: str(entry.period, 100),
+      description: str(entry.description, 600)
+    };
+  }).filter(function(item) { return item.role || item.company || item.description; }) : [];
+  const socialLinks = Array.isArray(input.socialLinks) ? input.socialLinks.filter(function(item) {
+    return item && typeof item === "object" && !Array.isArray(item);
+  }).slice(0, 12).map(function(item) {
+    const entry = item || {};
+    const label = str(entry.label, 60);
+    const rawUrl = str(entry.url, 500);
+    let url = "";
+    try {
+      const parsed = new URL(/^https?:\/\//i.test(rawUrl) ? rawUrl : "https://" + rawUrl);
+      if ((parsed.protocol === "https:" || parsed.protocol === "http:") && parsed.hostname.includes(".")) url = parsed.href;
+    } catch (_) {}
+    return { label, url };
+  }).filter(function(item) { return item.label && item.url; }) : [];
   const accent = typeof input.accent === "string" && /^#[0-9a-f]{6}$/i.test(input.accent) ? input.accent : "#b7ff64";
   const allowedBackgroundStyles = ["signature", "aurora", "glass", "orbit", "calm"];
   const backgroundStyle = allowedBackgroundStyles.includes(input.backgroundStyle) ? input.backgroundStyle : "signature";
@@ -264,9 +293,15 @@ function sanitizeDocument(input) {
     templateId: str(input.templateId, 100) || "design-0",
     projects,
     projectDetails,
+    skills,
+    experience,
+    socialLinks,
     visible: {
       about: visible.about !== false,
+      skills: visible.skills !== false,
+      experience: visible.experience !== false,
       projects: visible.projects !== false,
+      socials: visible.socials !== false,
       contact: visible.contact !== false
     }
   };

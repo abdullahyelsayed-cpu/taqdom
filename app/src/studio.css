@@ -1222,3 +1222,80 @@
   .project-editor-card{padding:10px}
   .site-project-description{font-size:10px!important}
 }
+
+
+/* Portfolio completeness: skills, timeline experience, and social destinations. */
+.site-nav-links{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:clamp(8px,1.35vw,20px);min-width:0}
+.site-nav-links a{font-size:clamp(9px,.85vw,12px);white-space:nowrap;text-decoration:none;transition:color .18s,opacity .18s}
+.site-nav-links a:hover{color:var(--accent)!important}
+.site-skills,.site-experience,.site-social-links{
+  position:relative;isolation:isolate;overflow:hidden;padding:clamp(26px,4vw,55px) clamp(20px,5vw,65px);
+  border-top:1px solid color-mix(in srgb,var(--accent) 26%,transparent);
+  background:linear-gradient(125deg,color-mix(in srgb,var(--accent) 8%,transparent),transparent 70%);
+}
+.site-skills:before,.site-experience:before,.site-social-links:before{
+  content:"";position:absolute;z-index:-1;pointer-events:none;inset:-50% -15% auto 50%;height:190%;
+  border-radius:50%;background:radial-gradient(ellipse,color-mix(in srgb,var(--accent) 12%,transparent),transparent 66%);filter:blur(13px)
+}
+.site-skills .site-section-title,.site-experience .site-section-title{margin-bottom:22px}
+.site-skills .site-section-title h2,.site-experience .site-section-title h2,.site-social-links h2{font-size:clamp(23px,3vw,38px);letter-spacing:-.045em;line-height:1.14}
+.site-skill-tags{display:flex;flex-wrap:wrap;gap:9px}
+.site-skill-pill{
+  display:inline-flex;align-items:center;gap:9px;max-width:100%;padding:9px 13px;border-radius:999px;
+  border:1px solid color-mix(in srgb,var(--accent) 29%,transparent);
+  background:linear-gradient(125deg,color-mix(in srgb,var(--accent) 12%,transparent),color-mix(in srgb,currentColor 3%,transparent));
+  box-shadow:inset 0 1px #ffffff14,0 6px 17px #0000000a;
+  backdrop-filter:blur(13px) saturate(135%);-webkit-backdrop-filter:blur(13px) saturate(135%);
+  color:inherit;font-size:clamp(10px,.9vw,12px);font-weight:650
+}
+.site-skill-pill i{display:grid;place-items:center;flex:none;width:21px;height:21px;border-radius:50%;background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-size:8px;font-style:normal;font-weight:800}
+.site-experience-list{position:relative;display:grid;gap:9px}
+.site-experience-list:before{content:"";position:absolute;top:24px;bottom:24px;inset-inline-start:18px;width:1px;background:linear-gradient(var(--accent),color-mix(in srgb,var(--accent) 8%,transparent));opacity:.45}
+.site-experience-entry{
+  position:relative;display:grid;grid-template-columns:38px minmax(0,1fr) minmax(92px,.4fr);align-items:start;gap:14px;
+  padding:18px;border:1px solid color-mix(in srgb,var(--accent) 20%,transparent);border-radius:12px;
+  background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 8%,transparent),color-mix(in srgb,currentColor 2%,transparent));
+  box-shadow:inset 0 1px #ffffff0c,0 8px 25px #00000008;
+  backdrop-filter:blur(17px) saturate(135%);-webkit-backdrop-filter:blur(17px) saturate(135%);
+}
+.experience-index{display:grid;place-items:center;z-index:1;width:36px;height:36px;border-radius:11px;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);font-size:10px;font-weight:850}
+.experience-main{min-width:0}
+.site-experience-entry h3{font-size:clamp(14px,1.5vw,18px);line-height:1.25;margin:1px 0 5px;color:inherit;overflow-wrap:anywhere}
+.experience-company{margin:0;color:var(--accent);font-size:11px;font-weight:750;overflow-wrap:anywhere}
+.experience-description{margin:8px 0 0;color:color-mix(in srgb,currentColor 70%,transparent);font-size:11px;line-height:1.85;white-space:pre-line;overflow-wrap:anywhere}
+.experience-period{justify-self:end;max-width:100%;padding:6px 9px;border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);border-radius:999px;color:color-mix(in srgb,currentColor 80%,transparent);font-size:9px;line-height:1.5;text-align:center;overflow-wrap:anywhere}
+.site-social-links{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);align-items:center;gap:28px}
+.site-social-links>div:first-child>small{color:var(--accent);font-size:9px;letter-spacing:.13em;font-weight:800}
+.site-social-links h2{margin:9px 0 0;color:inherit}
+.site-social-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.site-social-link{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;min-width:0;padding:12px 14px;
+  border:1px solid color-mix(in srgb,var(--accent) 27%,transparent);border-radius:10px;
+  background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 9%,transparent),color-mix(in srgb,currentColor 2%,transparent));
+  color:inherit!important;text-decoration:none;font-size:11px;font-weight:750;overflow-wrap:anywhere;
+  backdrop-filter:blur(15px) saturate(140%);-webkit-backdrop-filter:blur(15px) saturate(140%);
+  transition:transform .2s,border-color .2s,background .2s;
+}
+.site-social-link b{display:grid;place-items:center;width:24px;height:24px;flex:none;border-radius:50%;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);font-size:13px}
+.site-social-link:hover{transform:translateY(-2px);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent)}
+.portfolio-site.layout-1 .site-skills,.portfolio-site.layout-1 .site-experience,.portfolio-site.layout-1 .site-social-links,.portfolio-site.layout-3 .site-skills,.portfolio-site.layout-3 .site-experience,.portfolio-site.layout-3 .site-social-links,.portfolio-site.layout-5 .site-skills,.portfolio-site.layout-5 .site-experience,.portfolio-site.layout-5 .site-social-links,.portfolio-site.layout-7 .site-skills,.portfolio-site.layout-7 .site-experience,.portfolio-site.layout-7 .site-social-links{color:#28372d}
+.portfolio-site.layout-2 .site-skills,.portfolio-site.layout-2 .site-experience,.portfolio-site.layout-2 .site-social-links{color:#fff1f8}
+.portfolio-site.layout-0 .site-skills,.portfolio-site.layout-0 .site-experience,.portfolio-site.layout-0 .site-social-links,.portfolio-site.layout-4 .site-skills,.portfolio-site.layout-4 .site-experience,.portfolio-site.layout-4 .site-social-links,.portfolio-site.layout-6 .site-skills,.portfolio-site.layout-6 .site-experience,.portfolio-site.layout-6 .site-social-links,.portfolio-site.layout-8 .site-skills,.portfolio-site.layout-8 .site-experience,.portfolio-site.layout-8 .site-social-links{color:#f0f6ff}
+@media(max-width:740px){
+  .site-nav-links{gap:8px}
+  .site-nav-links a{font-size:9px}
+  .site-skills,.site-experience,.site-social-links{padding:23px 16px}
+  .site-experience-entry{grid-template-columns:32px minmax(0,1fr);gap:10px;padding:13px}
+  .experience-index{width:30px;height:30px;border-radius:9px}
+  .experience-period{grid-column:2;justify-self:start;margin-top:0}
+  .site-experience-list:before{inset-inline-start:15px}
+  .site-social-links{grid-template-columns:1fr;gap:17px}
+  .site-social-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:440px){
+  .site-nav-links{gap:5px}
+  .site-nav-links a{font-size:8px}
+  .site-skill-tags{gap:6px}
+  .site-skill-pill{padding:7px 9px;gap:6px}
+  .site-social-list{grid-template-columns:1fr}
+}

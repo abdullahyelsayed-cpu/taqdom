@@ -1,4 +1,6 @@
 type ExportProjectDetail = { description?: string; url?: string; imageUrl?: string }
+type ExportExperience = { role?: string; company?: string; period?: string; description?: string }
+type ExportSocialLink = { label?: string; url?: string }
 
 type ExportPortfolio = {
   name: string
@@ -9,6 +11,9 @@ type ExportPortfolio = {
   accent: string
   projects: string[]
   projectDetails?: ExportProjectDetail[]
+  skills?: string[]
+  experience?: ExportExperience[]
+  socialLinks?: ExportSocialLink[]
   visible: Record<string, boolean>
   avatarUrl?: string
   backgroundStyle?: 'signature' | 'aurora' | 'glass' | 'orbit' | 'calm'
@@ -98,6 +103,18 @@ export function downloadPortfolioHtml(
   const projects = Array.isArray(portfolio.projects)
     ? portfolio.projects.filter((project) => typeof project === 'string' && project.trim()).slice(0, 24)
     : []
+  const skills = Array.isArray(portfolio.skills) ? portfolio.skills.filter((skill) => typeof skill === 'string' && skill.trim()).map(skill => skill.trim().slice(0,80)).slice(0,30) : []
+  const experience = Array.isArray(portfolio.experience) ? portfolio.experience.filter(item => item && typeof item === 'object').slice(0,12) : []
+  const socialLinks = Array.isArray(portfolio.socialLinks) ? portfolio.socialLinks.map(item => ({ label:String(item?.label || '').trim().slice(0,60), url:safeExternalUrl(item?.url) })).filter(item => item.label && item.url).slice(0,12) : []
+  const skillsMarkup = portfolio.visible.skills && skills.length
+    ? `<section id="skills" class="section skills"><p class="kicker">01 / ${en ? 'SKILLS & EXPERTISE' : 'المهارات والتخصصات'}</p><h2>${en ? 'What I bring to the table' : 'المهارات التي أقدمها'}</h2><div class="skill-tags">${skills.map((skill,index) => `<span class="skill-tag"><i>${String(index+1).padStart(2,'0')}</i>${escapeHtml(skill)}</span>`).join('')}</div></section>`
+    : ''
+  const experienceMarkup = portfolio.visible.experience && experience.length
+    ? `<section id="experience" class="section experience"><p class="kicker">02 / ${en ? 'THE JOURNEY' : 'الخبرات المهنية'}</p><h2>${en ? 'Where I’ve made a difference' : 'محطات من رحلتي المهنية'}</h2><div class="experience-list">${experience.map((item,index) => `<article class="experience-item"><span class="experience-index">${String(index+1).padStart(2,'0')}</span><div><h3>${escapeHtml(item.role || (en ? 'Professional role' : 'خبرة مهنية'))}</h3>${item.company ? `<p class="experience-company">${escapeHtml(item.company)}</p>` : ''}${item.description ? `<p class="experience-description">${escapeHtml(item.description)}</p>` : ''}</div>${item.period ? `<span class="experience-period">${escapeHtml(item.period)}</span>` : ''}</article>`).join('')}</div></section>`
+    : ''
+  const socialMarkup = portfolio.visible.socials && socialLinks.length
+    ? `<section id="socials" class="section socials"><div><p class="kicker">03 / ${en ? 'FIND ME ELSEWHERE' : 'روابط التواصل'}</p><h2>${en ? 'Let’s connect' : 'تواصل معي عبر المنصات'}</h2></div><div class="social-links">${socialLinks.map(item => `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.label)} <span>↗</span></a>`).join('')}</div></section>`
+    : ''
   const projectMarkup = portfolio.visible.projects && projects.length
     ? `<section id="work" class="section work"><div class="section-heading"><div><p class="kicker">01 / ${en ? 'SELECTED WORK' : 'أعمال مختارة'}</p><h2>${en ? 'A few things I’ve made' : 'أعمال صنعتها بشغف'}</h2></div><span class="section-note">${en ? 'Selected projects' : 'مشاريع مختارة'} ↗</span></div><div class="projects">${projects.map((project, index) => {
       const detail = portfolio.projectDetails?.[index] || {}
@@ -151,6 +168,21 @@ h1{font-size:clamp(36px,5.7vw,76px);line-height:1.02;letter-spacing:-.065em;marg
 .visual-object>b{position:absolute;right:14%;top:12%;font-size:clamp(25px,4vw,44px);color:var(--accent);text-shadow:0 0 18px var(--glow-b)}
 .visual-object>span{position:absolute;bottom:11%;left:12%;font-size:10px;letter-spacing:.2em;color:var(--muted)}
 .section{border-top:1px solid var(--line);padding:clamp(30px,5vw,62px) clamp(20px,4.5vw,56px)}
+.skills .skill-tags{display:flex;flex-wrap:wrap;gap:9px}
+.skill-tag{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--line);border-radius:999px;background:var(--surface);backdrop-filter:blur(13px);font-size:12px}
+.skill-tag i{font-size:9px;font-style:normal;color:var(--accent);font-weight:800}
+.experience-list{display:grid;gap:10px}
+.experience-item{display:grid;grid-template-columns:35px minmax(0,1fr) auto;gap:13px;align-items:start;padding:17px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);backdrop-filter:blur(16px)}
+.experience-index{display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--line);border-radius:9px;color:var(--accent);font-size:10px;font-weight:800}
+.experience-item h3{margin:2px 0 4px;font-size:16px;color:var(--ink)}
+.experience-company{margin:0;color:var(--accent);font-size:11px;font-weight:750}
+.experience-description{margin:9px 0 0;color:var(--muted);font-size:12px;line-height:1.8;white-space:pre-line}
+.experience-period{font-size:10px;color:var(--muted);padding:5px 8px;border:1px solid var(--line);border-radius:999px;white-space:nowrap}
+.socials{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:22px;align-items:center}
+.socials h2{margin:0}
+.social-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.social-links a{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border:1px solid var(--line);border-radius:999px;color:var(--ink);background:var(--surface);font-size:11px;text-decoration:none;overflow-wrap:anywhere}
+.social-links a span{color:var(--accent);font-size:16px}
 .section-heading{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:28px}
 .section-heading h2,.about h2,.contact h2{margin:0;font-size:clamp(25px,3.5vw,43px);line-height:1.12;letter-spacing:-.055em;text-wrap:balance;color:var(--ink)}
 .kicker{font-size:10px;letter-spacing:.12em;font-weight:800;color:var(--accent);margin:0 0 12px}
@@ -215,7 +247,7 @@ body.theme-7 .visual-object:before,body.theme-7 .visual-object:after{border:0;ba
 body.theme-8 .hero{grid-template-columns:minmax(0,1.12fr) minmax(190px,.88fr)}
 body.theme-8 .visual-object:before,body.theme-8 .visual-object:after{border-color:#ff8b36;border-radius:50%;box-shadow:0 0 0 12px #ff851417,0 0 24px #ff751d43}
 body.theme-8 .hero-actions .primary{background:linear-gradient(100deg,#ff771a,#ffb745);color:#211005}
-@media(max-width:680px){.hero{grid-template-columns:1fr!important;padding:32px 21px}.hero-media{min-height:0;margin-top:12px}.portrait-frame{width:min(100%,260px);height:270px}.projects{grid-template-columns:1fr}.project{min-height:175px}.section-heading{align-items:flex-start;flex-direction:column}.contact{margin:12px 8px}footer{margin-inline:20px}}
+@media(max-width:680px){.hero{grid-template-columns:1fr!important;padding:32px 21px}.hero-media{min-height:0;margin-top:12px}.portrait-frame{width:min(100%,260px);height:270px}.projects{grid-template-columns:1fr}.project{min-height:175px}.section-heading{align-items:flex-start;flex-direction:column}.contact{margin:12px 8px}footer{margin-inline:20px}.experience-item{grid-template-columns:30px minmax(0,1fr)}.experience-period{grid-column:2;justify-self:start}.socials{grid-template-columns:1fr}.social-links{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 `
   const html = `<!doctype html>
@@ -243,9 +275,9 @@ ${designRules}
 <body class="theme-${layout} mood-${mood}">
 <main class="shell">
 <div class="ambient" aria-hidden="true"><span class="orbit"></span></div>
-<nav><a class="brand" href="#top" style="color:var(--ink);text-decoration:none;font-weight:850;letter-spacing:.12em">TAQDOM<span style="color:var(--accent)">✦</span></a><div class="nav-links">${portfolio.visible.about && portfolio.bio.trim() ? `<a href="#about">${en ? 'About' : 'نبذة'}</a>` : ''}${portfolio.visible.projects && projects.length ? `<a href="#work">${en ? 'Work' : 'الأعمال'}</a>` : ''}${portfolio.visible.contact ? `<a href="#contact">${en ? 'Contact' : 'تواصل'}</a>` : ''}</div><span class="availability">${en ? 'Available for work' : 'متاح للعمل'}</span></nav>
+<nav><a class="brand" href="#top" style="color:var(--ink);text-decoration:none;font-weight:850;letter-spacing:.12em">TAQDOM<span style="color:var(--accent)">✦</span></a><div class="nav-links">${portfolio.visible.about && portfolio.bio.trim() ? `<a href="#about">${en ? 'About' : 'نبذة'}</a>` : ''}${portfolio.visible.skills && skills.length ? `<a href="#skills">${en ? 'Skills' : 'المهارات'}</a>` : ''}${portfolio.visible.experience && experience.length ? `<a href="#experience">${en ? 'Experience' : 'الخبرات'}</a>` : ''}${portfolio.visible.projects && projects.length ? `<a href="#work">${en ? 'Work' : 'الأعمال'}</a>` : ''}${portfolio.visible.socials && socialLinks.length ? `<a href="#socials">${en ? 'Social' : 'روابطي'}</a>` : ''}${portfolio.visible.contact ? `<a href="#contact">${en ? 'Contact' : 'تواصل'}</a>` : ''}</div><span class="availability">${en ? 'Available for work' : 'متاح للعمل'}</span></nav>
 <header id="top" class="hero"><div class="hero-copy"><p class="kicker">${escapeHtml(profession)} · ${en ? 'PERSONAL PORTFOLIO' : 'موقع شخصي'}</p><h1>${escapeHtml(title)}</h1><p class="role">${escapeHtml(role)}</p>${portfolio.visible.about && portfolio.bio.trim() ? `<p id="about-intro" class="hero-summary">${escapeHtml(portfolio.bio.slice(0, 240))}</p>` : ''}<div class="hero-actions">${email ? `<a class="primary" href="mailto:${escapeHtml(email)}">${en ? 'Let’s work together' : 'لنعمل معًا'} ↗</a>` : ''}${portfolio.visible.projects && projects.length ? `<a href="#work">${en ? 'Explore my work' : 'استكشف أعمالي'} ↓</a>` : ''}</div>${portfolio.location.trim() ? `<p class="location">⌖ ${escapeHtml(portfolio.location)}</p>` : ''}</div>${heroMedia}</header>
-${projectMarkup}${aboutMarkup}${contactMarkup}
+${skillsMarkup}${experienceMarkup}${projectMarkup}${aboutMarkup}${socialMarkup}${contactMarkup}
 <footer><span>© ${new Date().getFullYear()} ${escapeHtml(title)}</span><span>TAQDOM · ${en ? 'Build your digital future.' : 'ابنِ مستقبلك الرقمي.'}</span></footer>
 </main></body></html>`
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
