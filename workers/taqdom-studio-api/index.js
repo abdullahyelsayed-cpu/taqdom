@@ -206,6 +206,19 @@ function toSlug(text) {
   return String(text || "").toLowerCase().replace(/[\s_]+/g, "-").replace(/[^\w\u0600-\u06ff\-]+/g, "").replace(/^-+|-+$/g, "").slice(0, 60) || "portfolio";
 }
 __name(toSlug, "toSlug");
+const RESERVED_SUBDOMAINS = new Set(["www","api","app","admin","assets","static","cdn","mail","smtp","ftp","support","help","status","docs","blog","dev","staging","preview","dashboard","auth","login","register","pricing","about","templates","features","contact","privacy","terms","taqdom"]);
+__name(RESERVED_SUBDOMAINS, "RESERVED_SUBDOMAINS");
+function normalizeSubdomain(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+__name(normalizeSubdomain, "normalizeSubdomain");
+function isValidSubdomain(value) {
+  return typeof value === "string" &&
+    value.length >= 3 && value.length <= 30 &&
+    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(value) &&
+    !RESERVED_SUBDOMAINS.has(value);
+}
+__name(isValidSubdomain, "isValidSubdomain");
 function sanitizeDocument(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return null;
   const str = /* @__PURE__ */ __name(function(value, max) {
@@ -474,7 +487,11 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     const id = crypto.randomUUID();
     const title = (typeof body.title === "string" ? body.title.trim().slice(0, 120) : "") || document.name || "My portfolio";
     const templateId = (typeof body.templateId === "string" ? body.templateId.slice(0, 100) : document.templateId) || "design-0";
-    const slug = toSlug(body.slug || document.name || "portfolio") + "-" + id.slice(0, 6);
+    const requestedSlug = normalizeSubdomain(body.slug);
+    if (body.slug !== void 0 && !isValidSubdomain(requestedSlug)) return reply({ error: "invalid_subdomain" }, 400, corsHeaders);
+    const slug = requestedSlug || "site-" + id.slice(0, 6);
+    const slugTaken = await env.TAQDOM_DB.prepare("SELECT id FROM portfolios WHERE lower(slug)=lower(?)").bind(slug).first();
+    if (slugTaken) return reply({ error: "subdomain_taken" }, 409, corsHeaders);
     const status = body.status === "published" ? "published" : "draft";
     await env.TAQDOM_DB.prepare("INSERT INTO portfolios (id,owner_id,title,template_id,slug,status,document_json) VALUES (?,?,?,?,?,?,?)").bind(id, userId, title, templateId, slug, status, JSON.stringify(document)).run();
     const item = await env.TAQDOM_DB.prepare("SELECT id,title,template_id,slug,document_json,status,created_at,updated_at FROM portfolios WHERE id=? AND owner_id=?").bind(id, userId).first();
@@ -506,10 +523,16 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     if (!document) return reply({ error: "invalid_document" }, 400, corsHeaders);
     const title = (typeof body.title === "string" ? body.title.trim().slice(0, 120) : "") || document.name || "My portfolio";
     const templateId = (typeof body.templateId === "string" ? body.templateId.slice(0, 100) : document.templateId) || "design-0";
-    const existingPortfolio = await env.TAQDOM_DB.prepare("SELECT status FROM portfolios WHERE id=? AND owner_id=?").bind(id, session.row.id).first();
+    const existingPortfolio = await env.TAQDOM_DB.prepare("SELECT status,slug FROM portfolios WHERE id=? AND owner_id=?").bind(id, session.row.id).first();
     if (!existingPortfolio) return reply({ error: "not_found" }, 404, corsHeaders);
     const status = body.status === "published" ? "published" : body.status === "draft" ? "draft" : existingPortfolio.status;
-    const result = await env.TAQDOM_DB.prepare("UPDATE portfolios SET title=?,template_id=?,status=?,document_json=?,updated_at=datetime('now') WHERE id=? AND owner_id=?").bind(title, templateId, status, JSON.stringify(document), id, session.row.id).run();
+    const requestedSlug = body.slug === void 0 ? existingPortfolio.slug : normalizeSubdomain(body.slug);
+    if (!isValidSubdomain(requestedSlug)) return reply({ error: "invalid_subdomain" }, 400, corsHeaders);
+    if (requestedSlug !== existingPortfolio.slug) {
+      const slugTaken = await env.TAQDOM_DB.prepare("SELECT id FROM portfolios WHERE lower(slug)=lower(?) AND id<>?").bind(requestedSlug, id).first();
+      if (slugTaken) return reply({ error: "subdomain_taken" }, 409, corsHeaders);
+    }
+    const result = await env.TAQDOM_DB.prepare("UPDATE portfolios SET title=?,template_id=?,status=?,slug=?,document_json=?,updated_at=datetime('now') WHERE id=? AND owner_id=?").bind(title, templateId, status, requestedSlug, JSON.stringify(document), id, session.row.id).run();
     return Number(result.meta && result.meta.changes || 0) ? reply({ ok: true, status, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }, 200, corsHeaders) : reply({ error: "not_found" }, 404, corsHeaders);
   }
   return reply({ error: "not_found" }, 404, corsHeaders);
