@@ -1105,3 +1105,79 @@
   .site-atmosphere:before,.atmosphere-glow,.site-availability i,.site-cta:after,.template-board-preview:before,.template-art-orb{animation:none!important}
   .site-project,.site-project-art img,.portrait-photo,.site-cta,.lux-template-card{transition:none!important}
 }
+
+
+/* Customizable atmosphere presets exposed directly in the visual editor. */
+.portfolio-site.mood-signature .site-atmosphere:before{opacity:.68}
+.portfolio-site.mood-signature .atmosphere-glass{opacity:.62}
+
+.background-style-intro{margin:7px 0 12px;color:#8999be;font-size:10px;line-height:1.8}
+.background-mood-options{display:grid;grid-template-columns:1fr;gap:7px;margin-top:10px}
+.background-mood-option{
+  position:relative;display:flex;align-items:center;gap:10px;width:100%;padding:9px!important;
+  background:#0b1429!important;border:1px solid #26395f!important;border-radius:10px!important;
+  text-align:start;color:#e8edff!important;transition:border-color .18s,background .18s,box-shadow .18s;
+}
+.background-mood-option:hover{border-color:#6176b2!important;background:#101c38!important}
+.background-mood-option.selected{border-color:#8c7cff!important;background:linear-gradient(115deg,#1d1d43,#0c1c31)!important;box-shadow:inset 0 0 0 1px #8c7cff38,0 0 22px #785aff19}
+.mood-swatch{position:relative;display:block;flex:none;overflow:hidden;width:62px;height:42px;border-radius:7px;border:1px solid #ffffff25;background:#09142b}
+.mood-swatch:before,.mood-swatch:after,.mood-swatch i,.mood-swatch b{content:"";position:absolute;display:block;border-radius:50%;filter:blur(5px)}
+.mood-swatch:before{width:52px;height:36px;left:-6px;top:-7px;background:#4a8fff}
+.mood-swatch:after{width:42px;height:33px;right:-7px;bottom:-12px;background:#b35dff}
+.mood-swatch i{width:28px;height:28px;right:8px;top:4px;background:#4eeaff;opacity:.85}
+.mood-swatch b{width:40px;height:14px;left:12px;bottom:-3px;background:#ffffff66;filter:blur(7px)}
+.mood-swatch-signature{background:linear-gradient(135deg,#0a1a31,#1b1736 58%,#10101c)}
+.mood-swatch-aurora{background:linear-gradient(135deg,#071c32,#173d54,#241747)}
+.mood-swatch-aurora:before{background:#40f2d0;filter:blur(9px);opacity:.85}
+.mood-swatch-aurora:after{background:#9d5cff;filter:blur(11px);opacity:.95}
+.mood-swatch-glass{background:linear-gradient(135deg,#0b182d,#244c72,#34244f)}
+.mood-swatch-glass:before{background:#52dfff;opacity:.72}
+.mood-swatch-glass:after{background:#ffffff80;filter:blur(2px);border-radius:5px;width:45px;height:20px;top:10px;left:9px;right:auto;bottom:auto}
+.mood-swatch-orbit{background:radial-gradient(circle at 50% 45%,#262c70,#060817 75%)}
+.mood-swatch-orbit:before{width:46px;height:17px;left:8px;top:12px;filter:none;border:1px solid #a886ff;background:transparent;transform:rotate(-24deg)}
+.mood-swatch-orbit:after{width:34px;height:34px;right:11px;top:4px;filter:none;border:1px solid #50e9ff;background:transparent}
+.mood-swatch-calm{background:linear-gradient(135deg,#e8f2ef,#d7e6ec,#f0e8fa)}
+.mood-swatch-calm:before{background:#98d9d1;opacity:.5}
+.mood-swatch-calm:after{background:#c9b9f7;opacity:.55}
+.mood-option-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.mood-option-copy strong{font-size:11px;color:#f3f6ff;font-weight:750}
+.mood-option-copy small{font-size:9px;line-height:1.6;color:#90a0c5}
+.mood-option-check{display:grid;place-items:center;flex:none;width:19px;height:19px;border-radius:50%;background:#8272ff;color:white;font-size:11px;font-weight:800}
+.portfolio-site.mood-aurora .site-atmosphere:before{
+  opacity:.98;filter:saturate(1.55);
+  background:
+    radial-gradient(ellipse at 13% 16%,var(--mood-glow-a,#42e9d288),transparent 41%),
+    radial-gradient(ellipse at 88% 28%,var(--mood-glow-b,#a568ff8a),transparent 38%),
+    radial-gradient(ellipse at 51% 86%,var(--mood-glow-c,#52cfff56),transparent 43%),
+    linear-gradient(125deg,transparent 25%,#ffffff04 49%,transparent 75%);
+  animation:taqdom-atmosphere-breathe 11s ease-in-out infinite alternate;
+}
+.portfolio-site.mood-aurora .atmosphere-glow{opacity:.92;filter:blur(35px)}
+.portfolio-site.mood-aurora .atmosphere-glass{opacity:.5}
+.portfolio-site.mood-glass .site-atmosphere:before{
+  opacity:.74;
+  background:
+    radial-gradient(ellipse at 18% 15%,var(--mood-glow-a,#64dfff75),transparent 39%),
+    radial-gradient(ellipse at 82% 36%,var(--mood-glow-b,#bb92ff69),transparent 38%),
+    linear-gradient(128deg,#ffffff05 25%,#ffffff19 48%,transparent 65%);
+}
+.portfolio-site.mood-glass .atmosphere-glass{opacity:.95;height:clamp(150px,22vw,260px);border-radius:48px;background:linear-gradient(115deg,#ffffff18,#ffffff02 27%,#ffffff24 52%,#ffffff05 76%,transparent);border-color:var(--mood-glass-border,#ffffff55);box-shadow:inset 0 1px #ffffff52,0 0 70px var(--mood-orbit-glow,#6b78ff25)}
+.portfolio-site.mood-glass .site-project{backdrop-filter:blur(25px) saturate(165%);-webkit-backdrop-filter:blur(25px) saturate(165%);box-shadow:inset 0 1px #ffffff33,0 16px 42px #00000020}
+.portfolio-site.mood-glass .site-availability{backdrop-filter:blur(22px) saturate(165%);-webkit-backdrop-filter:blur(22px) saturate(165%)}
+.portfolio-site.mood-orbit .site-atmosphere:before{
+  opacity:.61;
+  background:
+    radial-gradient(ellipse at 77% 26%,var(--mood-glow-a,#8f69ff72),transparent 39%),
+    radial-gradient(ellipse at 22% 72%,var(--mood-glow-b,#52e9ff50),transparent 35%);
+}
+.portfolio-site.mood-orbit .atmosphere-orbit{width:clamp(220px,38vw,520px);opacity:.92;border-width:1.5px;box-shadow:0 0 0 15px #ffffff05,0 0 0 37px #ffffff04,0 0 45px var(--mood-orbit-glow,#6b78ff32);transform:rotate(-25deg) scaleY(.38)}
+.portfolio-site.mood-orbit .atmosphere-grid{opacity:.52;transform:rotate(36deg)}
+.portfolio-site.mood-orbit .atmosphere-glass{height:clamp(65px,10vw,125px);opacity:.35;transform:rotate(-22deg)}
+.portfolio-site.mood-calm .site-atmosphere:before{opacity:.42;animation:none;filter:saturate(.72)}
+.portfolio-site.mood-calm .site-atmosphere:after{opacity:.07}
+.portfolio-site.mood-calm .atmosphere-glow{opacity:.36;filter:blur(45px)}
+.portfolio-site.mood-calm .atmosphere-orbit{opacity:.14;box-shadow:none}
+.portfolio-site.mood-calm .atmosphere-grid{opacity:.07;box-shadow:none}
+.portfolio-site.mood-calm .atmosphere-glass{opacity:.17;box-shadow:none}
+.portfolio-site.mood-calm .site-project{backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 8px 25px #0000000d,inset 0 1px #ffffff22}
+@media(max-width:740px){.background-mood-option{gap:8px}.mood-swatch{width:54px;height:38px}.mood-option-copy small{font-size:8px}}

@@ -6,6 +6,9 @@ const checks = [
   ['public portfolios require published status', source.includes("AND status='published'")],
   ['portfolio handles are validated against a reserved-name list', source.includes('function isValidSubdomain(value)') && source.includes('RESERVED_SUBDOMAINS')],
   ['portfolio creation stores a supplied handle', source.includes('const requestedSlug = normalizeSubdomain(body.slug)')],
+  ['background style is allowlisted before persistence', source.includes('const allowedBackgroundStyles = ["signature", "aurora", "glass", "orbit", "calm"]')],
+  ['background style is retained in portfolio documents', source.includes('    backgroundStyle,')],
+
   ['portfolio updates preserve a handle unless requested', source.includes('const handleWasProvided = body.slug !== void 0') && source.includes('const requestedSlug = handleWasProvided ? normalizeSubdomain(body.slug) : existingPortfolio.slug')],
   ['portfolio handle updates are written to the database', source.includes('SET title=?,template_id=?,status=?,slug=?,document_json=')],
 
