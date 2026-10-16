@@ -1474,48 +1474,34 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
       <main style={{ flex: 1, padding: '20px 10px' }}>
         <PortfolioCanvas data={data.document} template={chosenTemplate} language={language} />
 
-        <div style={{ maxWidth: '640px', margin: '40px auto 20px', background: '#fff', border: '1px solid #ebe9e3', borderRadius: '16px', padding: '28px' }}>
-          <h3 style={{ margin: '0 0 8px', fontSize: '18px' }}>{en ? 'Send a message' : 'تواصل مع صاحب الموقع'}</h3>
-          <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#666' }}>
-            {en ? `Leave a message for ${data.document.name || 'the creator'}.` : `أرسل رسالة مباشرة إلى ${data.document.name || 'صاحب الموقع'}.`}
-          </p>
+        {data.document.visible.contact && <section className={'portfolio-contact-panel layout-'+chosenTemplate.layout+' mood-'+(data.document.backgroundStyle || 'signature')} dir={en?'ltr':'rtl'} style={{'--accent':data.document.accent,'--pale':chosenTemplate.pale} as CSSProperties}>
+          <div className="portfolio-contact-head">
+            <div>
+              <small>{en?'03 / LET’S CONNECT':'03 / لنتواصل'}</small>
+              <h3>{en ? 'Send a message' : 'تواصل مع صاحب الموقع'}</h3>
+              <p>{en ? `Leave a message for ${data.document.name || 'the creator'}.` : `أرسل رسالة مباشرة إلى ${data.document.name || 'صاحب الموقع'}.`}</p>
+            </div>
+            <span className="portfolio-contact-symbol" aria-hidden="true">↗</span>
+          </div>
           {msgSent ? (
-            <div className="msg-success-badge">
+            <div className="msg-success-badge" role="status">
               ✓ {en ? 'Your message has been sent successfully!' : 'تم إرسال رسالتك بنجاح! سيتم إخطار صاحب الموقع.'}
             </div>
           ) : (
             <form onSubmit={handleSendMessage} className="public-contact-form">
-              <input
-                type="text"
-                placeholder={en ? 'Your name' : 'اسمك'}
-                value={senderName}
-                onChange={e => setSenderName(e.target.value)}
-                maxLength={100}
-                required
-              />
-              <input
-                type="email"
-                placeholder={en ? 'Your email address' : 'بريدك الإلكتروني'}
-                value={senderEmail}
-                onChange={e => setSenderEmail(e.target.value)}
-                maxLength={254}
-                required
-              />
-              <textarea
-                placeholder={en ? 'Your message…' : 'اكتب رسالتك هنا…'}
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-                rows={3}
-                maxLength={1500}
-                required
-              />
-              {msgError && <p style={{ color: '#d9534f', fontSize: '12px', margin: 0 }}>{msgError}</p>}
-              <button type="submit" className="button button-primary" style={{ alignSelf: 'flex-start' }} disabled={msgSending}>
+              <label className="contact-visually-hidden" htmlFor="visitor-name">{en ? 'Your name' : 'اسمك'}</label>
+              <input id="visitor-name" type="text" aria-label={en ? 'Your name' : 'اسمك'} placeholder={en ? 'Your name' : 'اسمك'} value={senderName} onChange={e => setSenderName(e.target.value)} maxLength={100} required />
+              <label className="contact-visually-hidden" htmlFor="visitor-email">{en ? 'Your email address' : 'بريدك الإلكتروني'}</label>
+              <input id="visitor-email" type="email" aria-label={en ? 'Your email address' : 'بريدك الإلكتروني'} placeholder={en ? 'Your email address' : 'بريدك الإلكتروني'} value={senderEmail} onChange={e => setSenderEmail(e.target.value)} maxLength={254} required />
+              <label className="contact-visually-hidden" htmlFor="visitor-message">{en ? 'Your message' : 'رسالتك'}</label>
+              <textarea id="visitor-message" aria-label={en ? 'Your message' : 'رسالتك'} placeholder={en ? 'Tell me what you have in mind…' : 'احكي لي عن فكرتك…'} value={message} onChange={e => setMessage(e.target.value)} rows={4} maxLength={1500} required />
+              {msgError && <p className="portfolio-contact-error" role="alert">{msgError}</p>}
+              <button type="submit" className="portfolio-contact-submit" disabled={msgSending}>
                 {msgSending ? (en ? 'Sending…' : 'جارٍ الإرسال…') : (en ? 'Send Message ✉' : 'إرسال الرسالة ✉')}
               </button>
             </form>
           )}
-        </div>
+        </section>}
       </main>
 
       <footer className="public-bottom-badge">

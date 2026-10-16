@@ -1299,3 +1299,77 @@
   .site-skill-pill{padding:7px 9px;gap:6px}
   .site-social-list{grid-template-columns:1fr}
 }
+
+
+/* The public message form belongs to the chosen portfolio design, not a separate white card. */
+.portfolio-contact-panel{
+  position:relative;isolation:isolate;overflow:hidden;width:min(860px,calc(100% - 24px));margin:28px auto 42px;
+  padding:clamp(22px,4vw,42px);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);
+  border-radius:clamp(12px,2vw,22px);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,#0a1021),color-mix(in srgb,var(--pale) 15%,#0a1021));
+  color:#f0f5ff;box-shadow:0 24px 75px #0002,inset 0 1px #ffffff1c;
+  backdrop-filter:blur(24px) saturate(145%);-webkit-backdrop-filter:blur(24px) saturate(145%);
+}
+.portfolio-contact-panel:before{
+  content:"";position:absolute;z-index:-1;pointer-events:none;inset:-40% -10% auto 45%;height:180%;border-radius:50%;
+  background:radial-gradient(ellipse,color-mix(in srgb,var(--accent) 23%,transparent),transparent 66%);filter:blur(22px);opacity:.72
+}
+.portfolio-contact-panel:after{
+  content:"";position:absolute;z-index:-1;inset:0;pointer-events:none;opacity:.14;
+  background-image:linear-gradient(color-mix(in srgb,var(--accent) 25%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--accent) 25%,transparent) 1px,transparent 1px);
+  background-size:31px 31px;mask-image:linear-gradient(125deg,#000,transparent 72%)
+}
+.portfolio-contact-head{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;margin-bottom:22px}
+.portfolio-contact-head>div{min-width:0}
+.portfolio-contact-head small{display:block;margin-bottom:9px;color:var(--accent);font-size:9px;font-weight:850;letter-spacing:.14em}
+.portfolio-contact-head h3{margin:0;color:inherit;font-size:clamp(23px,3.5vw,36px);line-height:1.15;letter-spacing:-.04em}
+.portfolio-contact-head p{margin:10px 0 0;color:color-mix(in srgb,currentColor 70%,transparent);font-size:12px;line-height:1.8}
+.portfolio-contact-symbol{display:grid;place-items:center;flex:none;width:42px;height:42px;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);border-radius:12px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-size:22px;box-shadow:0 0 24px color-mix(in srgb,var(--accent) 13%,transparent)}
+.portfolio-contact-panel .public-contact-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:18px;max-width:none;width:100%}
+.portfolio-contact-panel .public-contact-form input,.portfolio-contact-panel .public-contact-form textarea{
+  min-width:0;width:100%;padding:12px 13px;border:1px solid color-mix(in srgb,currentColor 19%,transparent);border-radius:9px;
+  background:color-mix(in srgb,var(--pale) 12%,transparent);color:inherit;font-family:inherit;font-size:12px;line-height:1.7;
+  outline:none;box-shadow:inset 0 1px #ffffff0c;transition:border-color .18s,box-shadow .18s,background .18s
+}
+.portfolio-contact-panel .public-contact-form textarea{grid-column:1/-1;resize:vertical;min-height:110px}
+.portfolio-contact-panel .public-contact-form input::placeholder,.portfolio-contact-panel .public-contact-form textarea::placeholder{color:color-mix(in srgb,currentColor 50%,transparent)}
+.portfolio-contact-panel .public-contact-form input:focus,.portfolio-contact-panel .public-contact-form textarea:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 15%,transparent);background:color-mix(in srgb,var(--pale) 19%,transparent)
+}
+.contact-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.portfolio-contact-submit{
+  justify-self:start;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:11px 17px;
+  border:1px solid color-mix(in srgb,var(--accent) 80%,white);border-radius:9px;background:linear-gradient(105deg,var(--accent),color-mix(in srgb,var(--accent) 50%,#41ceff));
+  color:white;font-size:12px;font-weight:800;box-shadow:0 9px 24px color-mix(in srgb,var(--accent) 22%,transparent);cursor:pointer;transition:transform .18s,filter .18s
+}
+.portfolio-contact-submit:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08)}
+.portfolio-contact-submit:disabled{cursor:wait;opacity:.65}
+.portfolio-contact-error{grid-column:1/-1;color:#ff9caa;font-size:11px;margin:0;line-height:1.7}
+.portfolio-contact-panel .msg-success-badge{display:flex;align-items:center;gap:9px;width:fit-content;max-width:100%;padding:12px 15px;border:1px solid #53dca76b;border-radius:10px;background:#2bd49c15;color:#8ef2ca;font-size:12px;line-height:1.7}
+
+/* Light art directions preserve legible dark text; darker art directions keep the luminous glass finish. */
+.portfolio-contact-panel.layout-0{background:linear-gradient(135deg,#07172deF,#092844eF);border-color:#3a9ddf8c;color:#f0f8ff}
+.portfolio-contact-panel.layout-1{background:linear-gradient(135deg,#fbf8eeeF,#e7ecdedf);border-color:#afc39e;color:#26392d;box-shadow:0 20px 50px #33452a14,inset 0 1px #ffffff9c}
+.portfolio-contact-panel.layout-2{background:linear-gradient(130deg,#2c0b35ef,#4b1034ed);border-color:#f0449c8c;color:#fff0f8}
+.portfolio-contact-panel.layout-3{background:linear-gradient(135deg,#ebf8efef,#c5e7dced);border-color:#9ecfbb;color:#174139;box-shadow:0 20px 50px #1f6c4e12,inset 0 1px #ffffffc9}
+.portfolio-contact-panel.layout-4{background:linear-gradient(135deg,#06182ff2,#082e4df0);border-color:#398aff99;color:#eff8ff}
+.portfolio-contact-panel.layout-5{background:linear-gradient(135deg,#f8f9faee,#e6e9ecef);border-color:#bbc2c9;color:#111820;border-radius:0;box-shadow:0 18px 50px #11182012}
+.portfolio-contact-panel.layout-6{background:linear-gradient(135deg,#080711ef,#190c2ded);border-color:#996bff87;color:#f5efff}
+.portfolio-contact-panel.layout-7{background:linear-gradient(135deg,#faf8ffef,#e6e8ffeF 55%,#fff0f7ef);border-color:#c8beff;color:#1c1c47;box-shadow:0 20px 50px #8270d51a,inset 0 1px #ffffffcf}
+.portfolio-contact-panel.layout-8{background:linear-gradient(135deg,#0c0c0df2,#281407ef);border-color:#ff8b3580;color:#fff2e6}
+.portfolio-contact-panel.layout-1 .portfolio-contact-head p,.portfolio-contact-panel.layout-3 .portfolio-contact-head p,.portfolio-contact-panel.layout-5 .portfolio-contact-head p,.portfolio-contact-panel.layout-7 .portfolio-contact-head p{color:#637064}
+.portfolio-contact-panel.layout-1 .public-contact-form input,.portfolio-contact-panel.layout-1 .public-contact-form textarea,.portfolio-contact-panel.layout-3 .public-contact-form input,.portfolio-contact-panel.layout-3 .public-contact-form textarea,.portfolio-contact-panel.layout-5 .public-contact-form input,.portfolio-contact-panel.layout-5 .public-contact-form textarea,.portfolio-contact-panel.layout-7 .public-contact-form input,.portfolio-contact-panel.layout-7 .public-contact-form textarea{background:#ffffff80;border-color:#87978348}
+.portfolio-contact-panel.layout-5 .portfolio-contact-submit{border-radius:0;background:#161d24;color:white;border-color:#161d24}
+.portfolio-contact-panel.layout-8 .portfolio-contact-submit{color:#201006;background:linear-gradient(105deg,#ff791d,#ffb43e);border-color:#ffd28a}
+.portfolio-contact-panel.mood-aurora:before{opacity:1;filter:blur(35px)}
+.portfolio-contact-panel.mood-glass{backdrop-filter:blur(32px) saturate(170%);-webkit-backdrop-filter:blur(32px) saturate(170%)}
+.portfolio-contact-panel.mood-orbit:after{opacity:.3;background-size:24px 24px}
+.portfolio-contact-panel.mood-calm:before,.portfolio-contact-panel.mood-calm:after{opacity:.08}
+@media(max-width:620px){
+  .portfolio-contact-panel{width:calc(100% - 24px);margin:18px auto 26px;padding:22px 16px}
+  .portfolio-contact-head{gap:12px}
+  .portfolio-contact-symbol{width:35px;height:35px;border-radius:10px;font-size:18px}
+  .portfolio-contact-panel .public-contact-form{grid-template-columns:1fr}
+  .portfolio-contact-panel .public-contact-form textarea{grid-column:auto}
+  .portfolio-contact-submit{width:100%;justify-self:stretch}
+}
+@media(prefers-reduced-motion:reduce){.portfolio-contact-panel *{transition:none!important}}
