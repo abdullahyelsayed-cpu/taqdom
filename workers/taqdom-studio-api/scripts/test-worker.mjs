@@ -307,6 +307,17 @@ await test('custom subdomain is stored on portfolio creation', async () => {
           { description: 'A complete product redesign.', url: 'example.com/case-study', imageUrl: '/api/media/11111111-1111-4111-8111-111111111111' },
           { description: 'Invalid links are removed.', url: 'javascript:alert(1)', imageUrl: 'javascript:alert(1)' }
         ],
+        skills: ['Product design', 'Figma', '', 'x'.repeat(100)],
+        experience: [
+          { role: 'Product Designer', company: 'Studio Nūn', period: '2024–present', description: 'Designed accessible tools.' },
+          { role: '', company: '', period: '', description: '' }
+        ],
+        socialLinks: [
+          { label: 'LinkedIn', url: 'linkedin.com/in/test' },
+          { label: 'Unsafe', url: 'javascript:alert(1)' },
+          { label: '', url: 'https://example.com' }
+        ],
+        visible: { about:true, skills:true, experience:true, projects:true, socials:true, contact:true },
         backgroundStyle: 'glass'
       }
     }
@@ -324,6 +335,12 @@ await test('custom subdomain is stored on portfolio creation', async () => {
   assert.equal(savedDocument.projectDetails[0].imageUrl, '/api/media/11111111-1111-4111-8111-111111111111')
   assert.equal(savedDocument.projectDetails[1].url, '')
   assert.equal(savedDocument.projectDetails[1].imageUrl, '')
+  assert.deepEqual(savedDocument.skills, ['Product design', 'Figma', 'x'.repeat(80)])
+  assert.deepEqual(savedDocument.experience, [{role:'Product Designer',company:'Studio Nūn',period:'2024–present',description:'Designed accessible tools.'}])
+  assert.deepEqual(savedDocument.socialLinks, [{label:'LinkedIn',url:'https://linkedin.com/in/test'}])
+  assert.equal(savedDocument.visible.skills, true)
+  assert.equal(savedDocument.visible.experience, true)
+  assert.equal(savedDocument.visible.socials, true)
 })
 
 await test('default subdomain uses a readable username-based handle', async () => {
