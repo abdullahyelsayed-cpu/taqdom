@@ -15,7 +15,7 @@ type Portfolio = { name: string; role: string; bio: string; email: string; locat
 type AppView = 'home' | 'editor' | 'preview' | 'auth' | 'dashboard' | 'public'
 type AuthMode = 'register' | 'login'
 type User = { id: string; email: string; displayName: string; locale: 'ar' | 'en'; emailVerified: boolean; createdAt: string }
-type SavedPortfolio = { id: string; title: string; slug?: string; templateId: string; document: Portfolio; status: 'draft' | 'published'; createdAt: string; updatedAt: string }
+type SavedPortfolio = { id: string; title: string; slug?: string; templateId: string; document: Portfolio; status: 'draft' | 'published'; revision?: number; createdAt: string; updatedAt: string }
 type ApiError = Error & { code?: string }
 
 type SitePage = 'home' | 'about' | 'templates' | 'features' | 'pricing' | 'faq' | 'contact' | 'privacy' | 'terms' | 'not-found'
@@ -112,6 +112,10 @@ function isValidPortfolioSubdomain(value: string): boolean {
   return value.length >= 3 && value.length <= 30 &&
     /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(value) &&
     !reservedSubdomains.has(value)
+}
+function mediaIdFromUrl(value: string | undefined): string {
+  const match = typeof value === 'string' ? value.match(/^\/api\/media\/([a-f0-9-]{10,100})$/i) : null
+  return match?.[1] || ''
 }
 function parsePublicRoute(pathname: string, search: string, hostname: string): string | null {
   const query = new URLSearchParams(search)
@@ -323,6 +327,7 @@ const imageUrls = [
   'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=720&q=74',
 ]
 const imageAlt = ['صورة استرشادية لواجهة شخصية إبداعية','مساحة عمل رقمية حديثة','صورة شخصية استرشادية','لوحة ألوان وتصميم بصري','مشهد بصري ملهم','فريق يعمل على مشروع']
+const CURRENT_YEAR = new Date().getFullYear()
 
 function readSaved(): Portfolio {
   try {
@@ -412,6 +417,7 @@ export default function App() {
   const [accountPortfolios, setAccountPortfolios] = useState<SavedPortfolio[]>([])
   const [portfolioId, setPortfolioId] = useState<string|null>(null)
   const [portfolioSlug, setPortfolioSlug] = useState('')
+  const [portfolioRevision, setPortfolioRevision] = useState(1)
   const [accountError, setAccountError] = useState('')
   const [accountBusy, setAccountBusy] = useState(false)
   const [publishModalOpen, setPublishModalOpen] = useState(false)
@@ -425,7 +431,12 @@ export default function App() {
   const trackedPortfolioRef = useRef<Portfolio | null>(null)
   const pendingSnapshotRef = useRef<Portfolio | null>(null)
   const historyTimerRef = useRef<number | null>(null)
+  const saveTimerRef = useRef<number | null>(null)
+  const saveQueueRef = useRef(Promise.resolve())
+  const saveGenerationRef = useRef(0)
+  const portfolioRevisionRef = useRef(1)
   const suppressHistoryRef = useRef(false)
+  const authReturnViewRef = useRef<AppView>('home')
   const [inboxOpen, setInboxOpen] = useState(false)
   const [inboxLoading, setInboxLoading] = useState(false)
   const [inboxMessages, setInboxMessages] = useState<Array<{ id: string; sender_name: string; sender_email: string; message: string; created_at: string }>>([])
@@ -648,7 +659,14 @@ export default function App() {
     setAccountError('')
     window.scrollTo(0,0)
   }
-  const openAuth = (mode: AuthMode) => { setAuthMode(mode); history.pushState({}, '', '?auth=' + mode + '&lang=' + language); setView('auth'); setAccountError(''); window.scrollTo(0,0) }
+  const openAuth = (mode: AuthMode) => {
+    authReturnViewRef.current = view
+    setAuthMode(mode)
+    history.pushState({}, '', '?auth=' + mode + '&lang=' + language)
+    setView('auth')
+    setAccountError('')
+    void window.scrollTo(0, 0)
+  }
   const openDashboard = async () => {
     history.replaceState({}, '', location.pathname); setView('dashboard'); setAccountError(''); window.scrollTo(0,0)
     if (user) {
