@@ -469,7 +469,6 @@ export default function App() {
     document.documentElement.lang = language
     document.documentElement.dir = en ? 'ltr' : 'rtl'
     if (view === 'public') {
-      document.title = en ? 'Portfolio | Taqdom' : 'معرض أعمال | تقدّم'
       return
     }
     const seo = getContentPageCopy(siteRoute.page, en)
@@ -1966,7 +1965,7 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome }: {
         if (!active) return
         setError(en ? 'Portfolio not found or unavailable.' : 'معرض الأعمال غير موجود أو غير متاح حاليًا.')
         document.querySelector('meta[name="robots"]')?.setAttribute('content', 'noindex, follow')
-        document.title = en ? 'Portfolio not found | Taqdom' : 'الموقع غير موجود | تقدّم'
+        document.title = en ? 'Portfolio Not Found' : 'لم يتم العثور على الموقع'
       })
       .finally(() => {
         if (active) setLoading(false)
