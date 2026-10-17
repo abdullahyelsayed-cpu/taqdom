@@ -677,11 +677,11 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     const status = body.status === "published" ? "published" : "draft";
     try {
       await env.TAQDOM_DB.prepare("INSERT INTO portfolios (id,owner_id,title,template_id,slug,status,document_json) VALUES (?,?,?,?,?,?,?)").bind(id, userId, title, templateId, slug, status, JSON.stringify(document)).run();
-      await syncPortfolioMedia(env, userId, id, document);
     } catch (error) {
       if (requestedSlug && /unique|constraint/i.test(String(error && error.message || error))) return reply({ error: "subdomain_taken" }, 409, corsHeaders);
       throw error;
     }
+    await syncPortfolioMedia(env, userId, id, document);
     const item = await env.TAQDOM_DB.prepare("SELECT id,title,template_id,slug,document_json,status,revision,created_at,updated_at FROM portfolios WHERE id=? AND owner_id=?").bind(id, userId).first();
     return reply({ portfolio: { id: item.id, title: item.title, templateId: item.template_id, slug: item.slug, document: JSON.parse(item.document_json), status: item.status, revision: Number(item.revision || 1), createdAt: item.created_at, updatedAt: item.updated_at } }, 201, corsHeaders);
   }
