@@ -244,7 +244,7 @@
 }
 
 /* Each template is an art-directed layout, not just a different accent swatch. */
-.portfolio-site{position:relative;isolation:isolate;overflow:hidden;transition:background .25s,color .25s}
+.portfolio-site{position:relative;isolation:isolate;overflow:hidden;container-type:inline-size;container-name:portfolio-canvas;transition:background .25s,color .25s}
 .portfolio-site .site-hero{position:relative;isolation:isolate}
 .portfolio-site .site-copy h1{font-size:clamp(38px,5vw,72px);line-height:1.02}
 .portfolio-site .site-copy h1 em{color:var(--accent)}
@@ -1253,18 +1253,18 @@
 .site-experience-list{position:relative;display:grid;gap:9px}
 .site-experience-list:before{content:"";position:absolute;top:24px;bottom:24px;inset-inline-start:18px;width:1px;background:linear-gradient(var(--accent),color-mix(in srgb,var(--accent) 8%,transparent));opacity:.45}
 .site-experience-entry{
-  position:relative;display:grid;grid-template-columns:38px minmax(0,1fr) minmax(92px,.4fr);align-items:start;gap:14px;
+  position:relative;display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 14px;
   padding:18px;border:1px solid color-mix(in srgb,var(--accent) 20%,transparent);border-radius:12px;
   background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 8%,transparent),color-mix(in srgb,currentColor 2%,transparent));
   box-shadow:inset 0 1px #ffffff0c,0 8px 25px #00000008;
   backdrop-filter:blur(17px) saturate(135%);-webkit-backdrop-filter:blur(17px) saturate(135%);
 }
-.experience-index{display:grid;place-items:center;z-index:1;width:36px;height:36px;border-radius:11px;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);font-size:10px;font-weight:850}
-.experience-main{min-width:0}
-.site-experience-entry h3{font-size:clamp(14px,1.5vw,18px);line-height:1.25;margin:1px 0 5px;color:inherit;overflow-wrap:anywhere}
-.experience-company{margin:0;color:var(--accent);font-size:11px;font-weight:750;overflow-wrap:anywhere}
-.experience-description{margin:8px 0 0;color:color-mix(in srgb,currentColor 70%,transparent);font-size:11px;line-height:1.85;white-space:pre-line;overflow-wrap:anywhere}
-.experience-period{justify-self:end;max-width:100%;padding:6px 9px;border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);border-radius:999px;color:color-mix(in srgb,currentColor 80%,transparent);font-size:9px;line-height:1.5;text-align:center;overflow-wrap:anywhere}
+.experience-index{display:grid;place-items:center;z-index:1;flex:0 0 36px;width:36px;height:36px;border-radius:11px;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);font-size:10px;font-weight:850}
+.experience-main{flex:1 1 180px;min-width:0}
+.site-experience-entry h3{font-size:clamp(14px,1.5vw,18px);line-height:1.25;margin:1px 0 5px;color:inherit;overflow-wrap:break-word;word-break:normal}
+.experience-company{margin:0;color:var(--accent);font-size:11px;font-weight:750;overflow-wrap:break-word;word-break:normal}
+.experience-description{margin:8px 0 0;color:color-mix(in srgb,currentColor 70%,transparent);font-size:11px;line-height:1.85;white-space:pre-line;overflow-wrap:break-word}
+.experience-period{flex:0 0 auto;margin-inline-start:auto;max-width:100%;padding:6px 9px;border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);border-radius:999px;color:color-mix(in srgb,currentColor 80%,transparent);font-size:9px;line-height:1.5;text-align:center;overflow-wrap:break-word}
 .site-social-links{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);align-items:center;gap:28px}
 .site-social-links>div:first-child>small{color:var(--accent);font-size:9px;letter-spacing:.13em;font-weight:800}
 .site-social-links h2{margin:9px 0 0;color:inherit}
@@ -1417,7 +1417,7 @@
 .portfolio-site .site-about-location{margin:18px 0 0;font-size:11px;color:var(--accent)}
 .portfolio-site .site-hero-summary{max-width:540px;margin:17px 0 0;font-size:clamp(13px,1.45vw,16px);line-height:1.9;color:color-mix(in srgb,currentColor 70%,transparent);white-space:pre-line}
 .portfolio-site .site-section-title{min-width:0}
-.portfolio-site .site-section-title h2{overflow-wrap:anywhere;text-wrap:balance}
+.portfolio-site .site-section-title h2{overflow-wrap:break-word;word-break:normal;text-wrap:balance}
 
 /* Nexus: wide briefing followed by paired capability/timeline cards. */
 .portfolio-site.layout-0 .site-sections.composition-0{grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
@@ -1491,6 +1491,12 @@
 .portfolio-site.layout-8 .site-sections.composition-8 .slot-contact{grid-column:span 8}
 .portfolio-site.layout-8 .site-sections.composition-8 .site-about,.portfolio-site.layout-8 .site-sections.composition-8 .site-skills,.portfolio-site.layout-8 .site-sections.composition-8 .site-experience,.portfolio-site.layout-8 .site-sections.composition-8 .site-social-links{border:1px solid #ff8d3d58;border-radius:10px;background:linear-gradient(145deg,#1d110bd9,#110d0b);color:#fff0e4}
 .portfolio-site.layout-8 .site-sections.composition-8 .site-contact{margin:0;background:linear-gradient(110deg,#241206,#351807);border-color:#ff8b355e;color:#fff0e4}
+@container portfolio-canvas (max-width:680px){
+  .site-sections.composition-0,.site-sections.composition-1,.site-sections.composition-3,.site-sections.composition-4,.site-sections.composition-7,.site-sections.composition-8{grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+  .site-sections .site-section-slot{grid-column:1/-1!important}
+  .site-social-links{grid-template-columns:minmax(0,1fr)!important}
+  .site-social-list{grid-template-columns:minmax(0,1fr)!important}
+}
 @media(max-width:740px){
  .portfolio-site .site-sections.composition-0,.portfolio-site .site-sections.composition-1,.portfolio-site .site-sections.composition-3,.portfolio-site .site-sections.composition-4,.portfolio-site .site-sections.composition-7,.portfolio-site .site-sections.composition-8{grid-template-columns:minmax(0,1fr);gap:0}
  .portfolio-site .site-sections .site-section-slot{grid-column:1/-1!important}
