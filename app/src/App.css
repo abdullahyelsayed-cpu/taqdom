@@ -53,14 +53,14 @@
 .publish-link-box button{background:#2b5c3b;color:#fff;border:0;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
 .modal-actions{display:flex;gap:10px;justify-content:center}
 
-/* Public Portfolio View */
-.public-portfolio-shell{min-height:100vh;background:#faf9f6;display:flex;flex-direction:column}
-.public-top-badge{background:#17181c;color:#fff;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;font-size:12px;border-bottom:1px solid #2a2b30}
-.public-top-badge a{color:#fff;text-decoration:none;display:flex;align-items:center;gap:8px}
-.public-top-badge .badge-cta{background:var(--coral,#e76f51);color:#fff;padding:6px 12px;border-radius:7px;font-weight:600;font-size:11px}
-.public-bottom-badge{margin-top:auto;border-top:1px solid #eeece6;background:#fff;padding:20px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#888}
-.public-bottom-badge a{color:inherit;font-weight:600}
-.public-portfolio-shell .portfolio-site{max-width:1040px;margin:30px auto;padding:40px 6%;box-shadow:0 12px 40px rgba(0,0,0,0.06);border-radius:16px;background:#fff}
+/* Public Portfolio View - Fullscreen Authentic Standalone Personal Website */
+.public-portfolio-shell{min-height:100vh;width:100%;margin:0;padding:0;background:transparent;display:flex;flex-direction:column}
+.public-portfolio-main{flex:1;width:100%;min-height:100vh;padding:0;margin:0;display:flex;flex-direction:column}
+.public-top-badge,.public-bottom-badge{display:none!important}
+.public-portfolio-shell .portfolio-site{width:100%;max-width:100%;min-height:100vh;margin:0;padding:clamp(28px,4vw,56px) clamp(20px,6vw,96px);border-radius:0;box-shadow:none;border:none;flex:1;display:flex;flex-direction:column}
+.site-nav-actions{display:flex;align-items:center;gap:12px}
+.site-nav-lang{background:transparent;border:1px solid currentColor;opacity:0.75;color:inherit;font-family:inherit;font-size:10px;font-weight:600;padding:3px 9px;border-radius:999px;cursor:pointer;transition:opacity .18s,transform .18s,background .18s;line-height:1.4}
+.site-nav-lang:hover{opacity:1;transform:translateY(-1px);background:rgba(128,128,128,0.12)}
 .public-contact-form{display:flex;flex-direction:column;gap:10px;margin-top:18px;max-width:440px;width:100%}
 .public-contact-form input,.public-contact-form textarea{border:1px solid #dedcd5;border-radius:8px;padding:9px 12px;font-size:12px;background:#faf9f7;outline:none}
 .public-contact-form input:focus,.public-contact-form textarea:focus{border-color:var(--accent,#e76f51)}

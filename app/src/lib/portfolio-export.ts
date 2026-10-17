@@ -341,7 +341,7 @@ body.theme-8 .composition-8 .section{border:1px solid #ff8b355e;border-radius:10
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="${layout === 1 || layout === 3 || layout === 5 || layout === 7 ? 'light' : 'dark light'}">
 <meta name="description" content="${escapeHtml((portfolio.bio || role || title).replace(/\\s+/g, ' ').slice(0, 160))}">
-<title>${escapeHtml(title)} — Taqdom Portfolio</title>
+<title>${escapeHtml(title)}${role ? ' · ' + escapeHtml(role) : ''}</title>
 <style>
 :root{color-scheme:light dark;--accent:${accent};font-family:Inter,"Segoe UI",Arial,sans-serif}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;min-height:100vh;line-height:1.7;background:var(--page);color:var(--ink);padding:clamp(10px,3vw,36px)}
@@ -360,16 +360,16 @@ ${compositionRules}
 <body class="theme-${layout} mood-${mood}">
 <main class="shell">
 <div class="ambient" aria-hidden="true"><span class="orbit"></span></div>
-<nav><a class="brand" href="#top" style="color:var(--ink);text-decoration:none;font-weight:850;letter-spacing:.12em">TAQDOM<span style="color:var(--accent)">✦</span></a><div class="nav-links">${navMarkup}</div><span class="availability">${en ? 'Available for work' : 'متاح للعمل'}</span></nav>
+<nav><a class="brand" href="#top" style="color:var(--ink);text-decoration:none;font-weight:850;letter-spacing:.12em">${escapeHtml(title).slice(0, 3).toUpperCase()}<span style="color:var(--accent)">✦</span></a><div class="nav-links">${navMarkup}</div><span class="availability">${en ? 'Available for work' : 'متاح للعمل'}</span></nav>
 <header id="top" class="hero"><div class="hero-copy"><p class="kicker">${escapeHtml(profession)} · ${en ? 'PERSONAL PORTFOLIO' : 'موقع شخصي'}</p><h1>${escapeHtml(title)}</h1><p class="role">${escapeHtml(role)}</p>${portfolio.visible.about && portfolio.bio.trim() ? `<p id="about-intro" class="hero-summary">${escapeHtml(portfolio.bio.slice(0, 240))}</p>` : ''}<div class="hero-actions">${email ? `<a class="primary" href="mailto:${escapeHtml(email)}">${en ? 'Let’s work together' : 'لنعمل معًا'} ↗</a>` : ''}${portfolio.visible.projects && projects.length ? `<a href="#work">${en ? 'Explore my work' : 'استكشف أعمالي'} ↓</a>` : ''}</div>${portfolio.location.trim() ? `<p class="location">⌖ ${escapeHtml(portfolio.location)}</p>` : ''}</div>${heroMedia}</header>
 ${orderedSectionsMarkup}
-<footer><span>© ${new Date().getFullYear()} ${escapeHtml(title)}</span><span>TAQDOM · ${en ? 'Build your digital future.' : 'ابنِ مستقبلك الرقمي.'}</span></footer>
+<footer><span>© ${new Date().getFullYear()} ${escapeHtml(title)}</span><span>${en ? 'All rights reserved.' : 'جميع الحقوق محفوظة.'}</span></footer>
 </main></body></html>`
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = (title.toLowerCase().replace(/[^\\p{L}\\p{N}-]+/gu, '-').replace(/^-+|-+$/g, '') || 'taqdom-portfolio') + '.html'
+  link.download = (title.toLowerCase().replace(/[^\\p{L}\\p{N}-]+/gu, '-').replace(/^-+|-+$/g, '') || 'portfolio') + '.html'
   link.style.display = 'none'
   document.body.appendChild(link)
   link.click()

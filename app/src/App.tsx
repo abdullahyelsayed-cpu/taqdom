@@ -1821,7 +1821,7 @@ function BeforeAfterSlider({ beforeUrl, afterUrl, alt, en }: { beforeUrl: string
   )
 }
 
-function PortfolioCanvas({data,template,language,contactContent,showSampleContent=true}:{data:Portfolio;template:Template;language:'ar'|'en';contactContent?:ReactNode;showSampleContent?:boolean}) {
+function PortfolioCanvas({data,template,language,contactContent,showSampleContent=true,onLanguage}:{data:Portfolio;template:Template;language:'ar'|'en';contactContent?:ReactNode;showSampleContent?:boolean;onLanguage?:()=>void}) {
   const en=language==='en'
   const enteredProjects=data.projects.filter(name=>typeof name==='string' && name.trim().length>0)
   const projects=enteredProjects.length?enteredProjects:(showSampleContent?(en?['A calmer way to bank','Learning without limits','A brand built to grow']:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو إبداعي']):[])
@@ -1872,7 +1872,14 @@ function PortfolioCanvas({data,template,language,contactContent,showSampleConten
     <div className="site-nav">
       <span className="site-monogram">{displayName.split(' ').map(character=>character[0]).join('')}</span>
       <div className="site-nav-links">{sectionOrder.filter(key=>sectionAvailable[key]).map(key=><a href={'#'+sectionIds[key]} key={key}>{en?sectionLabels[key].en:sectionLabels[key].ar}</a>)}</div>
-      <span className="site-nav-context">{data.location || ''}</span>
+      <div className="site-nav-actions">
+        {data.location && <span className="site-nav-context">{data.location}</span>}
+        {onLanguage && (
+          <button type="button" className="site-nav-lang" onClick={onLanguage} aria-label={en ? 'التبديل إلى العربية' : 'Switch to English'} title={en ? 'التبديل إلى العربية' : 'Switch to English'}>
+            {en ? 'العربية' : 'English'}
+          </button>
+        )}
+      </div>
     </div>
     <section className="site-hero">
       <div className="site-copy">
@@ -1900,12 +1907,12 @@ function PortfolioCanvas({data,template,language,contactContent,showSampleConten
   </article>
 }
 
-function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart }: {
+function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome }: {
   idOrSlug: string
   language: SiteLanguage
   onLanguage: () => void
   onGoHome: () => void
-  onStart: () => void
+  onStart?: () => void
 }) {
   const en = language === 'en'
   const [loading, setLoading] = useState(true)
@@ -1926,10 +1933,10 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
         setData(res.portfolio)
         const portfolio = res.portfolio
         const documentData = portfolio?.document || {}
-        const displayName = String(documentData.name || portfolio?.title || (en ? 'Personal Portfolio' : 'معرض أعمال')).trim()
+        const displayName = String(documentData.name || portfolio?.title || (en ? 'Portfolio' : 'معرض أعمال')).trim()
         const role = String(documentData.role || '').trim()
         const bio = String(documentData.bio || '').replace(/\\s+/g, ' ').trim()
-        const description = (bio || role || (en ? 'A personal website and portfolio made with Taqdom.' : 'موقع شخصي ومعرض أعمال على تقدّم.')).slice(0, 160)
+        const description = (bio || role || displayName).slice(0, 160)
         const host = location.hostname.toLowerCase()
         const tenantSuffix = '.taqdom.me'
         const isTenantHost = host.endsWith(tenantSuffix) && host !== 'taqdom.me' && !host.slice(0, -tenantSuffix.length).includes('.')
@@ -1938,7 +1945,7 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
           : `${location.origin}/p/${encodeURIComponent(portfolio.slug || idOrSlug)}`
         const canonical = document.querySelector('link[rel="canonical"]')
         canonical?.setAttribute('href', canonicalPath)
-        document.title = `${displayName} — ${en ? 'Personal Portfolio' : 'معرض أعمال'}`
+        document.title = role ? `${displayName} · ${role}` : displayName
         document.querySelector('meta[name="description"]')?.setAttribute('content', description)
         document.querySelector('meta[name="robots"]')?.setAttribute('content', 'index, follow, max-image-preview:large')
         document.querySelector('meta[property="og:title"]')?.setAttribute('content', displayName)
@@ -2006,13 +2013,7 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
   if (error || !data) {
     return (
       <div className="public-portfolio-shell" dir={en ? 'ltr' : 'rtl'}>
-        <header className="public-top-badge">
-          <button className="auth-brand" onClick={onGoHome} style={{ background: 'none', border: 0, color: '#fff', cursor: 'pointer' }}>
-            <BrandMark /><span>taqdom<span className="site-brand-dot">.</span></span>
-          </button>
-          <button className="site-lang" onClick={onLanguage}>{en ? 'العربية' : 'English'}</button>
-        </header>
-        <div style={{ display: 'grid', placeItems: 'center', minHeight: '50vh', textAlign: 'center', padding: '20px' }}>
+        <div style={{ display: 'grid', placeItems: 'center', minHeight: '80vh', textAlign: 'center', padding: '24px' }}>
           <div>
             <h2>{en ? 'Portfolio Not Found' : 'لم يتم العثور على الموقع'}</h2>
             <p style={{ color: '#888', margin: '12px 0 24px' }}>{error || (en ? 'This portfolio link does not exist.' : 'رابط الموقع المطلوب غير موجود أو غير منشور.')}</p>
@@ -2027,23 +2028,8 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
 
   return (
     <div className="public-portfolio-shell" dir={en ? 'ltr' : 'rtl'}>
-      <header className="public-top-badge">
-        <a href="/" onClick={e => { e.preventDefault(); onGoHome() }}>
-          <BrandMark />
-          <span><b>{data.document.name || 'Taqdom'}</b> · {en ? 'Personal Portfolio' : 'معرض أعمال'}</span>
-        </a>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button className="site-lang" onClick={onLanguage} style={{ color: '#aaa', background: 'none', border: 0, cursor: 'pointer' }}>
-            {en ? 'العربية' : 'English'}
-          </button>
-          <button className="badge-cta-subtle" onClick={onStart}>
-            {en ? 'Built with Taqdom ↗' : 'صُنع عبر تقدّم ↗'}
-          </button>
-        </div>
-      </header>
-
-      <main style={{ flex: 1, padding: '20px 10px' }}>
-        <PortfolioCanvas data={data.document} template={chosenTemplate} language={language} showSampleContent={false} contactContent={data.document.visible.contact ? (<section className={'portfolio-contact-panel layout-'+chosenTemplate.layout+' mood-'+(data.document.backgroundStyle || 'signature')} dir={en?'ltr':'rtl'} style={{'--accent':data.document.accent,'--pale':chosenTemplate.pale} as CSSProperties}>
+      <main className="public-portfolio-main">
+        <PortfolioCanvas data={data.document} template={chosenTemplate} language={language} onLanguage={onLanguage} showSampleContent={false} contactContent={data.document.visible.contact ? (<section className={'portfolio-contact-panel layout-'+chosenTemplate.layout+' mood-'+(data.document.backgroundStyle || 'signature')} dir={en?'ltr':'rtl'} style={{'--accent':data.document.accent,'--pale':chosenTemplate.pale} as CSSProperties}>
           <div className="portfolio-contact-head">
             <div>
               <small>{en?'03 / LET’S CONNECT':'03 / لنتواصل'}</small>
