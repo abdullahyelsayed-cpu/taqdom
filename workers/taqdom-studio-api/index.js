@@ -231,6 +231,39 @@ function safeStoredAssetUrl(value) {
   }
 }
 __name(safeStoredAssetUrl, "safeStoredAssetUrl");
+function mediaIdFromUrl(value) {
+  const match = typeof value === "string" ? value.match(/^\/api\/media\/([a-f0-9-]{10,100})$/i) : null;
+  return match ? match[1] : "";
+}
+__name(mediaIdFromUrl, "mediaIdFromUrl");
+async function validateDocumentMedia(env, ownerId, portfolioId, document) {
+  const refs = [document.avatarUrl].concat((document.projectDetails || []).map((item) => item && item.imageUrl));
+  const ids = [...new Set(refs.map(mediaIdFromUrl).filter(Boolean))];
+  if (!ids.length) return document;
+  const placeholders = ids.map(() => "?").join(",");
+  const result = await env.TAQDOM_DB.prepare(
+    "SELECT id, portfolio_id FROM media WHERE owner_id=? AND id IN (" + placeholders + ")"
+  ).bind(ownerId, ...ids).all();
+  const allowed = new Set((result.results || []).filter((row) => !row.portfolio_id || row.portfolio_id === portfolioId).map((row) => row.id));
+  if (document.avatarUrl && mediaIdFromUrl(document.avatarUrl) && !allowed.has(mediaIdFromUrl(document.avatarUrl))) document.avatarUrl = "";
+  document.projectDetails = (document.projectDetails || []).map((item) => {
+    if (!item || !mediaIdFromUrl(item.imageUrl) || allowed.has(mediaIdFromUrl(item.imageUrl))) return item;
+    return { ...item, imageUrl: "" };
+  });
+  return document;
+}
+__name(validateDocumentMedia, "validateDocumentMedia");
+async function syncPortfolioMedia(env, ownerId, portfolioId, document) {
+  const ids = [...new Set([document.avatarUrl, ...(document.projectDetails || []).map((item) => item && item.imageUrl)].map(mediaIdFromUrl).filter(Boolean))];
+  const updates = ids.map((id) => env.TAQDOM_DB.prepare(
+    "UPDATE media SET portfolio_id=? WHERE id=? AND owner_id=? AND (portfolio_id IS NULL OR portfolio_id=?)"
+  ).bind(portfolioId, id, ownerId, portfolioId));
+  const cleanup = ids.length
+    ? env.TAQDOM_DB.prepare("DELETE FROM media WHERE owner_id=? AND portfolio_id=? AND id NOT IN (" + ids.map(() => "?").join(",") + ")").bind(ownerId, portfolioId, ...ids)
+    : env.TAQDOM_DB.prepare("DELETE FROM media WHERE owner_id=? AND portfolio_id=?").bind(ownerId, portfolioId);
+  await env.TAQDOM_DB.batch([...updates, cleanup]);
+}
+__name(syncPortfolioMedia, "syncPortfolioMedia");
 function sanitizeDocument(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return null;
   const str = /* @__PURE__ */ __name(function(value, max) {
@@ -625,8 +658,9 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     const parsed = await readJson(request, 8e4);
     if (parsed.error) return reply({ error: parsed.error }, parsed.status, corsHeaders);
     const body = parsed.body || {};
-    const document = sanitizeDocument(body.document);
+    let document = sanitizeDocument(body.document);
     if (!document) return reply({ error: "invalid_document" }, 400, corsHeaders);
+    document = await validateDocumentMedia(env, userId, "", document);
     const count = await env.TAQDOM_DB.prepare("SELECT COUNT(*) AS total FROM portfolios WHERE owner_id=?").bind(userId).first();
     if (Number(count && count.total || 0) >= 20) return reply({ error: "portfolio_limit_reached", limit: 20 }, 429, corsHeaders);
     const id = crypto.randomUUID();
@@ -643,6 +677,7 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     const status = body.status === "published" ? "published" : "draft";
     try {
       await env.TAQDOM_DB.prepare("INSERT INTO portfolios (id,owner_id,title,template_id,slug,status,document_json) VALUES (?,?,?,?,?,?,?)").bind(id, userId, title, templateId, slug, status, JSON.stringify(document)).run();
+      await syncPortfolioMedia(env, userId, id, document);
     } catch (error) {
       if (requestedSlug && /unique|constraint/i.test(String(error && error.message || error))) return reply({ error: "subdomain_taken" }, 409, corsHeaders);
       throw error;
@@ -677,8 +712,9 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     const parsed = await readJson(request, 8e4);
     if (parsed.error) return reply({ error: parsed.error }, parsed.status, corsHeaders);
     const body = parsed.body || {};
-    const document = sanitizeDocument(body.document);
+    let document = sanitizeDocument(body.document);
     if (!document) return reply({ error: "invalid_document" }, 400, corsHeaders);
+    document = await validateDocumentMedia(env, session.row.id, id, document);
     const title = (typeof body.title === "string" ? body.title.trim().slice(0, 120) : "") || document.name || "My portfolio";
     const templateId = (typeof body.templateId === "string" ? body.templateId.slice(0, 100) : document.templateId) || "design-0";
     const existingPortfolio = await env.TAQDOM_DB.prepare("SELECT status,slug,revision FROM portfolios WHERE id=? AND owner_id=?").bind(id, session.row.id).first();
@@ -698,12 +734,19 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
     }
     let result;
     try {
-      result = await env.TAQDOM_DB.prepare("UPDATE portfolios SET title=?,template_id=?,status=?,slug=?,document_json=?,revision=?,updated_at=datetime('now') WHERE id=? AND owner_id=?").bind(title, templateId, status, requestedSlug, JSON.stringify(document), nextRevision, id, session.row.id).run();
+      result = await env.TAQDOM_DB.prepare("UPDATE portfolios SET title=?,template_id=?,status=?,slug=?,document_json=?,revision=?,updated_at=datetime('now') WHERE id=? AND owner_id=? AND revision=?").bind(title, templateId, status, requestedSlug, JSON.stringify(document), nextRevision, id, session.row.id, Number(existingPortfolio.revision || 1)).run();
     } catch (error) {
       if (handleWasProvided && requestedSlug !== existingPortfolio.slug && /unique|constraint/i.test(String(error && error.message || error))) return reply({ error: "subdomain_taken" }, 409, corsHeaders);
       throw error;
     }
-    return Number(result.meta && result.meta.changes || 0) ? reply({ ok: true, status, revision: nextRevision, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }, 200, corsHeaders) : reply({ error: "not_found" }, 404, corsHeaders);
+    if (!Number(result.meta && result.meta.changes || 0)) {
+      const latest = await env.TAQDOM_DB.prepare("SELECT revision FROM portfolios WHERE id=? AND owner_id=?").bind(id, session.row.id).first();
+      return latest
+        ? reply({ error: "portfolio_conflict", revision: Number(latest.revision || 1) }, 409, corsHeaders)
+        : reply({ error: "not_found" }, 404, corsHeaders);
+    }
+    await syncPortfolioMedia(env, session.row.id, id, document);
+    return reply({ ok: true, status, revision: nextRevision, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }, 200, corsHeaders);
   }
   return reply({ error: "not_found" }, 404, corsHeaders);
 }
