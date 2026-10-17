@@ -412,7 +412,7 @@ async function routeAuthApi(request, env, corsHeaders, origins) {
         status: 200,
         headers: {
           "Content-Type": row.mime_type,
-          "Cache-Control": "public, max-age=31536000, immutable",
+          "Cache-Control": "no-store",
           "X-Content-Type-Options": "nosniff",
           "Content-Security-Policy": "default-src 'none'; sandbox",
           "access-control-allow-origin": "*"
