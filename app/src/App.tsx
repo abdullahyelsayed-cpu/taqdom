@@ -508,15 +508,16 @@ export default function App() {
 
   const savePortfolioNow = async (snapshot: Portfolio, force = false) => {
     const generation = ++saveGenerationRef.current
+    const savingPortfolioId = portfolioId
     try { localStorage.setItem('taqdom.portfolio', JSON.stringify(snapshot)) } catch { /* browser storage may be disabled */ }
     setSaved(false)
-    saveQueueRef.current = saveQueueRef.current.catch(() => undefined).then(async () => {
+    const operation = saveQueueRef.current.catch(() => undefined).then(async () => {
       if (!force && generation !== saveGenerationRef.current) return
-      if (view !== 'editor' || !user || !portfolioId) {
+      if (view !== 'editor' || !user || !savingPortfolioId) {
         if (generation === saveGenerationRef.current) setSaved(true)
         return
       }
-      const response = await apiRequest<{ revision: number }>('/api/portfolios/' + portfolioId, {
+      const response = await apiRequest<{ revision: number }>('/api/portfolios/' + savingPortfolioId, {
         method: 'PUT',
         body: JSON.stringify({
           title: snapshot.name || (en ? 'My portfolio' : 'موقعي الشخصي'),
@@ -526,20 +527,23 @@ export default function App() {
         }),
       })
       const nextRevision = Number(response.revision || (portfolioRevisionRef.current + 1))
-      portfolioRevisionRef.current = nextRevision
-      if (generation === saveGenerationRef.current) {
+      if (activePortfolioIdRef.current === savingPortfolioId) {
+        portfolioRevisionRef.current = nextRevision
         setPortfolioRevision(nextRevision)
-        setSaved(true)
       }
-    }).catch(error => {
-      if (generation === saveGenerationRef.current) {
+      if (generation === saveGenerationRef.current && activePortfolioIdRef.current === savingPortfolioId) setSaved(true)
+    })
+    const result = operation.catch(error => {
+      if (generation === saveGenerationRef.current && activePortfolioIdRef.current === savingPortfolioId) {
         setSaved(false)
         setAccountError(error instanceof Error && error.message === 'portfolio_conflict'
           ? (en ? 'This site changed in another tab. Refresh it before continuing.' : 'الموقع اتغير في تبويب آخر. حدّث الصفحة قبل الاستمرار.')
           : (en ? 'Cloud save failed. Your latest edit remains on this device.' : 'فشل الحفظ السحابي. آخر تعديل ما زال محفوظًا على الجهاز.'))
       }
+      if (force) throw error
     })
-    return saveQueueRef.current
+    saveQueueRef.current = result.catch(() => undefined)
+    return result
   }
 
   useEffect(() => {
@@ -548,7 +552,7 @@ export default function App() {
     setSaved(false)
     saveTimerRef.current = window.setTimeout(() => {
       saveTimerRef.current = null
-      void savePortfolioNow(portfolio)
+      void savePortfolioNow(portfolio).catch(() => undefined)
     }, 450)
     return () => {
       if (saveTimerRef.current !== null) {
