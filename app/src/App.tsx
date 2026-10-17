@@ -416,7 +416,12 @@ export default function App() {
   const [user, setUser] = useState<User|null>(null)
   const [accountLoading, setAccountLoading] = useState(true)
   const [accountPortfolios, setAccountPortfolios] = useState<SavedPortfolio[]>([])
-  const [portfolioId, setPortfolioId] = useState<string|null>(null)
+  const [portfolioId, setPortfolioIdState] = useState<string|null>(null)
+  const activePortfolioIdRef = useRef<string|null>(null)
+  const setPortfolioId = (value: string|null) => {
+    activePortfolioIdRef.current = value
+    setPortfolioIdState(value)
+  }
   const [portfolioSlug, setPortfolioSlug] = useState('')
   const [, setPortfolioRevision] = useState(1)
   const [accountError, setAccountError] = useState('')
