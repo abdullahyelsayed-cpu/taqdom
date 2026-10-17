@@ -549,13 +549,16 @@
 .portfolio-site.layout-2 .portrait-ring{border-radius:45% 6% 42% 8%!important;background:#4a1245!important;border:2px solid #ff68b1!important;box-shadow:9px 10px 0 #ff8c4a!important;transform:rotate(-3deg)}
 .portfolio-site.layout-2 .portrait-photo{filter:saturate(1.12) contrast(1.08)!important}
 .portfolio-site.layout-2 .site-work{background:#fff0f6!important;color:#391534!important;border-top:3px solid #ff68b2!important}
-.portfolio-site.layout-2 .site-section-title h2,.portfolio-site.layout-2 .site-project h3,.portfolio-site.layout-2 .site-contact h2{color:#34112f!important;font-weight:800!important}
-.portfolio-site.layout-2 .site-section-title small,.portfolio-site.layout-2 .site-project>small,.portfolio-site.layout-2 .site-contact small{color:#a3477e!important}
+.portfolio-site.layout-2 .site-section-title h2{color:#ffffff!important}
+.portfolio-site.layout-2 .site-project h3{color:#34112f!important;font-weight:800!important}
+.portfolio-site.layout-2 .site-contact h2{color:#ffffff!important}
+.portfolio-site.layout-2 .site-section-title small,.portfolio-site.layout-2 .site-project>small{color:#a3477e!important}
+.portfolio-site.layout-2 .site-contact small{color:#ffcce5!important}
 .portfolio-site.layout-2 .site-project{background:#fffafe!important;border:1px solid #f3c6df!important;border-radius:4px!important;padding:6px 6px 12px}
 .portfolio-site.layout-2 .site-project-art{background:#3a133c!important;border-radius:2px!important}
 .portfolio-site.layout-2 .site-project-art:after{background:linear-gradient(0deg,#230b2ad9,transparent 65%)!important}
-.portfolio-site.layout-2 .site-contact{background:#ffdfeb!important;border-color:#381234!important}
-.portfolio-site.layout-2 .site-contact a{color:#9e2879!important;font-weight:800}
+.portfolio-site.layout-2 .site-contact{background:linear-gradient(135deg,#a81e5b,#2c0c27)!important;border:1px solid #ff5ea6!important;color:#fff!important}
+.portfolio-site.layout-2 .site-contact a{color:#ffcce5!important;font-weight:800}
 .portfolio-site.layout-2 .site-footer{background:#200b27!important;color:#f4bfdc!important;border-color:#71315e!important}
 
 /* Lumen — nature-led storytelling, open space, mint and deep-water teal. */
