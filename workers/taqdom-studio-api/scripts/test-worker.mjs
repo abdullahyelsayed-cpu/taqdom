@@ -49,6 +49,11 @@ function createDb(options = {}) {
                 }
               : null
           }
+          if (sql.includes('SELECT revision FROM portfolios WHERE id=? AND owner_id=?')) {
+            return options.latestPortfolioRevision === undefined
+              ? { revision: options.currentPortfolioRevision ?? 1 }
+              : { revision: options.latestPortfolioRevision }
+          }
           if (sql.includes('FROM portfolios WHERE (id=? OR slug=? COLLATE NOCASE)')) return options.publicPortfolio || null
           if (sql.includes("SELECT id FROM portfolios WHERE id=? AND status='published'")) {
             return options.publishedTarget ? { id: portfolioId } : null
@@ -80,6 +85,9 @@ function createDb(options = {}) {
           return null
         },
         async all() {
+          if (sql.includes('SELECT id, portfolio_id FROM media WHERE owner_id=? AND id IN')) {
+            return { results: options.ownedMedia || [] }
+          }
           return { results: options.allResults || [] }
         },
         async run() {
@@ -90,6 +98,7 @@ function createDb(options = {}) {
           if (sql.includes('INSERT INTO media')) calls.push({kind: 'insert-media', values: call.values})
           if (sql.includes('UPDATE portfolios SET title')) calls.push({kind: 'update-portfolio', values: call.values})
           if (sql.includes('INSERT INTO portfolios (id,owner_id,title,template_id,slug,status,document_json)')) calls.push({kind: 'insert-portfolio', values: call.values})
+          if (sql.includes('UPDATE portfolios SET title') && options.updateChanges !== undefined) return { meta: { changes: options.updateChanges } }
           return { meta: { changes: options.runChanges ?? 1 } }
         }
       }
