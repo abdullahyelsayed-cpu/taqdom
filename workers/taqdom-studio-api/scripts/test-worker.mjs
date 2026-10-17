@@ -473,5 +473,88 @@ await test('autosave preserves published status if status is omitted', async () 
   assert.equal(update.values[2], 'published')
 })
 
+
+await test('stale portfolio revisions are rejected before update', async () => {
+  const db = createDb({ userRow, currentPortfolioStatus: 'published', currentPortfolioRevision: 4 })
+  const { response, body } = await invoke('/api/portfolios/' + portfolioId, {
+    method: 'PUT',
+    cookie: sessionCookie,
+    body: {
+      title: 'Stale edit',
+      templateId: 'design-0',
+      baseRevision: 3,
+      document: { name: 'Stale edit', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 409)
+  assert.equal(body.error, 'portfolio_conflict')
+  assert.equal(body.revision, 4)
+  assert.equal(db.calls.some(call => call.kind === 'update-portfolio'), false)
+})
+
+await test('compare-and-swap update detects an edit racing with the same revision', async () => {
+  const db = createDb({
+    userRow,
+    currentPortfolioStatus: 'published',
+    currentPortfolioRevision: 3,
+    updateChanges: 0,
+    latestPortfolioRevision: 4
+  })
+  const { response, body } = await invoke('/api/portfolios/' + portfolioId, {
+    method: 'PUT',
+    cookie: sessionCookie,
+    body: {
+      title: 'Racing edit',
+      templateId: 'design-0',
+      baseRevision: 3,
+      document: { name: 'Racing edit', projects: [] }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 409)
+  assert.equal(body.error, 'portfolio_conflict')
+  assert.equal(body.revision, 4)
+})
+
+await test('foreign uploaded media is removed from portfolio document on save', async () => {
+  const db = createDb({ userRow, currentPortfolioStatus: 'draft', currentPortfolioSlug: 'my-portfolio' })
+  const { response } = await invoke('/api/portfolios/' + portfolioId, {
+    method: 'PUT',
+    cookie: sessionCookie,
+    body: {
+      title: 'My portfolio',
+      templateId: 'design-0',
+      document: {
+        name: 'My portfolio',
+        projects: ['Example'],
+        projectDetails: [{ description: '', url: '', imageUrl: '/api/media/22222222-2222-4222-8222-222222222222' }]
+      }
+    }
+  }, makeEnv(db))
+  assert.equal(response.status, 200)
+  const update = db.calls.find(call => call.kind === 'update-portfolio')
+  assert.ok(update)
+  assert.equal(JSON.parse(update.values[4]).projectDetails[0].imageUrl, '')
+})
+
+await test('account deletion requires a valid session and clears its session cookie', async () => {
+  const db = createDb({ userRow })
+  const { response, body } = await invoke('/api/auth/account', {
+    method: 'DELETE',
+    cookie: sessionCookie,
+    body: {}
+  }, makeEnv(db))
+  assert.equal(response.status, 200)
+  assert.equal(body.ok, true)
+  assert.match(response.headers.get('set-cookie') || '', /Max-Age=0/)
+  assert.equal(db.calls.some(call => call.sql?.includes('DELETE FROM users WHERE id=?')), true)
+  assert.equal(db.calls.some(call => call.sql?.includes('DELETE FROM media WHERE owner_id=?')), true)
+})
+
+await test('account deletion without a session is rejected', async () => {
+  const { response, body } = await invoke('/api/auth/account', { method: 'DELETE', body: {} })
+  assert.equal(response.status, 401)
+  assert.equal(body.error, 'not_authenticated')
+})
+
 console.log('\\n' + results.filter(result => result.passed).length + '/' + results.length + ' API smoke tests passed.')
 if (results.some(result => !result.passed)) process.exitCode = 1
