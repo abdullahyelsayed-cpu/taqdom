@@ -7,7 +7,7 @@ import { CareerAiError, improveCareerText } from './lib/ai'
 import { downloadPortfolioHtml } from './lib/portfolio-export'
 
 type Template = { id: string; profession: string; role: string; professionEn: string; roleEn: string; layout: number; accent: string; pale: string }
-type ProjectDetail = { description: string; url: string; imageUrl: string }
+type ProjectDetail = { description: string; url: string; imageUrl: string; beforeImageUrl?: string }
 type ExperienceEntry = { role: string; company: string; period: string; description: string }
 type SocialLink = { label: string; url: string }
 type PortfolioSectionKey = 'about' | 'skills' | 'experience' | 'projects' | 'socials' | 'contact'
@@ -37,7 +37,7 @@ const sitePageLabels: Record<Exclude<SitePage, 'not-found'>, { en: string; ar: s
 }
 const reservedSubdomains = new Set(['www','api','app','admin','assets','static','cdn','mail','smtp','ftp','support','help','status','docs','blog','dev','staging','preview','dashboard','auth','login','register','pricing','about','templates','features','contact','privacy','terms','taqdom'])
 function emptyProjectDetail(): ProjectDetail {
-  return { description: '', url: '', imageUrl: '' }
+  return { description: '', url: '', imageUrl: '', beforeImageUrl: '' }
 }
 function normaliseProjectDetails(value: unknown, count: number): ProjectDetail[] {
   const raw = Array.isArray(value) ? value : []
@@ -47,6 +47,7 @@ function normaliseProjectDetails(value: unknown, count: number): ProjectDetail[]
       description: typeof item.description === 'string' ? item.description.slice(0, 600) : '',
       url: typeof item.url === 'string' ? item.url.slice(0, 500) : '',
       imageUrl: typeof item.imageUrl === 'string' ? item.imageUrl.slice(0, 1000) : '',
+      beforeImageUrl: typeof item.beforeImageUrl === 'string' ? item.beforeImageUrl.slice(0, 1000) : '',
     }
   })
 }
@@ -428,6 +429,7 @@ export default function App() {
   const [publishing, setPublishing] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [projectUploadingIndex, setProjectUploadingIndex] = useState<number | null>(null)
+  const [projectBeforeUploadingIndex, setProjectBeforeUploadingIndex] = useState<number | null>(null)
   const [draggedSection, setDraggedSection] = useState<PortfolioSectionKey | null>(null)
   const [historyPast, setHistoryPast] = useState<Portfolio[]>([])
   const [historyFuture, setHistoryFuture] = useState<Portfolio[]>([])
@@ -884,7 +886,7 @@ export default function App() {
       setAvatarUploading(false)
     }
   }
-  const handleProjectImageFile = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProjectImageFile = async (index: number, e: React.ChangeEvent<HTMLInputElement>, targetField: 'imageUrl' | 'beforeImageUrl' = 'imageUrl') => {
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
@@ -901,7 +903,11 @@ export default function App() {
       alert(en ? 'Choose an image smaller than 12 MB.' : 'اختر صورة أصغر من 12 ميجابايت.')
       return
     }
-    setProjectUploadingIndex(index)
+    if (targetField === 'beforeImageUrl') {
+      setProjectBeforeUploadingIndex(index)
+    } else {
+      setProjectUploadingIndex(index)
+    }
     try {
       const img = new Image()
       const reader = new FileReader()
@@ -930,18 +936,22 @@ export default function App() {
         reader.onerror = () => reject(new Error('read_failed'))
         reader.readAsDataURL(file)
       })
-      const previousUrl = portfolio.projectDetails[index]?.imageUrl || ''
+      const previousUrl = portfolio.projectDetails[index]?.[targetField] || ''
       const result = await apiRequest<{ok:boolean; id:string; url:string}>('/api/media', {
         method:'POST',
         body:JSON.stringify({mimeType:'image/jpeg',base64:base64Data,portfolioId:portfolioId || undefined})
       })
-      updateProjectDetail(index, 'imageUrl', result.url)
+      updateProjectDetail(index, targetField, result.url)
       if (previousUrl && previousUrl !== result.url) void discardMedia(previousUrl)
     } catch (error) {
       console.error('Project image upload failed', error)
       alert(en ? 'Could not upload this project image. Please try again.' : 'تعذر رفع صورة المشروع. حاول مرة أخرى.')
     } finally {
-      setProjectUploadingIndex(null)
+      if (targetField === 'beforeImageUrl') {
+        setProjectBeforeUploadingIndex(null)
+      } else {
+        setProjectUploadingIndex(null)
+      }
     }
   }
   const signOut = async () => {
@@ -1003,7 +1013,17 @@ export default function App() {
     setAccountBusy(true); setAccountError('')
     const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], projectDetails:[], skills:[], experience:[], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, sectionOrder:['about','skills','experience','projects','socials','contact'], templateId:'design-0', accent:'#8b5cff' }
     try {
-      const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My first portfolio' : 'موقعي الشخصي', templateId:fresh.templateId, document:fresh }) })
+      const storedSlug = (() => {
+        try {
+          const s = localStorage.getItem('taqdom.custom_slug')
+          if (s && isValidPortfolioSubdomain(s)) {
+            localStorage.removeItem('taqdom.custom_slug')
+            return s
+          }
+        } catch { /* ignore */ }
+        return undefined
+      })()
+      const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My first portfolio' : 'موقعي الشخصي', templateId:fresh.templateId, document:fresh, slug:storedSlug }) })
       const nextPortfolio = normalisePortfolio(result.portfolio.document, fresh)
       const nextRevision = Number(result.portfolio.revision || 1)
       resetHistoryFor(nextPortfolio)
@@ -1056,7 +1076,17 @@ export default function App() {
     setAccountBusy(true); setAccountError('')
     const fresh: Portfolio = { ...initial, name:user.displayName, role:'', bio:'', email:user.email, location:'', projects:[], projectDetails:[], skills:[], experience:[], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, templateId, accent:templates.find(t=>t.id===templateId)?.accent || '#8b5cff' }
     try {
-      const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My portfolio' : 'موقعي الشخصي', templateId, document:fresh }) })
+      const storedSlug = (() => {
+        try {
+          const s = localStorage.getItem('taqdom.custom_slug')
+          if (s && isValidPortfolioSubdomain(s)) {
+            localStorage.removeItem('taqdom.custom_slug')
+            return s
+          }
+        } catch { /* ignore */ }
+        return undefined
+      })()
+      const result = await apiRequest<{portfolio:SavedPortfolio}>('/api/portfolios', { method:'POST', body:JSON.stringify({ title: en ? 'My portfolio' : 'موقعي الشخصي', templateId, document:fresh, slug:storedSlug }) })
       const nextRevision = Number(result.portfolio.revision || 1)
       resetHistoryFor(fresh)
       setPortfolio(fresh)
@@ -1165,7 +1195,7 @@ export default function App() {
         <div className="control-section profile-editor-section"><div className="control-heading"><b>{en?'Skills & expertise':'المهارات والتخصصات'}</b><span>{portfolio.skills.length}/30</span></div><p className="project-editor-intro">{en?'Show the tools and specialties that make your work yours.':'عرّف الزائر بأهم مهاراتك والأدوات التي تتقنها.'}</p>{portfolio.skills.map((skill,index)=><div className="profile-editor-row" key={index}><span className="profile-row-number">{String(index+1).padStart(2,'0')}</span><input className="search-input" value={skill} maxLength={80} placeholder={en?'e.g. UX research':'مثال: تصميم تجربة المستخدم'} onChange={e=>update('skills',portfolio.skills.map((item,i)=>i===index?e.target.value:item))}/><button type="button" className="profile-remove" onClick={()=>update('skills',portfolio.skills.filter((_,i)=>i!==index))} aria-label={en?'Remove skill':'حذف المهارة'}>×</button></div>)}<button type="button" className="add-project" onClick={()=>update('skills',[...portfolio.skills,''])} disabled={portfolio.skills.length>=30}>＋ {en?'Add skill':'إضافة مهارة'}</button></div>
         <div className="control-section profile-editor-section"><div className="control-heading"><b>{en?'Career experience':'الخبرات المهنية'}</b><span>{portfolio.experience.length}/12</span></div><p className="project-editor-intro">{en?'Show roles, teams, dates and what you contributed.':'أضف المناصب والجهات والفترات وأهم ما أنجزته.'}</p>{portfolio.experience.map((entry,index)=><div className="experience-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Role & impact':'المسمى والإنجاز'}</b><button type="button" className="project-remove" onClick={()=>removeExperience(index)} aria-label={en?'Remove experience':'حذف الخبرة'}>×</button></div><label className="field-label">{en?'Role / title':'المسمى الوظيفي'}<input value={entry.role} maxLength={160} onChange={e=>updateExperience(index,'role',e.target.value)} placeholder={en?'Product Designer':'مصمم منتجات'}/></label><label className="field-label">{en?'Company / organization':'الشركة أو المؤسسة'}<input value={entry.company} maxLength={160} onChange={e=>updateExperience(index,'company',e.target.value)} placeholder={en?'Company name':'اسم الشركة'}/></label><label className="field-label">{en?'Period':'الفترة'}<input value={entry.period} maxLength={100} onChange={e=>updateExperience(index,'period',e.target.value)} placeholder={en?'2023 — Present':'2023 — الآن'}/></label><label className="field-label">{en?'What you did':'أهم ما أنجزته'}<textarea rows={2} value={entry.description} maxLength={600} onChange={e=>updateExperience(index,'description',e.target.value)} placeholder={en?'Describe your impact…':'اكتب نبذة عن دورك ونتائج عملك…'}/></label></div>)}<button type="button" className="add-project" onClick={addExperience} disabled={portfolio.experience.length>=12}>＋ {en?'Add experience':'إضافة خبرة'}</button></div>
         <div className="control-section profile-editor-section"><div className="control-heading"><b>{en?'Social profiles':'حساباتك وروابطك'}</b><span>{portfolio.socialLinks.length}/12</span></div><p className="project-editor-intro">{en?'Add LinkedIn, Behance, GitHub or any public profile.':'أضف روابط لينكدإن وبيهانس وجيت هب أو أي حساب عام.'}</p>{portfolio.socialLinks.map((link,index)=><div className="social-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Profile link':'رابط الحساب'}</b><button type="button" className="project-remove" onClick={()=>removeSocialLink(index)} aria-label={en?'Remove social link':'حذف الرابط'}>×</button></div><label className="field-label">{en?'Platform / label':'اسم المنصة'}<input value={link.label} maxLength={60} onChange={e=>updateSocialLink(index,'label',e.target.value)} placeholder="LinkedIn"/></label><label className="field-label">{en?'Profile URL':'رابط الحساب'}<input value={link.url} maxLength={500} onChange={e=>updateSocialLink(index,'url',e.target.value)} placeholder="https://linkedin.com/in/yourname"/></label></div>)}<button type="button" className="add-project" onClick={addSocialLink} disabled={portfolio.socialLinks.length>=12}>＋ {en?'Add social profile':'إضافة حساب'}</button></div>
-        <div className="control-section project-editor-section"><div className="control-heading"><b>{en?'Project content':'تفاصيل المشاريع'}</b><span>{portfolio.projects.length}/24</span></div><p className="project-editor-intro">{en?'Give each project its own cover, short story, and destination link.':'أضف لكل مشروع صورة ووصفًا ورابطًا مستقلًا ليظهر كعمل احترافي.'}</p>{portfolio.projects.map((project,index)=>{const detail=portfolio.projectDetails[index] || emptyProjectDetail();return <div className="project-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Project details':'تفاصيل المشروع'}</b><button type="button" className="project-remove" onClick={()=>removeProject(index)} aria-label={en?'Remove project':'حذف المشروع'}>×</button></div><label className="field-label project-field">{en?'Project title':'اسم المشروع'}<input value={project} maxLength={160} onChange={e=>update('projects',portfolio.projects.map((p,i)=>i===index?e.target.value:p))} placeholder={en?'A project name':'اسم المشروع'}/></label><label className="field-label project-field">{en?'Short description':'وصف مختصر'}<textarea value={detail.description} rows={2} maxLength={600} onChange={e=>updateProjectDetail(index,'description',e.target.value)} placeholder={en?'What did you create and why?':'ماذا أنجزت في هذا المشروع؟'}/></label><label className="field-label project-field">{en?'Project link':'رابط المشروع'}<input type="url" value={detail.url} maxLength={500} onChange={e=>updateProjectDetail(index,'url',e.target.value)} placeholder="https://example.com"/></label><div className="project-image-editor">{detail.imageUrl?<img src={safeProjectImage(detail.imageUrl,imageUrls[(index+2)%imageUrls.length])} alt={en?'Project cover preview':'معاينة صورة المشروع'} loading="lazy"/>:<div className="project-image-placeholder"><span>✦</span><small>{en?'Add an image that tells the story':'أضف صورة تعبّر عن المشروع'}</small></div>}<div className="project-image-actions"><label className="project-image-upload">{projectUploadingIndex===index?(en?'Uploading…':'جارٍ الرفع…'):(detail.imageUrl?(en?'Replace cover':'تغيير الصورة'):(en?'Upload cover image':'رفع صورة المشروع'))}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void handleProjectImageFile(index,e)} disabled={projectUploadingIndex!==null} hidden/></label>{detail.imageUrl&&<button type="button" className="project-image-remove" onClick={()=>{ const url=detail.imageUrl; updateProjectDetail(index,'imageUrl',''); void discardMedia(url) }}>{en?'Remove image':'حذف الصورة'}</button>}</div></div></div>})}<button className="add-project" onClick={addProject} disabled={portfolio.projects.length>=24}>＋ {en?'Add project':'إضافة مشروع'} {portfolio.projects.length>=24?'· 24/24':''}</button></div>
+        <div className="control-section project-editor-section"><div className="control-heading"><b>{en?'Project content':'تفاصيل المشاريع'}</b><span>{portfolio.projects.length}/24</span></div><p className="project-editor-intro">{en?'Give each project its own cover, short story, and destination link.':'أضف لكل مشروع صورة ووصفًا ورابطًا مستقلًا ليظهر كعمل احترافي.'}</p>{portfolio.projects.map((project,index)=>{const detail=portfolio.projectDetails[index] || emptyProjectDetail();return <div className="project-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Project details':'تفاصيل المشروع'}</b><button type="button" className="project-remove" onClick={()=>removeProject(index)} aria-label={en?'Remove project':'حذف المشروع'}>×</button></div><label className="field-label project-field">{en?'Project title':'اسم المشروع'}<input value={project} maxLength={160} onChange={e=>update('projects',portfolio.projects.map((p,i)=>i===index?e.target.value:p))} placeholder={en?'A project name':'اسم المشروع'}/></label><label className="field-label project-field">{en?'Short description':'وصف مختصر'}<textarea value={detail.description} rows={2} maxLength={600} onChange={e=>updateProjectDetail(index,'description',e.target.value)} placeholder={en?'What did you create and why?':'ماذا أنجزت في هذا المشروع؟'}/></label><label className="field-label project-field">{en?'Project link':'رابط المشروع'}<input type="url" value={detail.url} maxLength={500} onChange={e=>updateProjectDetail(index,'url',e.target.value)} placeholder="https://example.com"/></label><div className="project-image-editor">{detail.imageUrl?<img src={safeProjectImage(detail.imageUrl,imageUrls[(index+2)%imageUrls.length])} alt={en?'Project cover preview':'معاينة صورة المشروع'} loading="lazy"/>:<div className="project-image-placeholder"><span>✦</span><small>{en?'Add an image that tells the story':'أضف صورة تعبّر عن المشروع'}</small></div>}<div className="project-image-actions"><label className="project-image-upload">{projectUploadingIndex===index?(en?'Uploading…':'جارٍ الرفع…'):(detail.imageUrl?(en?'Replace cover':'تغيير الصورة'):(en?'Upload cover image':'رفع صورة المشروع'))}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void handleProjectImageFile(index,e)} disabled={projectUploadingIndex!==null} hidden/></label>{detail.imageUrl&&<button type="button" className="project-image-remove" onClick={()=>{ const url=detail.imageUrl; updateProjectDetail(index,'imageUrl',''); void discardMedia(url) }}>{en?'Remove image':'حذف الصورة'}</button>}</div><div className="project-before-image-box" style={{marginTop:'10px',paddingTop:'10px',borderTop:'1px dashed #ffffff14'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}}><small style={{color:'#a5a3b8',fontSize:'11px',fontWeight:600}}>{en?'Before / After Comparison':'مقارنة قبل وبعد (اختياري)'}</small>{detail.beforeImageUrl&&<span style={{color:'#c6ff68',fontSize:'11px'}}>✓ {en?'Slider active':'مفعّل'}</span>}</div><div className="project-image-actions"><label className="project-image-upload">{projectBeforeUploadingIndex===index?(en?'Uploading…':'جارٍ الرفع…'):(detail.beforeImageUrl?(en?'Replace "Before" photo':'تغيير صورة "قبل"'):(en?'＋ Add "Before" photo':'＋ إضافة صورة "قبل"'))}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void handleProjectImageFile(index,e,'beforeImageUrl')} disabled={projectBeforeUploadingIndex!==null} hidden/></label>{detail.beforeImageUrl&&<button type="button" className="project-image-remove" onClick={()=>{ const url=detail.beforeImageUrl!; updateProjectDetail(index,'beforeImageUrl',''); void discardMedia(url) }}>{en?'Remove':'حذف'}</button>}</div></div></div></div>})}<button className="add-project" onClick={addProject} disabled={portfolio.projects.length>=24}>＋ {en?'Add project':'إضافة مشروع'} {portfolio.projects.length>=24?'· 24/24':''}</button></div>
         <div className="editor-group-label">{en?'03 — Templates':'03 — القوالب'}</div>
         <div className="control-section"><div className="control-heading"><b>{en?'Choose a direction':'اختر نمط الموقع'}</b><span>{templates.length} {en?'starting points':'بداية'}</span></div><input className="search-input" value={search} onChange={e=>{setSearch(e.target.value);setShowAllTemplates(false)}} placeholder={en?'Search profession or style…':'ابحث عن مجال أو تصميم…'}/><div className="category-pills">{[{value:'الكل',ar:'الكل',en:'All'},...jobs.map((j,index)=>({value:j[1],ar:j[1],en:jobEnglish[index][0]}))].map(c=><button className={category===c.value?'active':''} key={c.value} onClick={()=>{setCategory(c.value);setShowAllTemplates(false)}}>{en?c.en:c.ar}</button>)}</div><div className="template-list">{filtered.slice(0,showAllTemplates?filtered.length:10).map(t=><button className={t.id===portfolio.templateId?'chosen':''} key={t.id} onClick={()=>update('templateId',t.id)}><span className={'template-mini template-mini-'+t.layout} style={{'--accent':t.accent,'--pale':t.pale} as CSSProperties}><i/></span><span><b>{en?t.professionEn:t.profession}</b><small>{en?layouts[t.layout]:layoutsAr[t.layout]}</small></span>{t.id===portfolio.templateId&&<b className="checkmark">✓</b>}</button>)}</div>{filtered.length>10&&<button className="show-more" onClick={()=>setShowAllTemplates(v=>!v)}>{showAllTemplates?(en?'Show fewer':'عرض أقل'):(en?'Show all '+filtered.length:'اعرض كل الـ '+filtered.length)} {showAllTemplates?'↑':'↓'}</button>}</div>
       </div><div className="sidebar-bottom"><button className="button button-primary button-wide" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish site 🚀':'انشر موقعك 🚀')}</button><button className="button button-light button-wide" onClick={preview}>{en?'Preview my site':'عاين موقعي'} <span>↗</span></button><button className="button button-light button-wide" onClick={exportSite}>{en?'Export HTML':'نزّل نسخة HTML'} <span>↓</span></button><button className="button button-light button-wide" onClick={()=>setQrModalOpen(true)}>📱 {en?'Get QR Code':'رمز QR للطباعة والكروت'}</button><div className="local-note">{user?(saved?(en?'☁ Saved to your account':'☁ محفوظ على حسابك'):(en?'Saving to cloud…':'جارٍ الحفظ سحابيًا…')):(en?'Saved only on this device':'محفوظ على الجهاز فقط')}</div></div></aside>
@@ -1680,23 +1710,25 @@ function AuthScreen({mode,language,onLanguage,onBack,onMode,onSuccess}:{mode:Aut
                   <span>.taqdom.me</span>
                 </div>
                 <small className="auth-username-alert">
-                  ℹ {en?<>Your public address will be: <strong>https://{username||'your-name'}.taqdom.me</strong>. English letters, numbers, and hyphens only.</>:<>سيكون عنوان موقعك العام: <strong>https://{username||'your-name'}.taqdom.me</strong> (حروف إنجليزية وأرقام وشرطة فقط دون تكرار).</>}
+                  ℹ {en?<>Your public address will be: <strong>https://{username||'your-name'}.taqdom.me</strong>. English letters, numbers, and hyphens only.</>:<>سيكون عنوان موقعك العام: <strong>https://{username||'your-name'}.taqdom.me</strong> (حروف إنجليزية وأرقام وشرطة فقط دون تكرار أو مسافات).</>}
                 </small>
-                {displayName.trim().length >= 2 && (
-                  <div className="auth-slug-suggestions">
-                    <small>{en?'Suggested:':'اقتراحات:'}</small>
-                    {[
-                      displayName.toLowerCase().replace(/[^a-z0-9]/g, ''),
-                      `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}-dev`,
-                      `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}-design`,
-                      `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}-pro`
-                    ].filter(s => s.length >= 3).slice(0, 4).map(s => (
-                      <button key={s} type="button" className="auth-suggestion-pill" onClick={()=>setUsername(s)}>
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {(() => {
+                  const nameCandidate = displayName.toLowerCase().replace(/[^a-z0-9]/g, '')
+                  const emailCandidate = email.split('@')[0]?.toLowerCase().replace(/[^a-z0-9]/g, '') || ''
+                  const base = nameCandidate.length >= 2 ? nameCandidate : (emailCandidate.length >= 2 ? emailCandidate : '')
+                  if (!base) return null
+                  const suggestions = [base, `${base}-pro`, `${base}-work`, `${base}-dev`].filter(s => s.length >= 3 && s.length <= 30)
+                  return (
+                    <div className="auth-slug-suggestions">
+                      <small>{en?'Suggested:':'اقتراحات سهلة ومناسبة:'}</small>
+                      {suggestions.slice(0, 4).map(s => (
+                        <button key={s} type="button" className="auth-suggestion-pill" onClick={()=>setUsername(s)}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )
+                })()}
               </label>
             </>
           )}
@@ -1766,6 +1798,29 @@ function Dashboard({language,user,loading,busy,items,error,onLanguage,onHome,onC
   </div>
 }
 
+function BeforeAfterSlider({ beforeUrl, afterUrl, alt, en }: { beforeUrl: string; afterUrl: string; alt: string; en: boolean }) {
+  const [position, setPosition] = useState(50)
+  return (
+    <div className="before-after-slider" style={{ '--slider-pos': `${position}%` } as CSSProperties}>
+      <img className="slider-after-img" src={afterUrl} alt={alt + (en ? ' (After)' : ' (بعد)')} loading="lazy" />
+      <img className="slider-before-img" src={beforeUrl} alt={alt + (en ? ' (Before)' : ' (قبل)')} loading="lazy" />
+      <span className="slider-tag-before">{en ? 'Before' : 'قبل'}</span>
+      <span className="slider-tag-after">{en ? 'After' : 'بعد'}</span>
+      <div className="slider-handle" aria-hidden="true">
+        <div className="slider-button">⇄</div>
+      </div>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value={position}
+        onChange={e => setPosition(Number(e.target.value))}
+        aria-label={en ? 'Before and after comparison' : 'مقارنة قبل وبعد'}
+      />
+    </div>
+  )
+}
+
 function PortfolioCanvas({data,template,language,contactContent,showSampleContent=true}:{data:Portfolio;template:Template;language:'ar'|'en';contactContent?:ReactNode;showSampleContent?:boolean}) {
   const en=language==='en'
   const enteredProjects=data.projects.filter(name=>typeof name==='string' && name.trim().length>0)
@@ -1802,11 +1857,11 @@ function PortfolioCanvas({data,template,language,contactContent,showSampleConten
     about:data.visible.about&&(showSampleContent||data.bio.trim()||data.location.trim())?<section className="site-about" id="about"><div className="site-section-title"><div><small>01 / {en?'A LITTLE ABOUT ME':'نبذة عني'}</small><h2>{en?'Thoughtful work starts with a point of view.':'كل عمل مميز يبدأ برؤية.'}</h2></div></div>{displayBio&&<p className="site-about-copy">{displayBio}</p>}{data.location&&<p className="site-about-location">⌖ {data.location}</p>}</section>:null,
     skills:data.visible.skills&&skills.length>0?<section className="site-skills" id="skills"><div className="site-section-title"><div><small>02 / {en?'CAPABILITIES':'المهارات'}</small><h2>{en?'What I bring to the table':'ما أقدمه من مهارات'}</h2></div><span>{skills.length} {en?'specialties':'مهارات'}</span></div><div className="site-skill-tags">{skills.map((skill,index)=><span className="site-skill-pill" key={skill+'-'+index}><i>{String(index+1).padStart(2,'0')}</i>{skill}</span>)}</div></section>:null,
     experience:data.visible.experience&&experience.length>0?<section className="site-experience" id="experience"><div className="site-section-title"><div><small>03 / {en?'THE JOURNEY':'الخبرات'}</small><h2>{en?'Where I’ve made a difference':'محطات من رحلتي المهنية'}</h2></div></div><div className="site-experience-list">{experience.map((entry,index)=><article className="site-experience-entry" key={entry.role+'-'+entry.company+'-'+index}><span className="experience-index">{String(index+1).padStart(2,'0')}</span><div className="experience-main"><h3>{entry.role||(en?'Professional role':'خبرة مهنية')}</h3>{entry.company&&<p className="experience-company">{entry.company}</p>}{entry.description&&<p className="experience-description">{entry.description}</p>}</div>{entry.period&&<span className="experience-period">{entry.period}</span>}</article>)}</div></section>:null,
-    projects:data.visible.projects&&projects.length>0?<section className="site-work" id="work"><div className="site-section-title"><div><small>04 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{projects.length} {en?'projects':'مشاريع'}</span></div><div className="site-project-grid">{projects.map((name,index)=>{const detail=data.projectDetails?.[index]||emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,'');const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(index%3)} key={name+'-'+index}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}>{image ? <img src={image} alt={detail.description||name} loading="lazy"/> : <div className="site-project-art-placeholder" aria-hidden="true"><span>✦</span><b>{String(index+1).padStart(2,'0')}</b></div>}<span>{projectTypes[index%projectTypes.length]}</span><b>{data.showBadges ? ['✳','◡','✿'][index%3] : String(index+1).padStart(2,'0')}</b></div><h3>{name||(en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[index%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>:null,
+    projects:data.visible.projects&&projects.length>0?<section className="site-work" id="work"><div className="site-section-title"><div><small>04 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{projects.length} {en?'projects':'مشاريع'}</span></div><div className="site-project-grid">{projects.map((name,index)=>{const detail=data.projectDetails?.[index]||emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,'');const beforeImage=safeProjectImage(detail.beforeImageUrl,'');const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(index%3)} key={name+'-'+index}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}>{beforeImage && image ? <BeforeAfterSlider beforeUrl={beforeImage} afterUrl={image} alt={detail.description||name} en={en}/> : image ? <img src={image} alt={detail.description||name} loading="lazy"/> : <div className="site-project-art-placeholder" aria-hidden="true"><span>✦</span><b>{String(index+1).padStart(2,'0')}</b></div>}<span>{projectTypes[index%projectTypes.length]}</span><b>{data.showBadges ? ['✳','◡','✿'][index%3] : String(index+1).padStart(2,'0')}</b></div><h3 dir="auto">{name||(en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description" dir="auto">{detail.description}</p>}<small>{projectTypes[index%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>:null,
     socials:data.visible.socials&&socialLinks.length>0?<section className="site-social-links" id="socials"><div><small>05 / {en?'FIND ME ELSEWHERE':'روابط التواصل'}</small><h2>{en?'Let’s connect':'تواصل معي عبر المنصات'}</h2></div><div className="site-social-list">{socialLinks.map((link,index)=>{const href=safeExternalUrl(link.url);return href?<a className="site-social-link" key={link.label+'-'+index} href={href} target="_blank" rel="noopener noreferrer"><span>{link.label}</span><b>↗</b></a>:null})}</div></section>:null,
     contact:data.visible.contact ? (contactContent || <section className="site-contact" id="contact"><div><small>06 / {en?'SAY HELLO':'لنتحدث'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div>{data.email&&<a href={'mailto:'+data.email}>{data.email} ↗</a>}</section>) : null
   }
-  return <article className={'portfolio-site layout-'+template.layout+' mood-'+(data.backgroundStyle||'signature')} data-layout={template.layout} data-mood={data.backgroundStyle||'signature'} data-section-order={sectionOrder.join(' ')} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}>
+  return <article className={'portfolio-site layout-'+template.layout+' mood-'+(data.backgroundStyle||'signature')} dir={en?'ltr':'rtl'} data-layout={template.layout} data-mood={data.backgroundStyle||'signature'} data-section-order={sectionOrder.join(' ')} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}>
     <div className={'site-atmosphere atmosphere-'+template.layout+' effect-'+(data.backgroundStyle||'signature')} aria-hidden="true">
       <span className="atmosphere-glow atmosphere-glow-a"/>
       <span className="atmosphere-glow atmosphere-glow-b"/>
@@ -1823,10 +1878,10 @@ function PortfolioCanvas({data,template,language,contactContent,showSampleConten
       <div className="site-copy">
         <small className="site-eyebrow">{data.showBadges ? '✳ ' : '• '}{en?template.professionEn.toUpperCase():'أهلاً، أنا '+displayName}</small>
         <h1 className="site-name-heading">
-          <span className="site-name-line">{displayName}</span>
-          {displayRole && <span className="site-role-line"><em>{displayRole}</em></span>}
+          <span className="site-name-line" dir="auto">{displayName}</span>
+          {displayRole && <span className="site-role-line"><em dir="auto">{displayRole}</em></span>}
         </h1>
-        {data.visible.about&&data.bio.trim()&&<p className="site-hero-summary">{data.bio.length>170?data.bio.slice(0,167).trimEnd()+'…':data.bio}</p>}
+        {data.visible.about&&data.bio.trim()&&<p className="site-hero-summary" dir="auto">{data.bio.length>170?data.bio.slice(0,167).trimEnd()+'…':data.bio}</p>}
         {data.visible.contact&&data.email&&<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a>}
       </div>
       <div className="site-portrait"><div className="portrait-ring">{avatarSrc ? <img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/> : <div className="portrait-placeholder" aria-hidden="true">{displayName.split(' ').map(part => part[0]).join('').slice(0,3)}</div>}{data.showBadges && <span className="portrait-decoration">✿</span>}</div>{data.location&&<div className="portrait-label">{data.location}</div>}</div>
@@ -1993,7 +2048,7 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
             <div>
               <small>{en?'03 / LET’S CONNECT':'03 / لنتواصل'}</small>
               <h3>{en ? 'Send a message' : 'تواصل مع صاحب الموقع'}</h3>
-              <p>{en ? `Leave a message for ${data.document.name || 'the creator'}.` : `أرسل رسالة مباشرة إلى ${data.document.name || 'صاحب الموقع'}.`}</p>
+              <p>{en ? <>Leave a message for <b dir="auto">{data.document.name || 'the creator'}</b>.</> : <>أرسل رسالة مباشرة إلى <b dir="auto">{data.document.name || 'صاحب الموقع'}</b>.</>}</p>
             </div>
             <span className="portfolio-contact-symbol" aria-hidden="true">↗</span>
           </div>

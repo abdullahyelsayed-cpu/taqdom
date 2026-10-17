@@ -1413,11 +1413,11 @@
 .portfolio-site .site-about,.portfolio-site .site-skills,.portfolio-site .site-experience,.portfolio-site .site-work,.portfolio-site .site-social-links,.portfolio-site .site-contact{min-width:0;max-width:100%}
 .portfolio-site .site-about{padding:clamp(26px,4.3vw,58px) clamp(20px,5vw,65px);border-top:1px solid color-mix(in srgb,var(--accent) 26%,transparent);background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 5%,transparent),transparent 70%)}
 .portfolio-site .site-about .site-section-title{margin-bottom:12px}
-.portfolio-site .site-about-copy{max-width:900px;margin:15px 0 0;font-size:clamp(16px,2vw,22px);line-height:1.95;color:color-mix(in srgb,currentColor 75%,transparent);white-space:pre-line;overflow-wrap:anywhere}
+.portfolio-site .site-about-copy{max-width:900px;margin:15px 0 0;font-size:clamp(16px,2vw,22px);line-height:1.95;color:color-mix(in srgb,currentColor 82%,transparent);white-space:pre-line;overflow-wrap:break-word;word-break:keep-all;hyphens:none;text-wrap:pretty}
 .portfolio-site .site-about-location{margin:18px 0 0;font-size:11px;color:var(--accent)}
-.portfolio-site .site-hero-summary{max-width:540px;margin:17px 0 0;font-size:clamp(13px,1.45vw,16px);line-height:1.9;color:color-mix(in srgb,currentColor 70%,transparent);white-space:pre-line}
+.portfolio-site .site-hero-summary{max-width:540px;margin:17px 0 0;font-size:clamp(13px,1.45vw,16px);line-height:1.9;color:color-mix(in srgb,currentColor 80%,transparent);white-space:pre-line;overflow-wrap:break-word;word-break:keep-all;hyphens:none;text-wrap:pretty}
 .portfolio-site .site-section-title{min-width:0}
-.portfolio-site .site-section-title h2{overflow-wrap:break-word;word-break:normal;text-wrap:balance}
+.portfolio-site .site-section-title h2{overflow-wrap:break-word;word-break:keep-all;hyphens:none;text-wrap:balance}
 
 /* Nexus: wide briefing followed by paired capability/timeline cards. */
 .portfolio-site.layout-0 .site-sections.composition-0{grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
@@ -1512,7 +1512,7 @@
 }
 @media(prefers-reduced-motion:reduce){.history-action,.section-order-item,.section-order-arrows button{transition:none!important}}
 /* Production data states: avoid decorative placeholders being mistaken for user content. */
-.portfolio-site .site-nav-context{min-width:0;max-width:24%;overflow-wrap:anywhere;text-align:end;color:color-mix(in srgb,currentColor 58%,transparent);font-size:9px;font-weight:650;letter-spacing:.04em}
+.portfolio-site .site-nav-context{min-width:0;max-width:24%;overflow-wrap:break-word;word-break:keep-all;text-align:end;color:color-mix(in srgb,currentColor 58%,transparent);font-size:9px;font-weight:650;letter-spacing:.04em}
 .portfolio-site .portrait-placeholder{display:grid;place-items:center;width:100%;height:100%;background:
   radial-gradient(circle at 28% 25%,color-mix(in srgb,var(--accent) 35%,transparent),transparent 36%),
   linear-gradient(145deg,color-mix(in srgb,var(--pale) 72%,#000),color-mix(in srgb,var(--accent) 10%,var(--pale)));
@@ -1546,7 +1546,7 @@
 
 /* Typography Hierarchy: Prevent single-word awkward wrapping */
 .site-name-heading{display:flex;flex-direction:column;gap:clamp(6px,1.2vw,14px);text-wrap:balance;margin-bottom:14px}
-.site-name-line{font-size:clamp(32px,4.5vw,58px);line-height:1.08;font-weight:800;letter-spacing:-.04em;overflow-wrap:break-word}
+.site-name-line{font-size:clamp(32px,4.5vw,58px);line-height:1.08;font-weight:800;letter-spacing:-.04em;overflow-wrap:break-word;word-break:keep-all;hyphens:none}
 .site-role-line{font-size:clamp(17px,2.1vw,26px);line-height:1.25;font-weight:600;letter-spacing:-.02em;opacity:.92}
 .site-role-line em{font-style:normal}
 
@@ -1573,5 +1573,63 @@
 .auth-slug-suggestions small{color:#6c7fa8;font-size:10px}
 .auth-suggestion-pill{background:#111b36;border:1px solid #314674;color:#a9c5fb;border-radius:999px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all .15s}
 .auth-suggestion-pill:hover{background:#1c2d58;border-color:#5a84dc;color:#fff}
+
+/* Accessibility & High Contrast Enhancements for Dark Templates */
+.portfolio-site.layout-0{color:#f1f7ff!important}
+.portfolio-site.layout-0 .site-hero-summary,.portfolio-site.layout-0 .site-about-copy{color:#c8def8!important}
+.portfolio-site.layout-0 .site-experience-description,.portfolio-site.layout-0 .site-project-description{color:#a9cbef!important}
+
+.portfolio-site.layout-2{color:#fff0f7!important}
+.portfolio-site.layout-2 .site-hero-summary,.portfolio-site.layout-2 .site-about-copy{color:#ffd8ee!important}
+.portfolio-site.layout-2 .site-experience-description,.portfolio-site.layout-2 .site-project-description{color:#ffc7e7!important}
+.portfolio-site.layout-2 .site-experience-entry h3,.portfolio-site.layout-2 .site-project h3{color:#fff5fa!important}
+
+.portfolio-site.layout-4{color:#f0f8ff!important}
+.portfolio-site.layout-4 .site-hero-summary,.portfolio-site.layout-4 .site-about-copy{color:#cbe8ff!important}
+.portfolio-site.layout-4 .site-experience-description,.portfolio-site.layout-4 .site-project-description{color:#aee0ff!important}
+
+.portfolio-site.layout-6{color:#f6f1ff!important}
+.portfolio-site.layout-6 .site-hero-summary,.portfolio-site.layout-6 .site-about-copy{color:#e6dbff!important}
+.portfolio-site.layout-6 .site-experience-description,.portfolio-site.layout-6 .site-project-description{color:#d6c4ff!important}
+.portfolio-site.layout-6 .site-experience-entry h3,.portfolio-site.layout-6 .site-project h3{color:#fbf8ff!important}
+
+.portfolio-site.layout-8{color:#fff8ee!important}
+.portfolio-site.layout-8 .site-hero-summary,.portfolio-site.layout-8 .site-about-copy{color:#fed7aa!important}
+.portfolio-site.layout-8 .site-experience-description,.portfolio-site.layout-8 .site-project-description{color:#fecba1!important}
+
+/* Avatar Artifact Clean-up: Absolutely remove old cartoon pseudo-element across all templates */
+.portfolio-site .portrait-ring::after,
+.portfolio-site .portrait-ring:after{
+  display:none!important;
+  content:none!important;
+  background:none!important;
+  width:0!important;
+  height:0!important;
+}
+
+/* Symmetrical and Balanced Portrait Containers */
+.portfolio-site .portrait-ring{
+  max-width:260px!important;
+  aspect-ratio:1/1.1!important;
+  margin:0 auto!important;
+}
+.portfolio-site .portrait-photo{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+}
+
+/* Ensure editor sidebar can scroll fully past bottom actions bar */
+.editor-sidebar .sidebar-scroll{
+  padding-bottom:150px!important;
+}
+
+/* Generous, Prestigious Footer Padding */
+.portfolio-site .site-footer{
+  padding:36px 0 28px!important;
+  font-size:12px!important;
+  line-height:1.7!important;
+  margin-top:28px!important;
+}
 
 
