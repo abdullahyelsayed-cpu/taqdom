@@ -1553,6 +1553,7 @@
 /* Floating WhatsApp Button */
 .floating-whatsapp-btn{position:fixed;bottom:24px;inset-inline-end:24px;z-index:90;width:52px;height:52px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px #25d36666;transition:transform .2s,box-shadow .2s;text-decoration:none}
 .floating-whatsapp-btn:hover{transform:scale(1.08);box-shadow:0 12px 28px #25d36688}
+.canvas-browser .floating-whatsapp-btn{position:absolute!important;bottom:20px!important;inset-inline-end:20px!important}
 
 /* QR Code Modal & Print Feature */
 .qr-modal-card{max-width:440px!important;text-align:center}
