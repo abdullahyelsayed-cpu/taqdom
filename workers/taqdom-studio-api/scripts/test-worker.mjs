@@ -311,7 +311,7 @@ await test('reserved subdomains are rejected', async () => {
 })
 
 await test('custom subdomain is stored on portfolio creation', async () => {
-  const db = createDb({ userRow })
+  const db = createDb({ userRow, ownedMedia: [{ id: '11111111-1111-4111-8111-111111111111', portfolio_id: null }] })
   const { response, body } = await invoke('/api/portfolios', {
     method: 'POST',
     cookie: sessionCookie,
