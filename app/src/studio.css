@@ -1597,6 +1597,17 @@
 .portfolio-site.layout-8 .site-hero-summary,.portfolio-site.layout-8 .site-about-copy{color:#fed7aa!important}
 .portfolio-site.layout-8 .site-experience-description,.portfolio-site.layout-8 .site-project-description{color:#fecba1!important}
 
+.portfolio-site.layout-0 .site-section-title h2,
+.portfolio-site.layout-2 .site-section-title h2,
+.portfolio-site.layout-4 .site-section-title h2,
+.portfolio-site.layout-6 .site-section-title h2,
+.portfolio-site.layout-8 .site-section-title h2{color:#ffffff!important}
+.portfolio-site.layout-0 .site-section-title small,
+.portfolio-site.layout-2 .site-section-title small,
+.portfolio-site.layout-4 .site-section-title small,
+.portfolio-site.layout-6 .site-section-title small,
+.portfolio-site.layout-8 .site-section-title small{color:rgba(255,255,255,0.85)!important}
+
 /* Avatar Artifact Clean-up: Absolutely remove old cartoon pseudo-element across all templates */
 .portfolio-site .portrait-ring::after,
 .portfolio-site .portrait-ring:after{
