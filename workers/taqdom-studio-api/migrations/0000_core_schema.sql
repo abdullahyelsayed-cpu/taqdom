@@ -1,0 +1,1 @@
+-- Reproducible baseline D1 schema. All statements in this file must remain idempotent.
