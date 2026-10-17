@@ -316,6 +316,8 @@ function sanitizeDocument(input) {
     experience,
     socialLinks,
     sectionOrder,
+    showBadges: Boolean(input.showBadges),
+    whatsapp: str(input.whatsapp, 30),
     visible: {
       about: visible.about !== false,
       skills: visible.skills !== false,

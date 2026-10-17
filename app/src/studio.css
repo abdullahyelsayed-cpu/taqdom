@@ -173,8 +173,8 @@
 .show-more{color:#80e8ff!important}
 .sidebar-bottom{background:#070c1b!important;border-top:1px solid #2b3c65!important;padding:14px 18px!important}
 .sidebar-bottom .button{border-radius:8px!important}
-.editor-workspace{min-width:0;background:#050817!important}
-.editor-toolbar{position:sticky;top:68px;z-index:20;height:58px!important;background:#080f23!important;border-bottom:1px solid #293b64!important;color:#e9efff!important;padding-inline:clamp(10px,2vw,26px)!important}
+.editor-workspace{min-width:0;background:#050817!important;height:calc(100vh - 68px)!important;max-height:calc(100vh - 68px)!important;overflow-y:auto!important;overflow-x:hidden!important;scrollbar-width:thin;scrollbar-color:#3a4d79 #081022}
+.editor-toolbar{position:sticky;top:0!important;z-index:20;height:58px!important;background:#080f23!important;border-bottom:1px solid #293b64!important;color:#e9efff!important;padding-inline:clamp(10px,2vw,26px)!important}
 .mode-switch{background:#0d1830!important;border-color:#2e426d!important;border-radius:9px!important}
 .mode-switch button{color:#a6b4d7!important}
 .mode-switch button.active{background:linear-gradient(105deg,#8e5cff,#416fe9)!important;color:white!important;box-shadow:0 0 19px #7c5fff35!important}
@@ -193,8 +193,9 @@
    radial-gradient(ellipse at 92% 75%,#008ab41a,transparent 40%)!important;
   background-size:22px 22px,100% 100%,100% 100%!important;
 }
-.canvas-browser{overflow:hidden;border:1px solid #586aab!important;border-radius:12px!important;background:#060a18!important;outline:1px solid #ffffff0a!important;box-shadow:0 25px 80px #0008,0 0 45px #5e59ff19!important}
-.canvas-browser-bar{height:38px!important;background:#0d1731!important;border-color:#293d67!important;color:#a9bbdf!important}
+.canvas-browser{overflow:visible!important;border:1px solid #586aab!important;border-radius:12px!important;background:#060a18!important;outline:1px solid #ffffff0a!important;box-shadow:0 25px 80px #0008,0 0 45px #5e59ff19!important}
+.canvas-browser.mobile-frame{max-height:calc(100vh - 170px);overflow-y:auto!important;scrollbar-width:thin}
+.canvas-browser-bar{position:sticky;top:0;z-index:10;height:38px!important;background:#0d1731!important;border-color:#293d67!important;color:#a9bbdf!important}
 .browser-dots i{box-shadow:0 0 8px currentColor}
 .canvas-address{background:#071023!important;border:1px solid #324777!important;color:#91cdec!important;border-radius:6px!important;padding:5px 13px!important}
 .canvas-zoom,.canvas-hint{color:#8c9bc0!important}
@@ -1442,7 +1443,7 @@
 .portfolio-site.layout-2 .site-sections.composition-2 .site-about{border-inline-start:5px solid #ff4b9b}
 .portfolio-site.layout-2 .site-sections.composition-2 .site-work{border-block:3px solid #f0449c;padding-inline:clamp(14px,4vw,45px)}
 .portfolio-site.layout-2 .site-sections.composition-2 .site-social-links{grid-template-columns:1fr 1.5fr}
-.portfolio-site.layout-2 .site-sections.composition-2 .site-contact{border-radius:0;margin:10px 0;background:#ff3b8b;color:#1e071c}
+.portfolio-site.layout-2 .site-sections.composition-2 .site-contact{border-radius:0;margin:10px 0;background:linear-gradient(135deg,#bd2768,#340f2f)!important;border:1px solid #ff4b9b!important;color:#fff!important}
 /* Meadow: rounded, nested cards and generous breathing room. */
 .portfolio-site.layout-3 .site-sections.composition-3{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .portfolio-site.layout-3 .site-sections.composition-3 .slot-about,.portfolio-site.layout-3 .site-sections.composition-3 .slot-projects,.portfolio-site.layout-3 .site-sections.composition-3 .slot-experience{grid-column:1/-1}
@@ -1527,4 +1528,43 @@
   .dashboard-account-danger{align-items:flex-start;flex-direction:column}
   .dashboard-account-danger button{width:100%}
 }
+
+/* Avatar Upload Control: Dark luxury harmony */
+.avatar-upload-control{background:#0e1730!important;border:1px dashed #344c7c!important;border-radius:10px!important;padding:12px 14px!important;margin:10px 0 16px!important}
+.avatar-preview-wrap{background:#152244!important;border:2px solid #3c548a!important;box-shadow:0 0 16px #4a6bff22!important}
+.avatar-preview-empty{opacity:.85!important;filter:drop-shadow(0 0 4px #50c4ff)}
+.avatar-upload-btn{background:linear-gradient(105deg,#8e5cff,#3f72ef)!important;border:1px solid #9c84ff!important;color:#fff!important;border-radius:8px!important;font-weight:600;padding:7px 13px!important;display:inline-block;cursor:pointer;font-size:12px}
+.avatar-upload-btn:hover{background:linear-gradient(105deg,#9e70ff,#5181f7)!important;box-shadow:0 0 16px #7b62ff44}
+.avatar-remove-btn{background:#23111f!important;border:1px solid #78264b!important;color:#ff85a8!important;border-radius:8px!important;padding:7px 11px!important;cursor:pointer;font-size:12px}
+.avatar-remove-btn:hover{background:#3a142e!important;border-color:#ba3b75!important;color:#ffaec7!important}
+
+/* Typography Hierarchy: Prevent single-word awkward wrapping */
+.site-name-heading{display:flex;flex-direction:column;gap:clamp(6px,1.2vw,14px);text-wrap:balance;margin-bottom:14px}
+.site-name-line{font-size:clamp(32px,4.5vw,58px);line-height:1.08;font-weight:800;letter-spacing:-.04em;overflow-wrap:break-word}
+.site-role-line{font-size:clamp(17px,2.1vw,26px);line-height:1.25;font-weight:600;letter-spacing:-.02em;opacity:.92}
+.site-role-line em{font-style:normal}
+
+/* Floating WhatsApp Button */
+.floating-whatsapp-btn{position:fixed;bottom:24px;inset-inline-end:24px;z-index:90;width:52px;height:52px;border-radius:50%;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px #25d36666;transition:transform .2s,box-shadow .2s;text-decoration:none}
+.floating-whatsapp-btn:hover{transform:scale(1.08);box-shadow:0 12px 28px #25d36688}
+
+/* QR Code Modal & Print Feature */
+.qr-modal-card{max-width:440px!important;text-align:center}
+.qr-preview-box{background:#fff;padding:16px;border-radius:14px;display:inline-flex;flex-direction:column;align-items:center;gap:12px;margin:16px auto;box-shadow:0 12px 35px #0006}
+.qr-preview-box img{display:block;border-radius:8px}
+.qr-url-badge{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;color:#1a1c38;background:#f0eeff;padding:4px 12px;border-radius:999px;border:1px solid #d4cbfb}
+
+/* Subtle Public Badge */
+.badge-cta-subtle{background:rgba(255,255,255,0.08)!important;border:1px solid rgba(255,255,255,0.18)!important;color:#fff!important;padding:6px 14px!important;border-radius:999px!important;font-size:11px!important;font-weight:600!important;backdrop-filter:blur(8px);cursor:pointer;transition:all .18s}
+.badge-cta-subtle:hover{background:rgba(255,255,255,0.16)!important;border-color:rgba(255,255,255,0.32)!important;transform:translateY(-1px)}
+
+/* Auth Screen Username Alert & Suggestions */
+.auth-username-field{margin-top:4px}
+.auth-username-alert{display:block;margin-top:6px;font-size:11px;color:#8ba5d8;line-height:1.6}
+.auth-username-alert strong{color:#7be8ff}
+.auth-slug-suggestions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+.auth-slug-suggestions small{color:#6c7fa8;font-size:10px}
+.auth-suggestion-pill{background:#111b36;border:1px solid #314674;color:#a9c5fb;border-radius:999px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all .15s}
+.auth-suggestion-pill:hover{background:#1c2d58;border-color:#5a84dc;color:#fff}
+
 

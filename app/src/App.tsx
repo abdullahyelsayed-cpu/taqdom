@@ -11,7 +11,7 @@ type ProjectDetail = { description: string; url: string; imageUrl: string }
 type ExperienceEntry = { role: string; company: string; period: string; description: string }
 type SocialLink = { label: string; url: string }
 type PortfolioSectionKey = 'about' | 'skills' | 'experience' | 'projects' | 'socials' | 'contact'
-type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; projectDetails: ProjectDetail[]; skills: string[]; experience: ExperienceEntry[]; socialLinks: SocialLink[]; visible: Record<string, boolean>; sectionOrder: PortfolioSectionKey[]; backgroundStyle: BackgroundStyle; avatarUrl?: string; slug?: string }
+type Portfolio = { name: string; role: string; bio: string; email: string; location: string; accent: string; templateId: string; projects: string[]; projectDetails: ProjectDetail[]; skills: string[]; experience: ExperienceEntry[]; socialLinks: SocialLink[]; visible: Record<string, boolean>; sectionOrder: PortfolioSectionKey[]; backgroundStyle: BackgroundStyle; avatarUrl?: string; slug?: string; showBadges?: boolean; whatsapp?: string }
 type AppView = 'home' | 'editor' | 'preview' | 'auth' | 'dashboard' | 'public'
 type AuthMode = 'register' | 'login'
 type User = { id: string; email: string; displayName: string; locale: 'ar' | 'en'; emailVerified: boolean; createdAt: string }
@@ -317,7 +317,7 @@ const backgroundStyles: { id: BackgroundStyle; en: string; ar: string; noteEn: s
   { id: 'calm', en: 'Calm', ar: 'هادئ وبسيط', noteEn: 'Quieter light and less texture', noteAr: 'إضاءة هادئة وتفاصيل أقل' },
 ]
 const templates: Template[] = jobs.flatMap((job, j) => layouts.map((_, l) => ({ id: job[0] + '-' + l, profession: job[1], role: job[2], professionEn: jobEnglish[j][0], roleEn: jobEnglish[j][1], layout: l, accent: colors[l], pale: stylePales[l] })))
-const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], projectDetails:[], skills:['تصميم تجربة المستخدم','Figma','النماذج الأولية','البحث والتجربة'], experience:[{role:'مصممة منتجات رقمية',company:'استوديو نون',period:'2024 — الآن',description:'تصميم تجارب رقمية واضحة وتطوير واجهات سهلة الاستخدام.'}], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, sectionOrder:['about','skills','experience','projects','socials','contact'], backgroundStyle:'signature', avatarUrl:'', slug:'' }
+const initial: Portfolio = { name:'سلمى حسن', role:'مصممة منتجات رقمية', bio:'أصمم منتجات رقمية بسيطة وقريبة من الناس. أحوّل الأفكار المعقدة إلى تجارب واضحة، وأحب العمل مع فرق تشارك هدفًا حقيقيًا.', email:'hello@example.com', location:'القاهرة، مصر', accent:'#8b5cff', templateId:'design-0', projects:['تجربة مصرفية أسهل','منصة تعلّم عربية','هوية استوديو نون'], projectDetails:[], skills:['تصميم تجربة المستخدم','Figma','النماذج الأولية','البحث والتجربة'], experience:[{role:'مصممة منتجات رقمية',company:'استوديو نون',period:'2024 — الآن',description:'تصميم تجارب رقمية واضحة وتطوير واجهات سهلة الاستخدام.'}], socialLinks:[], visible:{about:true,skills:true,experience:true,projects:true,socials:true,contact:true}, sectionOrder:['about','skills','experience','projects','socials','contact'], backgroundStyle:'signature', avatarUrl:'', slug:'', showBadges:false, whatsapp:'' }
 const imageUrls = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=76',
   'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=720&q=74',
@@ -353,6 +353,8 @@ function readSaved(): Portfolio {
       visible: normaliseVisibleSections(visible, initial.visible),
       avatarUrl: typeof saved.avatarUrl === 'string' ? saved.avatarUrl.slice(0, 1000) : '',
       slug: typeof saved.slug === 'string' ? saved.slug.slice(0, 80) : '',
+      showBadges: Boolean(saved.showBadges),
+      whatsapp: typeof saved.whatsapp === 'string' ? saved.whatsapp.slice(0, 30) : '',
     }
   } catch { return initial }
 }
@@ -422,6 +424,7 @@ export default function App() {
   const [accountError, setAccountError] = useState('')
   const [accountBusy, setAccountBusy] = useState(false)
   const [publishModalOpen, setPublishModalOpen] = useState(false)
+  const [qrModalOpen, setQrModalOpen] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [projectUploadingIndex, setProjectUploadingIndex] = useState<number | null>(null)
@@ -462,6 +465,7 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.lang = language
+    document.documentElement.dir = en ? 'ltr' : 'rtl'
     if (view === 'public') {
       document.title = en ? 'Portfolio | Taqdom' : 'معرض أعمال | تقدّم'
       return
@@ -1108,7 +1112,7 @@ export default function App() {
   </>
   if (view === 'preview') return <div className="preview-screen" style={vars}><div className="preview-bar"><button onClick={()=>{history.replaceState({},'',location.pathname);setView('editor')}}>← {en?'Back to editor':'العودة للمحرر'}</button><span className="preview-status"><i/>{en?'Private preview':'معاينة خاصة'}</span><button className="small-action" onClick={exportSite}>{en?'Download HTML':'تنزيل HTML'} ↓</button></div><PortfolioCanvas data={portfolio} template={chosen} language={language}/></div>
 
-  return <div className="app-shell editor-mode">
+  return <div className="app-shell editor-mode" dir={en ? 'ltr' : 'rtl'}>
     <header className="topbar"><a className="brand" href="#" onClick={e=>{e.preventDefault();user?openDashboard():goHome()}}><BrandMark/><span>taqdom<span className="brand-dot">.</span></span></a>
       <div className="editor-breadcrumb">{en?'My workspace':'مساحة عملي'} <b>/</b> <strong>{portfolio.name || (en?'New portfolio':'موقعي الجديد')}</strong></div>
       <div className="top-actions"><span className={'save-indicator '+(saved?'is-saved':'')}><i/>{saved?(en?'Saved':'تم الحفظ'):(en?'Saving…':'جارٍ الحفظ…')}</span><div className="history-actions" aria-label={en?'Edit history':'سجل التعديلات'}><button type="button" className="history-action" onClick={undo} disabled={historyPast.length===0&&!historyPending} aria-label={en?'Undo change':'التراجع عن التعديل'} title={en?'Undo':'تراجع'}><span aria-hidden="true">↶</span><small>{en?'Undo':'تراجع'}</small></button><button type="button" className="history-action" onClick={redo} disabled={historyFuture.length===0} aria-label={en?'Redo change':'إعادة التعديل'} title={en?'Redo':'إعادة'}><span aria-hidden="true">↷</span><small>{en?'Redo':'إعادة'}</small></button></div><button className="lang-switch" onClick={toggleLanguage}>{en?'العربية':'English'}</button>{user?<button className="button button-light hide-mobile" onClick={openDashboard}>{en?'Workspace':'مساحة العمل'}</button>:<button className="button button-light hide-mobile" onClick={()=>openAuth('register')}>{en?'Create account':'إنشاء حساب'}</button>}<button className="button button-dark hide-mobile" onClick={exportSite}>{en?'Export site':'نزّل الموقع'} <span>↓</span></button></div>
@@ -1141,9 +1145,11 @@ export default function App() {
         <p className={'ai-status '+(aiMessage?'has-message':'')} aria-live="polite">{aiMessage || (en?'AI only runs when you click. Review every suggestion.':'الذكاء الاصطناعي لا يعمل إلا بطلبك. راجع كل اقتراح.')}</p>
         <label className="field-label">{en?'Contact email':'إيميل التواصل'}<input type="email" value={portfolio.email} onChange={e=>update('email',e.target.value)}/></label>
         <label className="field-label">{en?'Location':'مكانك'}<input value={portfolio.location} onChange={e=>update('location',e.target.value)}/></label>
+        <label className="field-label">{en?'WhatsApp for inquiries (optional)':'واتساب للتواصل المباشر (اختياري)'}<input type="tel" value={portfolio.whatsapp || ''} maxLength={30} onChange={e=>update('whatsapp',e.target.value)} placeholder="+20 100 000 0000"/></label>
         <div className="editor-group-label">{en?'02 — Visual identity':'02 — الهوية البصرية'}</div>
         <div className="control-section"><div className="control-heading"><b>{en?'Atmosphere & background':'أجواء الخلفية'}</b><span>{en?'Choose a mood':'اختار الروح'}</span></div><p className="background-style-intro">{en?'Change the light, texture, and glass feeling without losing the template identity.':'غيّر الإضاءة والتدرجات والزجاجيات مع الحفاظ على هوية القالب.'}</p><div className="background-mood-options">{backgroundStyles.map(mood=><button type="button" key={mood.id} className={'background-mood-option '+(portfolio.backgroundStyle===mood.id?'selected':'')} aria-pressed={portfolio.backgroundStyle===mood.id} onClick={()=>update('backgroundStyle',mood.id)}><span className={'mood-swatch mood-swatch-'+mood.id}><i/><b/></span><span className="mood-option-copy"><strong>{en?mood.en:mood.ar}</strong><small>{en?mood.noteEn:mood.noteAr}</small></span>{portfolio.backgroundStyle===mood.id&&<span className="mood-option-check">✓</span>}</button>)}</div></div>
         <div className="control-section"><div className="control-heading"><b>{en?'Accent color':'اللون الأساسي'}</b><span>{portfolio.accent}</span></div><div className="color-options">{colors.map(c=><button className={portfolio.accent===c?'selected':''} key={c} style={{background:c}} aria-label={'Use '+c} onClick={()=>update('accent',c)}/>)}<label className="custom-color"><span>＋</span><input type="color" value={portfolio.accent} onChange={e=>update('accent',e.target.value)} aria-label="لون مخصص"/></label></div></div>
+        <div className="control-section"><div className="control-heading"><b>{en?'Visual details':'الزخارف والتفاصيل'}</b></div><label className="toggle-row"><span>{en?'Decorative playful symbols (✳, ✿)':'الرموز والأشكال التعبيرية (✳, ✿)'}</span><input type="checkbox" checked={Boolean(portfolio.showBadges)} onChange={e=>update('showBadges',e.target.checked)}/><i/></label></div>
         <div className="control-section"><div className="control-heading"><b>{en?'Visible sections':'الأقسام الظاهرة'}</b></div>{[['about',en?'About me':'نبذة عني'],['skills',en?'Skills':'المهارات'],['experience',en?'Experience':'الخبرات'],['projects',en?'Selected work':'المشاريع'],['socials',en?'Social links':'روابط التواصل'],['contact',en?'Contact':'التواصل']].map(([key,label])=><label className="toggle-row" key={key}><span>{label}</span><input type="checkbox" checked={Boolean(portfolio.visible[key])} onChange={e=>update('visible',{...portfolio.visible,[key]:e.target.checked})}/><i/></label>)}</div>
         <div className="editor-group-label">{en?'04 — Page structure':'04 — ترتيب الصفحة'}</div>
         <div className="control-section section-order-editor">
@@ -1162,8 +1168,8 @@ export default function App() {
         <div className="control-section project-editor-section"><div className="control-heading"><b>{en?'Project content':'تفاصيل المشاريع'}</b><span>{portfolio.projects.length}/24</span></div><p className="project-editor-intro">{en?'Give each project its own cover, short story, and destination link.':'أضف لكل مشروع صورة ووصفًا ورابطًا مستقلًا ليظهر كعمل احترافي.'}</p>{portfolio.projects.map((project,index)=>{const detail=portfolio.projectDetails[index] || emptyProjectDetail();return <div className="project-editor-card" key={index}><div className="project-editor-card-head"><span>{String(index+1).padStart(2,'0')}</span><b>{en?'Project details':'تفاصيل المشروع'}</b><button type="button" className="project-remove" onClick={()=>removeProject(index)} aria-label={en?'Remove project':'حذف المشروع'}>×</button></div><label className="field-label project-field">{en?'Project title':'اسم المشروع'}<input value={project} maxLength={160} onChange={e=>update('projects',portfolio.projects.map((p,i)=>i===index?e.target.value:p))} placeholder={en?'A project name':'اسم المشروع'}/></label><label className="field-label project-field">{en?'Short description':'وصف مختصر'}<textarea value={detail.description} rows={2} maxLength={600} onChange={e=>updateProjectDetail(index,'description',e.target.value)} placeholder={en?'What did you create and why?':'ماذا أنجزت في هذا المشروع؟'}/></label><label className="field-label project-field">{en?'Project link':'رابط المشروع'}<input type="url" value={detail.url} maxLength={500} onChange={e=>updateProjectDetail(index,'url',e.target.value)} placeholder="https://example.com"/></label><div className="project-image-editor">{detail.imageUrl?<img src={safeProjectImage(detail.imageUrl,imageUrls[(index+2)%imageUrls.length])} alt={en?'Project cover preview':'معاينة صورة المشروع'} loading="lazy"/>:<div className="project-image-placeholder"><span>✦</span><small>{en?'Add an image that tells the story':'أضف صورة تعبّر عن المشروع'}</small></div>}<div className="project-image-actions"><label className="project-image-upload">{projectUploadingIndex===index?(en?'Uploading…':'جارٍ الرفع…'):(detail.imageUrl?(en?'Replace cover':'تغيير الصورة'):(en?'Upload cover image':'رفع صورة المشروع'))}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void handleProjectImageFile(index,e)} disabled={projectUploadingIndex!==null} hidden/></label>{detail.imageUrl&&<button type="button" className="project-image-remove" onClick={()=>{ const url=detail.imageUrl; updateProjectDetail(index,'imageUrl',''); void discardMedia(url) }}>{en?'Remove image':'حذف الصورة'}</button>}</div></div></div>})}<button className="add-project" onClick={addProject} disabled={portfolio.projects.length>=24}>＋ {en?'Add project':'إضافة مشروع'} {portfolio.projects.length>=24?'· 24/24':''}</button></div>
         <div className="editor-group-label">{en?'03 — Templates':'03 — القوالب'}</div>
         <div className="control-section"><div className="control-heading"><b>{en?'Choose a direction':'اختر نمط الموقع'}</b><span>{templates.length} {en?'starting points':'بداية'}</span></div><input className="search-input" value={search} onChange={e=>{setSearch(e.target.value);setShowAllTemplates(false)}} placeholder={en?'Search profession or style…':'ابحث عن مجال أو تصميم…'}/><div className="category-pills">{[{value:'الكل',ar:'الكل',en:'All'},...jobs.map((j,index)=>({value:j[1],ar:j[1],en:jobEnglish[index][0]}))].map(c=><button className={category===c.value?'active':''} key={c.value} onClick={()=>{setCategory(c.value);setShowAllTemplates(false)}}>{en?c.en:c.ar}</button>)}</div><div className="template-list">{filtered.slice(0,showAllTemplates?filtered.length:10).map(t=><button className={t.id===portfolio.templateId?'chosen':''} key={t.id} onClick={()=>update('templateId',t.id)}><span className={'template-mini template-mini-'+t.layout} style={{'--accent':t.accent,'--pale':t.pale} as CSSProperties}><i/></span><span><b>{en?t.professionEn:t.profession}</b><small>{en?layouts[t.layout]:layoutsAr[t.layout]}</small></span>{t.id===portfolio.templateId&&<b className="checkmark">✓</b>}</button>)}</div>{filtered.length>10&&<button className="show-more" onClick={()=>setShowAllTemplates(v=>!v)}>{showAllTemplates?(en?'Show fewer':'عرض أقل'):(en?'Show all '+filtered.length:'اعرض كل الـ '+filtered.length)} {showAllTemplates?'↑':'↓'}</button>}</div>
-      </div><div className="sidebar-bottom"><button className="button button-primary button-wide" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish site 🚀':'انشر موقعك 🚀')}</button><button className="button button-light button-wide" onClick={preview}>{en?'Preview my site':'عاين موقعي'} <span>↗</span></button><button className="button button-light button-wide" onClick={exportSite}>{en?'Export HTML':'نزّل نسخة HTML'} <span>↓</span></button><div className="local-note">{user?(saved?(en?'☁ Saved to your account':'☁ محفوظ على حسابك'):(en?'Saving to cloud…':'جارٍ الحفظ سحابيًا…')):(en?'Saved only on this device':'محفوظ على الجهاز فقط')}</div></div></aside>
-      <section className="editor-workspace"><div className="editor-toolbar"><div className="toolbar-start"><button className="mobile-panel-button" onClick={()=>setMobilePanel(true)}>☷ {en?'Edit':'تعديل'}</button><div className="mode-switch"><button className={device==='desktop'?'active':''} onClick={()=>setDevice('desktop')}>▣ <span>{en?'Desktop':'الحاسوب'}</span></button><button className={device==='mobile'?'active':''} onClick={()=>setDevice('mobile')}>▯ <span>{en?'Mobile':'الهاتف'}</span></button></div></div><div className="toolbar-end"><span className="canvas-live-status"><i/> {en?'Live preview':'معاينة مباشرة'}</span>{portfolioId && <button type="button" className="button button-light toolbar-inbox" onClick={()=>void openInbox()}>📬 {en?'Inbox':'الرسائل'}</button>}<button className="button button-light toolbar-publish" onClick={preview}>{en?'Preview ↗':'معاينة ↗'}</button><button className="button button-primary toolbar-publish" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish 🚀':'انشر موقعك 🚀')}</button></div></div>
+      </div><div className="sidebar-bottom"><button className="button button-primary button-wide" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish site 🚀':'انشر موقعك 🚀')}</button><button className="button button-light button-wide" onClick={preview}>{en?'Preview my site':'عاين موقعي'} <span>↗</span></button><button className="button button-light button-wide" onClick={exportSite}>{en?'Export HTML':'نزّل نسخة HTML'} <span>↓</span></button><button className="button button-light button-wide" onClick={()=>setQrModalOpen(true)}>📱 {en?'Get QR Code':'رمز QR للطباعة والكروت'}</button><div className="local-note">{user?(saved?(en?'☁ Saved to your account':'☁ محفوظ على حسابك'):(en?'Saving to cloud…':'جارٍ الحفظ سحابيًا…')):(en?'Saved only on this device':'محفوظ على الجهاز فقط')}</div></div></aside>
+      <section className="editor-workspace"><div className="editor-toolbar"><div className="toolbar-start"><button className="mobile-panel-button" onClick={()=>setMobilePanel(true)}>☷ {en?'Edit':'تعديل'}</button><div className="mode-switch"><button className={device==='desktop'?'active':''} onClick={()=>setDevice('desktop')}>▣ <span>{en?'Desktop':'الحاسوب'}</span></button><button className={device==='mobile'?'active':''} onClick={()=>setDevice('mobile')}>▯ <span>{en?'Mobile':'الهاتف'}</span></button></div></div><div className="toolbar-end"><span className="canvas-live-status"><i/> {en?'Live preview':'معاينة مباشرة'}</span>{portfolioId && <button type="button" className="button button-light toolbar-inbox" onClick={()=>void openInbox()}>📬 {en?'Inbox':'الرسائل'}</button>}<button type="button" className="button button-light toolbar-qr hide-mobile" onClick={()=>setQrModalOpen(true)} title={en?'QR Code & Share':'رمز QR والمشاركة'}>📱 QR</button><button className="button button-light toolbar-publish" onClick={preview}>{en?'Preview ↗':'معاينة ↗'}</button><button className="button button-primary toolbar-publish" onClick={()=>void publishSite()} disabled={publishing}>{publishing?(en?'Publishing…':'جارٍ النشر…'):(en?'Publish 🚀':'انشر موقعك 🚀')}</button></div></div>
         <div className="canvas-area"><div className={'canvas-browser '+(device==='mobile'?'mobile-frame':'')}><div className="canvas-browser-bar"><span className="browser-dots"><i/><i/><i/></span><span className="canvas-address">{portfolioSlug || 'your-name'}.taqdom.me</span><span className="canvas-zoom">{device==='desktop'?'100%':'390 px'}</span></div><PortfolioCanvas data={portfolio} template={chosen} language={language}/></div><p className="canvas-hint"><span>✦</span>{user?(en?'Your changes are saved to your account.':'تعديلاتك محفوظة على حسابك.'):(en?'This is a local demo. Create an account to save your project across devices.':'هذه معاينة محلية. أنشئ حسابًا لحفظ موقعك والوصول إليه من أي جهاز.')}</p></div>
       </section>
     </main>
@@ -1223,7 +1229,58 @@ export default function App() {
         </div>
       </div>
     )}
+    {qrModalOpen && (
+      <QRModal slug={portfolioSlug} language={language} onClose={()=>setQrModalOpen(false)} />
+    )}
   </div>
+}
+
+function QRModal({ slug, language, onClose }: { slug: string; language: 'ar' | 'en'; onClose: () => void }) {
+  const en = language === 'en'
+  const siteUrl = slug ? `https://${slug}.taqdom.me` : 'https://taqdom.me'
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=15&format=png&data=${encodeURIComponent(siteUrl)}`
+  const [copied, setCopied] = useState(false)
+
+  const copyLink = () => {
+    void navigator.clipboard?.writeText(siteUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  const downloadQr = () => {
+    const a = document.createElement('a')
+    a.href = qrUrl
+    a.download = `${slug || 'portfolio'}-qr.png`
+    a.target = '_blank'
+    a.click()
+  }
+
+  return (
+    <div className="publish-modal-overlay" onClick={onClose} dir={en ? 'ltr' : 'rtl'}>
+      <div className="publish-modal-card qr-modal-card" onClick={e => e.stopPropagation()}>
+        <button className="close-modal" onClick={onClose}>×</button>
+        <div className="modal-icon">📱</div>
+        <h3>{en ? 'QR Code & Print Badge' : 'رمز QR والطباعة الذكية'}</h3>
+        <p>{en ? 'Print this code on business cards, brochures, clinic/office doors, or shop windows so clients can visit your site directly.' : 'اطبع هذا الكود على كروت العمل، أو واجهة العيادة / المكتب، أو بروشورات الخدمات ليصل عملاؤك لموقعك فورًا بمجرد توجيه الكاميرا.'}</p>
+        <div className="qr-preview-box">
+          <img src={qrUrl} alt={`QR Code for ${siteUrl}`} width="180" height="180" loading="eager" />
+          <div className="qr-url-badge">{siteUrl}</div>
+        </div>
+        <div className="modal-actions" style={{ marginTop: '16px' }}>
+          <button type="button" className="button button-primary" onClick={downloadQr}>
+            ↓ {en ? 'Download QR Image' : 'تنزيل رمز QR'}
+          </button>
+          <button type="button" className="button button-light" onClick={copyLink}>
+            {copied ? (en ? '✓ Copied!' : '✓ تم النسخ!') : (en ? 'Copy Link' : 'نسخ الرابط')}
+          </button>
+          <button type="button" className="button button-light" onClick={onClose}>
+            {en ? 'Done' : 'إغلاق'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function BrandMark() {
@@ -1570,6 +1627,7 @@ function ContentPage({ page, language, onLanguage }: { page: SitePage; language:
 function AuthScreen({mode,language,onLanguage,onBack,onMode,onSuccess}:{mode:AuthMode;language:'ar'|'en';onLanguage:()=>void;onBack:()=>void;onMode:(mode:AuthMode)=>void;onSuccess:(user:User)=>void}) {
   const en=language==='en'
   const [displayName,setDisplayName]=useState('')
+  const [username,setUsername]=useState('')
   const [email,setEmail]=useState('')
   const [password,setPassword]=useState('')
   const [showPassword,setShowPassword]=useState(false)
@@ -1589,6 +1647,9 @@ function AuthScreen({mode,language,onLanguage,onBack,onMode,onSuccess}:{mode:Aut
     e.preventDefault();setBusy(true);setError('');setNotice('')
     try {
       const result=await apiRequest<{user:User}>(register?'/api/auth/register':'/api/auth/login',{method:'POST',body:JSON.stringify(register?{displayName,email,password,locale:language}:{email,password})})
+      if (register && username) {
+        try { localStorage.setItem('taqdom.custom_slug', username.toLowerCase().trim()) } catch { /* ignore */ }
+      }
       setNotice(en?'Your account is ready. Opening your workspace…':'أصبح حسابك جاهزًا. جارٍ فتح مساحة العمل…')
       onSuccess(result.user)
     } catch(err) {
@@ -1600,7 +1661,46 @@ function AuthScreen({mode,language,onLanguage,onBack,onMode,onSuccess}:{mode:Aut
   return <div className="auth-shell" dir={en?'ltr':'rtl'}><header className="auth-topbar"><button className="auth-brand" onClick={onBack}><BrandMark/><span>taqdom<span className="site-brand-dot">.</span></span></button><div><button className="site-lang" onClick={onLanguage}>{en?'العربية':'English'}</button><button className="auth-back" onClick={onBack}>← {en?'Back to site':'العودة للموقع'}</button></div></header>
     <main className="auth-grid"><section className="auth-visual"><img src={imageUrls[0]} alt="" fetchPriority="high"/><div className="auth-image-overlay"/><div className="auth-visual-content"><span className="auth-visual-label"><i/> TAQDOM / YOUR OWN SPACE</span><h1>{en?<>A good story<br/>deserves a<br/><em>beautiful home.</em></>:<>كل قصة مميزة<br/>تستحق مساحة<br/><em>تليق بها.</em></>}</h1><p>{en?'Your work, your direction, your next step — all in one place.':'أعمالك وأسلوبك وخطوتك التالية — جميعها في مكان واحد.'}</p><div className="auth-photo-credit">PERSONAL WEBSITES · THOUGHTFULLY MADE</div></div><div className="auth-sticker"><span>✳</span><b>{en?'Your corner of the internet':'مساحتك الخاصة على الإنترنت'}</b></div></section>
       <section className="auth-form-side"><div className="auth-form-wrap"><div className="auth-form-kicker">{en?'YOUR WORKSPACE STARTS HERE':'تبدأ مساحة عملك من هنا'}</div><h2>{register?(en?'Create your account':'أنشئ حسابك'):(en?'Welcome back':'مرحبًا بعودتك')}</h2><p className="auth-form-intro">{register?(en?'Save your work, pick up where you left off, and build a site that feels like you.':'احفظ أعمالك، وتابع العمل عليها في أي وقت، وأنشئ موقعًا يعكس هويتك.'):(en?'Sign in to open your workspace and continue building.':'سجّل الدخول إلى مساحة عملك وتابع إنشاء موقعك.')}</p>
-        <form onSubmit={submit} className="auth-form">{register&&<label>{en?'Your name':'الاسم'}<input autoComplete="name" value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder={en?'Enter your name':'أدخل اسمك'} minLength={2} maxLength={100} required/></label>}<label>{en?'Email address':'البريد الإلكتروني'}<input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" maxLength={254} required/></label><label>{en?'Password':'كلمة المرور'}<div className="password-input-wrap"><input type={showPassword?'text':'password'} autoComplete={register?'new-password':'current-password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder={register?(en?'At least 10 characters':'10 أحرف على الأقل'):(en?'Enter your password':'اكتب كلمة المرور')} minLength={register?10:1} maxLength={128} required/><button type="button" onClick={()=>setShowPassword(s=>!s)}>{showPassword?(en?'Hide':'إخفاء'):(en?'Show':'إظهار')}</button></div></label>
+        <form onSubmit={submit} className="auth-form">
+          {register && (
+            <>
+              <label>{en?'Your name':'الاسم'}<input autoComplete="name" value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder={en?'Enter your name':'أدخل اسمك'} minLength={2} maxLength={100} required/></label>
+              <label className="field-label auth-username-field">
+                <span>{en?'Choose English username':'اسم المستخدم (إنجليزي فقط)'}</span>
+                <div className="subdomain-input-wrap">
+                  <input
+                    value={username}
+                    onChange={e=>setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,30))}
+                    placeholder="your-name"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    required
+                  />
+                  <span>.taqdom.me</span>
+                </div>
+                <small className="auth-username-alert">
+                  ℹ {en?<>Your public address will be: <strong>https://{username||'your-name'}.taqdom.me</strong>. English letters, numbers, and hyphens only.</>:<>سيكون عنوان موقعك العام: <strong>https://{username||'your-name'}.taqdom.me</strong> (حروف إنجليزية وأرقام وشرطة فقط دون تكرار).</>}
+                </small>
+                {displayName.trim().length >= 2 && (
+                  <div className="auth-slug-suggestions">
+                    <small>{en?'Suggested:':'اقتراحات:'}</small>
+                    {[
+                      displayName.toLowerCase().replace(/[^a-z0-9]/g, ''),
+                      `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}-dev`,
+                      `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}-design`,
+                      `${displayName.toLowerCase().replace(/[^a-z0-9]/g, '')}-pro`
+                    ].filter(s => s.length >= 3).slice(0, 4).map(s => (
+                      <button key={s} type="button" className="auth-suggestion-pill" onClick={()=>setUsername(s)}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </label>
+            </>
+          )}
+          <label>{en?'Email address':'البريد الإلكتروني'}<input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" maxLength={254} required/></label><label>{en?'Password':'كلمة المرور'}<div className="password-input-wrap"><input type={showPassword?'text':'password'} autoComplete={register?'new-password':'current-password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder={register?(en?'At least 10 characters':'10 أحرف على الأقل'):(en?'Enter your password':'اكتب كلمة المرور')} minLength={register?10:1} maxLength={128} required/><button type="button" onClick={()=>setShowPassword(s=>!s)}>{showPassword?(en?'Hide':'إخفاء'):(en?'Show':'إظهار')}</button></div></label>
           {register&&<p className="auth-password-hint"><span>✓</span> {en?'Use at least 10 characters. Never reuse a password.':'استخدم كلمة مرور من 10 أحرف على الأقل، ولا تُعد استخدام كلمة المرور نفسها في مواقع أخرى.'}</p>}
           {error&&<p className="auth-error" role="alert">{error}</p>}{notice&&<p className="auth-notice" role="status">{notice}</p>}
           <button className="auth-submit" type="submit" disabled={busy}>{busy?(en?'Please wait…':'ثواني…'):(register?(en?'Create my account':'إنشاء الحساب'):(en?'Sign in to Taqdom':'تسجيل الدخول'))}<span>↗</span></button></form>
@@ -1702,9 +1802,9 @@ function PortfolioCanvas({data,template,language,contactContent,showSampleConten
     about:data.visible.about&&(showSampleContent||data.bio.trim()||data.location.trim())?<section className="site-about" id="about"><div className="site-section-title"><div><small>01 / {en?'A LITTLE ABOUT ME':'نبذة عني'}</small><h2>{en?'Thoughtful work starts with a point of view.':'كل عمل مميز يبدأ برؤية.'}</h2></div></div>{displayBio&&<p className="site-about-copy">{displayBio}</p>}{data.location&&<p className="site-about-location">⌖ {data.location}</p>}</section>:null,
     skills:data.visible.skills&&skills.length>0?<section className="site-skills" id="skills"><div className="site-section-title"><div><small>02 / {en?'CAPABILITIES':'المهارات'}</small><h2>{en?'What I bring to the table':'ما أقدمه من مهارات'}</h2></div><span>{skills.length} {en?'specialties':'مهارات'}</span></div><div className="site-skill-tags">{skills.map((skill,index)=><span className="site-skill-pill" key={skill+'-'+index}><i>{String(index+1).padStart(2,'0')}</i>{skill}</span>)}</div></section>:null,
     experience:data.visible.experience&&experience.length>0?<section className="site-experience" id="experience"><div className="site-section-title"><div><small>03 / {en?'THE JOURNEY':'الخبرات'}</small><h2>{en?'Where I’ve made a difference':'محطات من رحلتي المهنية'}</h2></div></div><div className="site-experience-list">{experience.map((entry,index)=><article className="site-experience-entry" key={entry.role+'-'+entry.company+'-'+index}><span className="experience-index">{String(index+1).padStart(2,'0')}</span><div className="experience-main"><h3>{entry.role||(en?'Professional role':'خبرة مهنية')}</h3>{entry.company&&<p className="experience-company">{entry.company}</p>}{entry.description&&<p className="experience-description">{entry.description}</p>}</div>{entry.period&&<span className="experience-period">{entry.period}</span>}</article>)}</div></section>:null,
-    projects:data.visible.projects&&projects.length>0?<section className="site-work" id="work"><div className="site-section-title"><div><small>04 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{projects.length} {en?'projects':'مشاريع'}</span></div><div className="site-project-grid">{projects.map((name,index)=>{const detail=data.projectDetails?.[index]||emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,'');const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(index%3)} key={name+'-'+index}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}>{image ? <img src={image} alt={detail.description||name} loading="lazy"/> : <div className="site-project-art-placeholder" aria-hidden="true"><span>✦</span><b>{String(index+1).padStart(2,'0')}</b></div>}<span>{projectTypes[index%projectTypes.length]}</span><b>{['✳','◡','✿'][index%3]}</b></div><h3>{name||(en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[index%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>:null,
+    projects:data.visible.projects&&projects.length>0?<section className="site-work" id="work"><div className="site-section-title"><div><small>04 / {en?'SELECTED WORK':'أعمال مختارة'}</small><h2>{en?'A few things I’ve made':'حاجات عملتها بحب'}</h2></div><span>{projects.length} {en?'projects':'مشاريع'}</span></div><div className="site-project-grid">{projects.map((name,index)=>{const detail=data.projectDetails?.[index]||emptyProjectDetail();const image=safeProjectImage(detail.imageUrl,'');const projectUrl=safeExternalUrl(detail.url);return <article className={'site-project project-'+(index%3)} key={name+'-'+index}><div className={'site-project-art '+(detail.imageUrl?'has-custom-image':'')}>{image ? <img src={image} alt={detail.description||name} loading="lazy"/> : <div className="site-project-art-placeholder" aria-hidden="true"><span>✦</span><b>{String(index+1).padStart(2,'0')}</b></div>}<span>{projectTypes[index%projectTypes.length]}</span><b>{data.showBadges ? ['✳','◡','✿'][index%3] : String(index+1).padStart(2,'0')}</b></div><h3>{name||(en?'Untitled project':'مشروع بدون اسم')}</h3>{detail.description.trim()&&<p className="site-project-description">{detail.description}</p>}<small>{projectTypes[index%projectTypes.length]}</small>{projectUrl&&<a className="site-project-link" href={projectUrl} target="_blank" rel="noopener noreferrer">{en?'View project':'عرض المشروع'} <b>↗</b></a>}</article>})}</div></section>:null,
     socials:data.visible.socials&&socialLinks.length>0?<section className="site-social-links" id="socials"><div><small>05 / {en?'FIND ME ELSEWHERE':'روابط التواصل'}</small><h2>{en?'Let’s connect':'تواصل معي عبر المنصات'}</h2></div><div className="site-social-list">{socialLinks.map((link,index)=>{const href=safeExternalUrl(link.url);return href?<a className="site-social-link" key={link.label+'-'+index} href={href} target="_blank" rel="noopener noreferrer"><span>{link.label}</span><b>↗</b></a>:null})}</div></section>:null,
-    contact:data.visible.contact?<><section className="site-contact" id="contact"><div><small>06 / {en?'SAY HELLO':'لنتحدث'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div>{data.email&&<a href={'mailto:'+data.email}>{data.email} ↗</a>}</section>{contactContent}</>:null
+    contact:data.visible.contact ? (contactContent || <section className="site-contact" id="contact"><div><small>06 / {en?'SAY HELLO':'لنتحدث'}</small><h2>{en?'Have something in mind?':'عندك فكرة حلوة؟'}</h2></div>{data.email&&<a href={'mailto:'+data.email}>{data.email} ↗</a>}</section>) : null
   }
   return <article className={'portfolio-site layout-'+template.layout+' mood-'+(data.backgroundStyle||'signature')} data-layout={template.layout} data-mood={data.backgroundStyle||'signature'} data-section-order={sectionOrder.join(' ')} style={{'--accent':data.accent,'--pale':template.pale} as CSSProperties}>
     <div className={'site-atmosphere atmosphere-'+template.layout+' effect-'+(data.backgroundStyle||'signature')} aria-hidden="true">
@@ -1721,17 +1821,27 @@ function PortfolioCanvas({data,template,language,contactContent,showSampleConten
     </div>
     <section className="site-hero">
       <div className="site-copy">
-        <small className="site-eyebrow">✳ {en?template.professionEn.toUpperCase():'أهلاً، أنا '+displayName}</small>
-        <h1>{displayName}{displayRole && <><br/><em>{displayRole}</em></>}</h1>
+        <small className="site-eyebrow">{data.showBadges ? '✳ ' : '• '}{en?template.professionEn.toUpperCase():'أهلاً، أنا '+displayName}</small>
+        <h1 className="site-name-heading">
+          <span className="site-name-line">{displayName}</span>
+          {displayRole && <span className="site-role-line"><em>{displayRole}</em></span>}
+        </h1>
         {data.visible.about&&data.bio.trim()&&<p className="site-hero-summary">{data.bio.length>170?data.bio.slice(0,167).trimEnd()+'…':data.bio}</p>}
         {data.visible.contact&&data.email&&<a className="site-cta" href={'mailto:'+data.email}>{en?'Let’s work together':'خلينا نشتغل سوا'} <b>↗</b></a>}
       </div>
-      <div className="site-portrait"><div className="portrait-ring">{avatarSrc ? <img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/> : <div className="portrait-placeholder" aria-hidden="true">{displayName.split(' ').map(part => part[0]).join('').slice(0,3)}</div>}<span className="portrait-decoration">✿</span></div>{data.location&&<div className="portrait-label">{data.location}</div>}</div>
+      <div className="site-portrait"><div className="portrait-ring">{avatarSrc ? <img className="portrait-photo" src={avatarSrc} alt={displayName} loading="lazy"/> : <div className="portrait-placeholder" aria-hidden="true">{displayName.split(' ').map(part => part[0]).join('').slice(0,3)}</div>}{data.showBadges && <span className="portrait-decoration">✿</span>}</div>{data.location&&<div className="portrait-label">{data.location}</div>}</div>
     </section>
     <div className={'site-sections composition-'+template.layout} data-section-container="true">
       {sectionOrder.filter(key=>sectionAvailable[key]).map(key=><div className={'site-section-slot slot-'+key} key={key} data-section={key}>{sectionNodes[key]}</div>)}
     </div>
-    <footer className="site-footer"><span>© {CURRENT_YEAR} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}　<span style={{color:data.accent}}>✳</span></span></footer>
+    <footer className="site-footer"><span>© {CURRENT_YEAR} {displayName}</span><span>{en?'Made with care.':'اتعمل بحب.'}{data.showBadges ? <><span style={{color:data.accent}}>　✳</span></> : null}</span></footer>
+    {data.whatsapp && (
+      <a href={`https://wa.me/${data.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="floating-whatsapp-btn" aria-label="WhatsApp" title={en ? 'Chat on WhatsApp' : 'تواصل عبر واتساب'}>
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+          <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm.01 18.06c-1.49 0-2.94-.4-4.2-1.16l-.3-.18-3.12.82.83-3.04-.2-.31a8.13 8.13 0 0 1-1.25-4.28c0-4.51 3.67-8.18 8.19-8.18 2.19 0 4.24.85 5.79 2.4a8.12 8.12 0 0 1 2.4 5.79c0 4.51-3.67 8.18-8.19 8.18zm4.49-6.13c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.14.17-.25.25-.41.08-.17.04-.31-.02-.43s-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.55c.12.17 1.74 2.65 4.21 3.72.59.25 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.1-.23-.17-.47-.29z"/>
+        </svg>
+      </a>
+    )}
   </article>
 }
 
@@ -1871,8 +1981,8 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
           <button className="site-lang" onClick={onLanguage} style={{ color: '#aaa', background: 'none', border: 0, cursor: 'pointer' }}>
             {en ? 'العربية' : 'English'}
           </button>
-          <button className="badge-cta" onClick={onStart}>
-            {en ? 'Create your own free site 🚀' : 'أنشئ موقعك مجانًا 🚀'}
+          <button className="badge-cta-subtle" onClick={onStart}>
+            {en ? 'Built with Taqdom ↗' : 'صُنع عبر تقدّم ↗'}
           </button>
         </div>
       </header>
@@ -1906,14 +2016,7 @@ function PublicPortfolioPage({ idOrSlug, language, onLanguage, onGoHome, onStart
             </form>
           )}
         </section>) : null} />
-
-
       </main>
-
-      <footer className="public-bottom-badge">
-        <span>© {CURRENT_YEAR} {data.document.name || 'Taqdom'}</span>
-        <span>{en ? 'Powered by' : 'مدعوم بواسطة'} <a href="https://taqdom.me" target="_blank" rel="noreferrer">taqdom.me</a></span>
-      </footer>
     </div>
   )
 }
