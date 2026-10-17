@@ -464,5 +464,14 @@ await test('autosave preserves published status if status is omitted', async () 
   assert.equal(update.values[2], 'published')
 })
 
+await test('served media is not cached after an asset may be deleted', async () => {
+  const db = createDb({
+    mediaRow: { mime_type: 'image/jpeg', data_base64: 'aGVsbG8=' }
+  })
+  const response = await worker.fetch(makeRequest('/api/media/test-media-id'), makeEnv(db))
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('Cache-Control'), 'no-store')
+})
+
 console.log('\\n' + results.filter(result => result.passed).length + '/' + results.length + ' API smoke tests passed.')
 if (results.some(result => !result.passed)) process.exitCode = 1
